@@ -3,12 +3,14 @@
 //! This module provides the BoundingBox type and geometric operations used
 //! for spatial analysis of text elements in PDF documents.
 
+use serde::{Deserialize, Serialize};
+
 // Constants for weighted distance calculation
 const WEIGHTED_DISTANCE_X_WEIGHT: f32 = 5.0;
 const WEIGHTED_DISTANCE_Y_WEIGHT: f32 = 1.0;
 
 /// A bounding box for text or elements.
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Serialize, Deserialize)]
 pub struct BoundingBox {
     /// Left x-coordinate
     pub left: f32,

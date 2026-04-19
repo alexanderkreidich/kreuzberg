@@ -42,6 +42,17 @@ pub enum OcrBoundingGeometry {
     },
 }
 
+impl Default for OcrBoundingGeometry {
+    fn default() -> Self {
+        OcrBoundingGeometry::Rectangle {
+            left: 0,
+            top: 0,
+            width: 0,
+            height: 0,
+        }
+    }
+}
+
 impl OcrBoundingGeometry {
     /// Convert to axis-aligned bounding box (AABB).
     ///
@@ -93,7 +104,7 @@ impl OcrBoundingGeometry {
 ///
 /// Separates detection confidence (how confident that text exists at this location)
 /// from recognition confidence (how confident about the actual text content).
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq)]
 #[cfg_attr(feature = "api", derive(utoipa::ToSchema))]
 pub struct OcrConfidence {
     /// Detection confidence: how confident the OCR engine is that text exists here.
@@ -218,7 +229,7 @@ impl OcrElementLevel {
 ///
 /// This is the primary type for structured OCR output, preserving all information
 /// from both Tesseract and PaddleOCR backends.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 #[cfg_attr(feature = "api", derive(utoipa::ToSchema))]
 pub struct OcrElement {
     /// The recognized text content.

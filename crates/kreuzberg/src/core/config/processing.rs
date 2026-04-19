@@ -384,6 +384,12 @@ pub enum EmbeddingModelType {
     Llm { llm: super::llm::LlmConfig },
 }
 
+impl Default for EmbeddingModelType {
+    fn default() -> Self {
+        Self::Preset { name: String::new() }
+    }
+}
+
 fn default_true() -> bool {
     true
 }

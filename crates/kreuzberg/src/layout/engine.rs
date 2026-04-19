@@ -182,7 +182,7 @@ impl LayoutEngine {
         // Postprocessing heuristics (confidence filtering, overlap resolution).
         let postprocess_start = Instant::now();
         if self.config.apply_heuristics {
-            heuristics::apply_heuristics(&mut detections, page_width as f32, page_height as f32);
+            detections = heuristics::apply_heuristics(detections, page_width as f32, page_height as f32);
         }
         let postprocess_ms = postprocess_start.elapsed().as_secs_f64() * 1000.0;
 
@@ -233,7 +233,7 @@ impl LayoutEngine {
             let page_height = img.height();
 
             if self.config.apply_heuristics {
-                heuristics::apply_heuristics(&mut detections, page_width as f32, page_height as f32);
+                detections = heuristics::apply_heuristics(detections, page_width as f32, page_height as f32);
             }
 
             results.push((

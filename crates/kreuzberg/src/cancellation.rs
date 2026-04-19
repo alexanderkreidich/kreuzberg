@@ -20,6 +20,7 @@
 //! The FFI crate wraps this type in an opaque `*mut CancellationToken` handle
 //! (see `crates/kreuzberg-ffi/src/cancellation.rs`).
 
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 
@@ -60,6 +61,32 @@ impl CancellationToken {
     #[inline]
     pub fn is_cancelled(&self) -> bool {
         self.cancelled.load(Ordering::Relaxed)
+    }
+}
+
+impl Serialize for CancellationToken {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        // Serialize the current cancellation state.
+        // Note: This is a snapshot at serialization time; deserialized tokens
+        // are independent of the original token's future state.
+        let state = self.is_cancelled();
+        state.serialize(serializer)
+    }
+}
+
+impl<'de> Deserialize<'de> for CancellationToken {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        // Deserialize the cancellation state into a new token.
+        let cancelled = bool::deserialize(deserializer)?;
+        Ok(CancellationToken {
+            cancelled: Arc::new(AtomicBool::new(cancelled)),
+        })
     }
 }
 

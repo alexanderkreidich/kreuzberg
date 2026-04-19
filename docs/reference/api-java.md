@@ -1,2218 +1,26031 @@
-# Java API Reference <span class="version-badge">v4.9.2</span>
-
-Complete reference for the Kreuzberg Java bindings using Java 25+ Foreign Function & Memory API (FFM/Panama).
-
-## Installation
-
-Add the dependency to your Maven `pom.xml`:
-
-```xml title="pom.xml"
-<dependency>
-    <groupId>dev.kreuzberg</groupId>
-    <artifactId>kreuzberg</artifactId>
-    <version>4.9.2</version>
-</dependency>
-```
-
-Or with Gradle:
-
-```gradle title="build.gradle"
-dependencies {
-    implementation 'dev.kreuzberg:kreuzberg:4.9.2'
-}
-```
-
-**Requirements:**
-
-- Java 25 or later
-- Libkreuzberg_ffi native library (auto-loaded)
-- Optional: Tesseract or EasyOCR/PaddleOCR for OCR functionality
-
-View package on [Maven Central](https://central.sonatype.com/artifact/dev.kreuzberg/kreuzberg).
-
+---
+title: "Java API Reference"
 ---
 
-## Core Functions
+## Java API Reference <span class="version-badge">v4.9.1</span>
 
-### BatchExtractBytes()
+### Functions
 
-Extract content from multiple byte arrays in parallel (synchronous).
+#### getCacheMetadata()
 
 **Signature:**
 
-```java title="Java"
-public static List<ExtractionResult> batchExtractBytes(List<BytesWithMime> items, ExtractionConfig config)
-    throws KreuzbergException
+```java
+public static CacheStats getCacheMetadata(String cacheDir) throws Error
 ```
 
 **Parameters:**
 
-- `items` (List<BytesWithMime>): List of byte data with MIME types
-- `config` (ExtractionConfig): Optional extraction configuration applied to all items. Uses defaults if null.
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `cacheDir` | `String` | Yes | The cache dir |
 
-**Returns:**
+**Returns:** `CacheStats`
 
-- `List<ExtractionResult>`: List of extraction results in the same order as input items
+**Errors:** Throws `ErrorException`.
 
-**Throws:**
-
-- `KreuzbergException`: If batch extraction fails
 
 ---
 
-**Example - Basic usage:**
-
-```java title="BasicExtraction.java"
-import dev.kreuzberg.Kreuzberg;
-import dev.kreuzberg.ExtractionResult;
-
-try {
-    // Extract content from a PDF file
-    ExtractionResult result = Kreuzberg.extractFile("document.pdf");
-    System.out.println(result.getContent());
-    System.out.println("MIME Type: " + result.getMimeType());
-} catch (IOException e) {
-    System.err.println("File error: " + e.getMessage());
-} catch (KreuzbergException e) {
-    System.err.println("Extraction failed: " + e.getMessage());
-}
-```
-
-**Example - With OCR:**
-
-```java title="WithOcr.java"
-import dev.kreuzberg.*;
-import dev.kreuzberg.config.*;
-
-// Configure OCR for scanned documents
-ExtractionConfig config = ExtractionConfig.builder()
-    .ocr(OcrConfig.builder()
-        .backend("tesseract")
-        .language("eng")
-        .build())
-    .build();
-
-ExtractionResult result = Kreuzberg.extractFile("scanned.pdf", config);
-System.out.println(result.getContent());
-```
-
-**Example - With multiple options:**
-
-```java title="AdvancedExtraction.java"
-// Configure extraction with multiple options for comprehensive processing
-ExtractionConfig config = ExtractionConfig.builder()
-    .useCache(true)
-    .forceOcr(false)
-    .enableQualityProcessing(true)
-    .ocr(OcrConfig.builder()
-        .backend("tesseract")
-        .language("eng+fra")
-        .build())
-    .pdfOptions(PdfConfig.builder()
-        .extractImages(true)
-        .extractMetadata(true)
-        .build())
-    .chunking(ChunkingConfig.builder()
-        .maxChars(1000)
-        .maxOverlap(200)
-        .build())
-    .build();
-
-ExtractionResult result = Kreuzberg.extractFile("document.pdf", config);
-```
-
----
-
-### ExtractBytes()
-
-Extract content from byte array (synchronous).
+#### cleanupCache()
 
 **Signature:**
 
-```java title="Java"
-public static ExtractionResult extractBytes(byte[] data, String mimeType, ExtractionConfig config)
-    throws KreuzbergException
+```java
+public static UsizeF64 cleanupCache(String cacheDir, double maxAgeDays, double maxSizeMb, double targetSizeRatio) throws Error
 ```
 
 **Parameters:**
 
-- `data` (byte[]): File content as bytes (must not be empty)
-- `mimeType` (String): MIME type of the data (required for format detection)
-- `config` (ExtractionConfig): Optional extraction configuration
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `cacheDir` | `String` | Yes | The cache dir |
+| `maxAgeDays` | `double` | Yes | The max age days |
+| `maxSizeMb` | `double` | Yes | The max size mb |
+| `targetSizeRatio` | `double` | Yes | The target size ratio |
 
-**Returns:**
+**Returns:** `UsizeF64`
 
-- `ExtractionResult`: Extraction result containing content, metadata, and tables
+**Errors:** Throws `ErrorException`.
 
-**Throws:**
-
-- `KreuzbergException`: If extraction or validation fails
-
-**Example - Basic usage:**
-
-```java title="ByteExtraction.java"
-import dev.kreuzberg.Kreuzberg;
-
-// Extract from in-memory byte array
-byte[] pdfBytes = /* read from file or stream */;
-ExtractionResult result = Kreuzberg.extractBytes(pdfBytes, "application/pdf", null);
-System.out.println(result.getContent());
-```
-
-**Example - With configuration:**
-
-```java title="ByteExtraction.java"
-// Extract from bytes with quality processing enabled
-ExtractionConfig config = ExtractionConfig.builder()
-    .enableQualityProcessing(true)
-    .build();
-
-byte[] docxBytes = /* ... */;
-ExtractionResult result = Kreuzberg.extractBytes(docxBytes, "application/vnd.openxmlformats-officedocument.wordprocessingml.document", config);
-```
-
-### BatchExtractBytesAsync()
-
-Extract multiple byte arrays in parallel (asynchronous).
-
-**Signature:**
-
-```java title="Java"
-public static CompletableFuture<List<ExtractionResult>> batchExtractBytesAsync(
-    List<BytesWithMime> items,
-    ExtractionConfig config
-)
-```
-
-**Returns:**
-
-- `CompletableFuture<List<ExtractionResult>>`: Future that completes with the list of results
 
 ---
 
-### BatchExtractFiles()
-
-Extract content from multiple files in parallel (synchronous).
+#### smartCleanupCache()
 
 **Signature:**
 
-```java title="Java"
-public static List<ExtractionResult> batchExtractFiles(List<String> paths, ExtractionConfig config)
-    throws KreuzbergException
+```java
+public static UsizeF64 smartCleanupCache(String cacheDir, double maxAgeDays, double maxSizeMb, double minFreeSpaceMb) throws Error
 ```
 
 **Parameters:**
 
-- `paths` (List<String>): List of file paths to extract
-- `config` (ExtractionConfig): Optional extraction configuration applied to all files
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `cacheDir` | `String` | Yes | The cache dir |
+| `maxAgeDays` | `double` | Yes | The max age days |
+| `maxSizeMb` | `double` | Yes | The max size mb |
+| `minFreeSpaceMb` | `double` | Yes | The min free space mb |
 
-**Returns:**
+**Returns:** `UsizeF64`
 
-- `List<ExtractionResult>`: List of extraction results (one per file)
+**Errors:** Throws `ErrorException`.
 
-**Throws:**
-
-- `KreuzbergException`: If batch extraction fails
-
-### BatchExtractFilesAsync()
-
-Extract multiple files in parallel (asynchronous).
-
-**Signature:**
-
-```java title="Java"
-public static CompletableFuture<List<ExtractionResult>> batchExtractFilesAsync(
-    List<String> paths,
-    ExtractionConfig config
-)
-```
-
-**Returns:**
-
-- `CompletableFuture<List<ExtractionResult>>`: Future that completes with extraction results
 
 ---
 
-### BatchExtractFilesWithConfigs() <span class="version-badge">v4.9.2</span>
-
-Extract multiple files in parallel with per-file configuration overrides (synchronous).
+#### isCacheValid()
 
 **Signature:**
 
-```java title="Java"
-public static List<ExtractionResult> batchExtractFilesWithConfigs(
-    List<FileWithConfig> items,
-    ExtractionConfig config
-) throws KreuzbergException
+```java
+public static boolean isCacheValid(String cachePath, double maxAgeDays)
 ```
 
 **Parameters:**
 
-- `items` (List<FileWithConfig>): List of file path + per-file config pairs. `null` config uses batch defaults.
-- `config` (ExtractionConfig): Batch-level extraction configuration
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `cachePath` | `String` | Yes | The cache path |
+| `maxAgeDays` | `double` | Yes | The max age days |
+
+**Returns:** `boolean`
+
 
 ---
 
-### BatchExtractBytesWithConfigs() <span class="version-badge">v4.9.2</span>
-
-Extract multiple byte arrays in parallel with per-file configuration overrides (synchronous).
+#### clearCacheDirectory()
 
 **Signature:**
 
-```java title="Java"
-public static List<ExtractionResult> batchExtractBytesWithConfigs(
-    List<BytesWithMimeAndConfig> items,
-    ExtractionConfig config
-) throws KreuzbergException
-```
-
----
-
-### FileExtractionConfig <span class="version-badge">v4.9.2</span>
-
-Per-file extraction configuration overrides for batch operations. All fields are `Optional<T>` — empty means "use the batch-level default."
-
-```java title="FileExtractionConfig.java"
-public record FileExtractionConfig(
-    Optional<Boolean> enableQualityProcessing,
-    Optional<OcrConfig> ocr,
-    Optional<Boolean> forceOcr,
-    Optional<ChunkingConfig> chunking,
-    Optional<ImageExtractionConfig> images,
-    Optional<PdfConfig> pdfOptions,
-    Optional<TokenReductionConfig> tokenReduction,
-    Optional<LanguageDetectionConfig> languageDetection,
-    Optional<PageConfig> pages,
-    Optional<PostProcessorConfig> postprocessor,
-    Optional<String> outputFormat,
-    Optional<String> resultFormat,
-    Optional<Boolean> includeDocumentStructure
-) {}
-```
-
-Batch-level fields (`maxConcurrentExtractions`, `useCache`, `acceleration`, `securityLimits`) cannot be overridden per file. See [Configuration Reference](configuration.md#fileextractionconfig) for details.
-
----
-
-### ClearDocumentExtractors()
-
-Remove all registered custom document extractors.
-
-**Signature:**
-
-```java title="Java"
-public static void clearDocumentExtractors() throws KreuzbergException
-```
-
----
-
-### ClearOCRBackends()
-
-Remove all registered custom OCR backends.
-
-**Signature:**
-
-```java title="Java"
-public static void clearOCRBackends() throws KreuzbergException
-```
-
----
-
-### ClearPostProcessors()
-
-Remove all registered custom post-processors.
-
-**Signature:**
-
-```java title="Java"
-public static void clearPostProcessors() throws KreuzbergException
-```
-
----
-
-### ClearValidators()
-
-Remove all registered custom validators.
-
-**Signature:**
-
-```java title="Java"
-public static void clearValidators() throws KreuzbergException
-```
-
----
-
-### DetectMimeType()
-
-Detect MIME type from file path or raw bytes.
-
-**Signature:**
-
-```java title="Java"
-public static String detectMimeType(String path) throws KreuzbergException
-public static String detectMimeType(String path, boolean checkExists) throws KreuzbergException
-public static String detectMimeType(byte[] data) throws KreuzbergException
+```java
+public static UsizeF64 clearCacheDirectory(String cacheDir) throws Error
 ```
 
 **Parameters:**
 
-- `path` (String): Path to the file
-- `checkExists` (boolean): Whether to verify file existence (default: true)
-- `data` (byte[]): Raw bytes to analyze
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `cacheDir` | `String` | Yes | The cache dir |
+
+**Returns:** `UsizeF64`
+
+**Errors:** Throws `ErrorException`.
+
+
+---
+
+#### batchCleanupCaches()
+
+**Signature:**
+
+```java
+public static List<UsizeF64> batchCleanupCaches(List<String> cacheDirs, double maxAgeDays, double maxSizeMb, double minFreeSpaceMb) throws Error
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `cacheDirs` | `List<String>` | Yes | The cache dirs |
+| `maxAgeDays` | `double` | Yes | The max age days |
+| `maxSizeMb` | `double` | Yes | The max size mb |
+| `minFreeSpaceMb` | `double` | Yes | The min free space mb |
+
+**Returns:** `List<UsizeF64>`
+
+**Errors:** Throws `ErrorException`.
+
+
+---
+
+#### generateCacheKey()
+
+Generate a deterministic cache key from configuration parameters.
+
+# Algorithm
+
+Uses blake3 (cryptographic, SIMD-accelerated) for collision-resistant cache keys.
+Cache keys are generated by:
+1. Sorting key-value pairs by key (for determinism)
+2. Concatenating as "key1=val1&key2=val2&..."
+3. Hashing with blake3 and formatting as 32-character hex (first 128 bits)
+
+**Signature:**
+
+```java
+public static String generateCacheKey(List<StrStr> parts)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `parts` | `List<StrStr>` | Yes | The parts |
+
+**Returns:** `String`
+
+
+---
+
+#### blake3HashBytes()
+
+Hash arbitrary bytes with blake3, returning a 32-char hex string.
+
+**Signature:**
+
+```java
+public static String blake3HashBytes(byte[] data)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `data` | `byte[]` | Yes | The data |
+
+**Returns:** `String`
+
+
+---
+
+#### blake3HashFile()
+
+Hash a file's content with blake3 using streaming 64 KiB reads.
+
+Returns a 32-char hex string (128 bits of blake3 output).
+
+**Signature:**
+
+```java
+public static String blake3HashFile(String path) throws Error
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `path` | `String` | Yes | Path to the file |
+
+**Returns:** `String`
+
+**Errors:** Throws `ErrorException`.
+
+
+---
+
+#### getAvailableDiskSpace()
+
+**Signature:**
+
+```java
+public static double getAvailableDiskSpace(String path) throws Error
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `path` | `String` | Yes | Path to the file |
+
+**Returns:** `double`
+
+**Errors:** Throws `ErrorException`.
+
+
+---
+
+#### fastHash()
+
+**Signature:**
+
+```java
+public static long fastHash(byte[] data)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `data` | `byte[]` | Yes | The data |
+
+**Returns:** `long`
+
+
+---
+
+#### validateCacheKey()
+
+**Signature:**
+
+```java
+public static boolean validateCacheKey(String key)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `key` | `String` | Yes | The key |
+
+**Returns:** `boolean`
+
+
+---
+
+#### filterOldCacheEntries()
+
+**Signature:**
+
+```java
+public static List<Long> filterOldCacheEntries(List<Double> cacheTimes, double currentTime, double maxAgeSeconds)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `cacheTimes` | `List<Double>` | Yes | The cache times |
+| `currentTime` | `double` | Yes | The current time |
+| `maxAgeSeconds` | `double` | Yes | The max age seconds |
+
+**Returns:** `List<Long>`
+
+
+---
+
+#### sortCacheByAccessTime()
+
+**Signature:**
+
+```java
+public static List<String> sortCacheByAccessTime(List<StringF64> entries)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `entries` | `List<StringF64>` | Yes | The entries |
+
+**Returns:** `List<String>`
+
+
+---
+
+#### sanitizeNamespace()
+
+Validate and sanitize a cache namespace string.
+
+Namespace must be alphanumeric, hyphens, or underscores only, max 64 chars.
+Returns `null` if the input is invalid.
+
+**Signature:**
+
+```java
+public static Optional<String> sanitizeNamespace(String namespace)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `namespace` | `String` | Yes | The namespace |
+
+**Returns:** `Optional<String>`
+
+
+---
+
+#### isBatchMode()
+
+Check if we're currently in batch processing mode.
+
+Returns `false` if the task-local is not set (single-file mode).
+
+**Signature:**
+
+```java
+public static boolean isBatchMode()
+```
+
+**Returns:** `boolean`
+
+
+---
+
+#### resolveThreadBudget()
+
+Resolve the effective thread budget from config or auto-detection.
+
+User-set `max_threads` takes priority. Otherwise auto-detects from `num_cpus`,
+capped at 8 for sane defaults in serverless environments.
+
+**Signature:**
+
+```java
+public static long resolveThreadBudget(ConcurrencyConfig config)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `config` | `Optional<ConcurrencyConfig>` | No | The configuration options |
+
+**Returns:** `long`
+
+
+---
+
+#### initThreadPools()
+
+Initialize the global Rayon thread pool with the given budget.
+
+Safe to call multiple times — only the first call takes effect (subsequent
+calls are silently ignored).
+
+**Signature:**
+
+```java
+public static void initThreadPools(long budget)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `budget` | `long` | Yes | The budget |
+
+**Returns:** `void`
+
+
+---
+
+#### mergeConfigJson()
+
+Merge extraction configuration using JSON-level field override.
+
+Serializes the base config to JSON, merges each field from the override JSON
+(top-level only), and deserializes back. This correctly handles boolean fields
+explicitly set to their default values — the override always wins for any field
+present in `override_json`.
+
+Fields **not** present in `override_json` are preserved from `base`.
+
+**Errors:**
+
+Returns `Err` if the base config cannot be serialized, or if the merged JSON
+cannot be deserialized back into `ExtractionConfig` (e.g., wrong field types).
+
+**Signature:**
+
+```java
+public static ExtractionConfig mergeConfigJson(ExtractionConfig base, String overrideJson) throws String
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `base` | `ExtractionConfig` | Yes | The extraction config |
+| `overrideJson` | `String` | Yes | The override json |
+
+**Returns:** `ExtractionConfig`
+
+**Errors:** Throws `StringException`.
+
+
+---
+
+#### buildConfigFromJson()
+
+Build extraction config by optionally merging JSON overrides into a base config.
+
+If `override_json` is `null`, returns a clone of `base`. Otherwise delegates
+to `merge_config_json`.
+
+**Signature:**
+
+```java
+public static ExtractionConfig buildConfigFromJson(ExtractionConfig base, String overrideJson) throws String
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `base` | `ExtractionConfig` | Yes | The extraction config |
+| `overrideJson` | `Optional<String>` | No | The override json |
+
+**Returns:** `ExtractionConfig`
+
+**Errors:** Throws `StringException`.
+
+
+---
+
+#### validatePort()
+
+Validate a port number for server configuration.
+
+Port must be in the range 1-65535. While ports 1-1023 are privileged and may require
+special permissions on some systems, they are still valid port numbers.
 
 **Returns:**
 
-- `String`: Detected MIME type (for example, "application/pdf")
-
----
-
-### DetectMimeTypeFromPath()
-
-Detect MIME type from a file path (alias for `detectMimeType(path, true)`).
+`Ok(())` if the port is valid, or a `ValidationError` with details about valid ranges.
 
 **Signature:**
 
-```java title="Java"
-public static String detectMimeTypeFromPath(String path) throws KreuzbergException
+```java
+public static void validatePort(short port) throws Error
 ```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `port` | `short` | Yes | The port number to validate |
+
+**Returns:** `void`
+
+**Errors:** Throws `ErrorException`.
+
 
 ---
 
-### DiscoverExtractionConfig()
+#### validateHost()
 
-Discover extraction configuration from environment or configuration files.
+Validate a host/IP address string for server configuration.
 
-**Signature:**
-
-```java title="Java"
-public static Optional<ExtractionConfig> discoverExtractionConfig() throws KreuzbergException
-```
+Accepts valid IPv4 addresses (e.g., "127.0.0.1", "0.0.0.0"), valid IPv6 addresses
+(e.g., ".1", "."), and hostnames (e.g., "localhost", "example.com").
 
 **Returns:**
 
-- `Optional<ExtractionConfig>`: Discovered configuration if found
-
----
-
-### GetEmbeddingPreset()
-
-Retrieve details of a specific embedding preset.
+`Ok(())` if the host is valid, or a `ValidationError` with details about valid formats.
 
 **Signature:**
 
-```java title="Java"
-public static Optional<EmbeddingPreset> getEmbeddingPreset(String name) throws KreuzbergException
+```java
+public static void validateHost(String host) throws Error
 ```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `host` | `String` | Yes | The host/IP address string to validate |
+
+**Returns:** `void`
+
+**Errors:** Throws `ErrorException`.
+
 
 ---
 
-### GetExtensionsForMime()
+#### validateCorsOrigin()
 
-Get common file extensions for a given MIME type.
+Validate a CORS (Cross-Origin Resource Sharing) origin URL.
 
-**Signature:**
-
-```java title="Java"
-public static List<String> getExtensionsForMime(String mimeType) throws KreuzbergException
-```
+Accepts valid HTTP/HTTPS URLs (e.g., "<https://example.com">) or the wildcard "*"
+to allow all origins. URLs must start with "<http://"> or "<https://",> or be exactly "*".
 
 **Returns:**
 
-- `List<String>`: List of extensions (for example, ["pdf"])
-
----
-
-### GetVersion()
-
-Get the current version of the Kreuzberg library.
+`Ok(())` if the origin is valid, or a `ValidationError` with details about valid formats.
 
 **Signature:**
 
-```java title="Java"
-public static String getVersion()
+```java
+public static void validateCorsOrigin(String origin) throws Error
 ```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `origin` | `String` | Yes | The CORS origin URL to validate |
+
+**Returns:** `void`
+
+**Errors:** Throws `ErrorException`.
+
 
 ---
 
-### ListDocumentExtractors()
+#### validateUploadSize()
 
-List names of all registered document extractors.
+Validate an upload size limit for server configuration.
+
+Upload size must be greater than 0 (measured in bytes).
+
+**Returns:**
+
+`Ok(())` if the size is valid, or a `ValidationError` with details about constraints.
 
 **Signature:**
 
-```java title="Java"
-public static List<String> listDocumentExtractors() throws KreuzbergException
+```java
+public static void validateUploadSize(long size) throws Error
 ```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `size` | `long` | Yes | The maximum upload size in bytes to validate |
+
+**Returns:** `void`
+
+**Errors:** Throws `ErrorException`.
+
 
 ---
 
-### ListEmbeddingPresets()
+#### validateBinarizationMethod()
 
-List names of all available embedding presets.
+Validate a binarization method string.
+
+**Returns:**
+
+`Ok(())` if the method is valid, or a `ValidationError` with details about valid options.
 
 **Signature:**
 
-```java title="Java"
-public static List<String> listEmbeddingPresets() throws KreuzbergException
+```java
+public static void validateBinarizationMethod(String method) throws Error
 ```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `method` | `String` | Yes | The binarization method to validate (e.g., "otsu", "adaptive", "sauvola") |
+
+**Returns:** `void`
+
+**Errors:** Throws `ErrorException`.
+
 
 ---
 
-### ListOCRBackends()
+#### validateTokenReductionLevel()
 
-List names of all registered OCR backends.
+Validate a token reduction level string.
+
+**Returns:**
+
+`Ok(())` if the level is valid, or a `ValidationError` with details about valid options.
 
 **Signature:**
 
-```java title="Java"
-public static List<String> listOCRBackends() throws KreuzbergException
+```java
+public static void validateTokenReductionLevel(String level) throws Error
 ```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `level` | `String` | Yes | The token reduction level to validate (e.g., "off", "light", "moderate") |
+
+**Returns:** `void`
+
+**Errors:** Throws `ErrorException`.
+
 
 ---
 
-### ListPostProcessors()
+#### validateOcrBackend()
 
-List names of all registered post-processors.
+Validate an OCR backend string.
+
+**Returns:**
+
+`Ok(())` if the backend is valid, or a `ValidationError` with details about valid options.
 
 **Signature:**
 
-```java title="Java"
-public static List<String> listPostProcessors() throws KreuzbergException
+```java
+public static void validateOcrBackend(String backend) throws Error
 ```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `backend` | `String` | Yes | The OCR backend to validate (e.g., "tesseract", "easyocr", "paddleocr") |
+
+**Returns:** `void`
+
+**Errors:** Throws `ErrorException`.
+
 
 ---
 
-### ListValidators()
+#### validateLanguageCode()
 
-List names of all registered validators.
+Validate a language code (ISO 639-1 or 639-3 format).
+
+Accepts both 2-letter ISO 639-1 codes (e.g., "en", "de") and
+3-letter ISO 639-3 codes (e.g., "eng", "deu") for broader compatibility.
+
+**Returns:**
+
+`Ok(())` if the code is valid, or a `ValidationError` indicating an invalid language code.
 
 **Signature:**
 
-```java title="Java"
-public static List<String> listValidators() throws KreuzbergException
+```java
+public static void validateLanguageCode(String code) throws Error
 ```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `code` | `String` | Yes | The language code to validate |
+
+**Returns:** `void`
+
+**Errors:** Throws `ErrorException`.
+
 
 ---
 
-### LoadExtractionConfigFromFile()
+#### validateTesseractPsm()
 
-Load extraction configuration from a file.
+Validate a tesseract Page Segmentation Mode (PSM).
+
+**Returns:**
+
+`Ok(())` if the PSM is valid, or a `ValidationError` with details about valid ranges.
 
 **Signature:**
 
-```java title="Java"
-public static ExtractionConfig loadExtractionConfigFromFile(Path path) throws KreuzbergException
+```java
+public static void validateTesseractPsm(int psm) throws Error
 ```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `psm` | `int` | Yes | The PSM value to validate (0-13) |
+
+**Returns:** `void`
+
+**Errors:** Throws `ErrorException`.
+
 
 ---
 
-### RegisterOcrBackend()
+#### validateTesseractOem()
 
-Register a custom OCR backend.
+Validate a tesseract OCR Engine Mode (OEM).
+
+**Returns:**
+
+`Ok(())` if the OEM is valid, or a `ValidationError` with details about valid options.
 
 **Signature:**
 
-```java title="Java"
-public static void registerOcrBackend(String name, OcrBackend backend) throws KreuzbergException
-public static void registerOcrBackend(String name, OcrBackend backend, List<String> supportedLanguages) throws KreuzbergException
+```java
+public static void validateTesseractOem(int oem) throws Error
 ```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `oem` | `int` | Yes | The OEM value to validate (0-3) |
+
+**Returns:** `void`
+
+**Errors:** Throws `ErrorException`.
+
 
 ---
 
-### RegisterPostProcessor()
+#### validateOutputFormat()
 
-Register a custom post-processor.
+Validate a document extraction output format.
+
+Accepts the following formats and aliases:
+- "plain" or "text" for plain text output
+- "markdown" or "md" for Markdown output
+- "djot" for Djot markup format
+- "html" for HTML output
+
+**Returns:**
+
+`Ok(())` if the format is valid, or a `ValidationError` with details about valid options.
 
 **Signature:**
 
-```java title="Java"
-public static void registerPostProcessor(String name, PostProcessor processor) throws KreuzbergException
-public static void registerPostProcessor(String name, PostProcessor processor, int priority, ProcessingStage stage) throws KreuzbergException
+```java
+public static void validateOutputFormat(String format) throws Error
 ```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `format` | `String` | Yes | The output format to validate |
+
+**Returns:** `void`
+
+**Errors:** Throws `ErrorException`.
+
 
 ---
 
-### RegisterValidator()
+#### validateConfidence()
 
-Register a custom validator.
+Validate a confidence threshold value.
+
+Confidence thresholds should be between 0.0 and 1.0 inclusive.
+
+**Returns:**
+
+`Ok(())` if the confidence is valid, or a `ValidationError` with details about valid ranges.
 
 **Signature:**
 
-```java title="Java"
-public static void registerValidator(String name, Validator validator) throws KreuzbergException
-public static void registerValidator(String name, Validator validator, int priority) throws KreuzbergException
+```java
+public static void validateConfidence(double confidence) throws Error
 ```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `confidence` | `double` | Yes | The confidence threshold to validate |
+
+**Returns:** `void`
+
+**Errors:** Throws `ErrorException`.
+
 
 ---
 
-### UnregisterDocumentExtractor()
+#### validateDpi()
 
-Unregister a document extractor by name.
+Validate a DPI (dots per inch) value.
+
+DPI should be a positive integer, typically 72-600.
+
+**Returns:**
+
+`Ok(())` if the DPI is valid, or a `ValidationError` with details about valid ranges.
 
 **Signature:**
 
-```java title="Java"
-public static void unregisterDocumentExtractor(String name) throws KreuzbergException
+```java
+public static void validateDpi(int dpi) throws Error
 ```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `dpi` | `int` | Yes | The DPI value to validate |
+
+**Returns:** `void`
+
+**Errors:** Throws `ErrorException`.
+
 
 ---
 
-### UnregisterOCRBackend()
+#### validateChunkingParams()
 
-Unregister an OCR backend by name.
+Validate chunk size parameters.
+
+Checks that max_chars > 0 and max_overlap < max_chars.
+
+**Returns:**
+
+`Ok(())` if the parameters are valid, or a `ValidationError` with details about constraints.
 
 **Signature:**
 
-```java title="Java"
-public static void unregisterOCRBackend(String name) throws KreuzbergException
+```java
+public static void validateChunkingParams(long maxChars, long maxOverlap) throws Error
 ```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `maxChars` | `long` | Yes | The maximum characters per chunk |
+| `maxOverlap` | `long` | Yes | The maximum overlap between chunks |
+
+**Returns:** `void`
+
+**Errors:** Throws `ErrorException`.
+
 
 ---
 
-### UnregisterPostProcessor()
+#### validateLlmConfigModel()
 
-Unregister a post-processor by name.
+Validate that an `LlmConfig` has a non-empty model string.
+
+**Returns:**
+
+`Ok(())` if the model is non-empty, or a `ValidationError` otherwise.
 
 **Signature:**
 
-```java title="Java"
-public static void unregisterPostProcessor(String name) throws KreuzbergException
+```java
+public static void validateLlmConfigModel(String model) throws Error
 ```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `model` | `String` | Yes | The model string to validate |
+
+**Returns:** `void`
+
+**Errors:** Throws `ErrorException`.
+
 
 ---
 
-### UnregisterValidator()
+#### validateVlmBackendConfig()
 
-Unregister a validator by name.
+Validate that a VLM OCR backend has the required `vlm_config`.
+
+When the OCR backend is set to `"vlm"`, the `vlm_config` field must be present
+to provide the model endpoint configuration, and the model string must be non-empty.
+
+**Returns:**
+
+`Ok(())` if the backend is not `"vlm"` or `vlm_config` is present with a valid model,
+or a `ValidationError` if `"vlm"` backend is used without `vlm_config` or with an empty model.
 
 **Signature:**
 
-```java title="Java"
-public static void unregisterValidator(String name) throws KreuzbergException
+```java
+public static void validateVlmBackendConfig(String backend, LlmConfig vlmConfig) throws Error
 ```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `backend` | `String` | Yes | The OCR backend name |
+| `vlmConfig` | `Optional<LlmConfig>` | No | The optional VLM config to validate |
+
+**Returns:** `void`
+
+**Errors:** Throws `ErrorException`.
+
 
 ---
 
-### ValidateMimeType()
+#### validateStructuredExtractionSchema()
 
-Validate a MIME type string and return its normalized form.
+Validate structured extraction configuration.
+
+When structured extraction is enabled, the JSON schema must not be null or empty,
+and the LLM config must have a non-empty model string.
+
+**Returns:**
+
+`Ok(())` if the schema is a non-empty object or array and the model is valid,
+or a `ValidationError` if the schema is null/empty or the model is empty.
 
 **Signature:**
 
-```java title="Java"
-public static String validateMimeType(String mimeType) throws KreuzbergException
+```java
+public static void validateStructuredExtractionSchema(Object schema, String llmModel) throws Error
 ```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `schema` | `Object` | Yes | The JSON schema value to validate |
+| `llmModel` | `String` | Yes | The LLM model string from the nested `LlmConfig` |
+
+**Returns:** `void`
+
+**Errors:** Throws `ErrorException`.
+
 
 ---
 
-## Configuration
+#### extractBytes()
 
-### ExtractionConfig
+Extract content from a byte array.
 
-Main extraction configuration using builder pattern.
+This is the main entry point for in-memory extraction. It performs the following steps:
+1. Validate MIME type
+2. Handle legacy format conversion if needed
+3. Select appropriate extractor from registry
+4. Extract content
+5. Run post-processing pipeline
 
-**Builder Methods:**
+**Returns:**
 
-```java title="ExtractionConfig.java"
-// Build extraction configuration with all available options
-ExtractionConfig config = ExtractionConfig.builder()
-    .chunking(ChunkingConfig)                          // Text chunking configuration
-    .concurrency(ConcurrencyConfig)                    // Concurrency control settings
-    .enableQualityProcessing(false)                    // Enable quality processing (default: false)
-    .forceOcr(false)                                   // Force OCR on all pages (default: false)
-    .htmlOptions(HtmlOptions)                          // HTML conversion options
-    .imageExtraction(ImageExtractionConfig)            // Image extraction settings
-    .imagePreprocessing(ImagePreprocessingConfig)      // Image preprocessing
-    .includeDocumentStructure(false)                   // Include document structure (default: false)
-    .keywords(KeywordConfig)                           // Keyword extraction settings
-    .languageDetection(LanguageDetectionConfig)        // Language detection settings
-    .layout(LayoutDetectionConfig)                     // Layout detection settings
-    .maxConcurrentExtractions(4)                       // Max concurrent extractions
-    .ocr(OcrConfig)                                    // OCR configuration
-    .outputFormat("plain")                             // Content format: "plain", "markdown", "djot", "html"
-    .pdfOptions(PdfConfig)                             // PDF-specific options
-    .postprocessor(PostProcessorConfig)                // Post-processor settings
-    .resultFormat("unified")                           // Result format: "unified", "element_based"
-    .securityLimits(SecurityLimitsConfig)              // Security limits configuration
-    .tokenReduction(TokenReductionConfig)              // Token reduction configuration
-    .useCache(true)                                    // Enable caching (default: true)
-    .build();
-```
+An `ExtractionResult` containing the extracted content and metadata.
 
-**Static Methods:**
+**Errors:**
 
-```java title="ConfigLoading.java"
-// Load configuration from file (TOML, YAML, or JSON)
-ExtractionConfig config = ExtractionConfig.fromFile("kreuzberg.toml");
-
-// Automatically discover configuration file in current/parent directories
-ExtractionConfig config = ExtractionConfig.discover(); // Returns null if not found
-```
-
----
-
-### OcrConfig
-
-OCR configuration for text extraction from images.
-
-**Builder Methods:**
-
-```java title="OcrConfiguration.java"
-// Configure OCR backend and language settings
-OcrConfig ocr = OcrConfig.builder()
-    .backend("tesseract")          // "tesseract", "easyocr", "paddleocr", etc.
-    .language("eng")               // Language code(s), comma-separated for multiple
-    .tesseractConfig(config)       // Tesseract-specific configuration
-    .paddleOcrConfig(paddleConfig) // PaddleOCR-specific configuration
-    .build();
-```
-
-**PaddleOcrConfig Fields:** <span class="version-badge">v4.9.2</span>
-
-- `modelTier` (String): Model tier: "mobile" (lightweight, ~21MB total, fast) or "server" (high accuracy, ~172MB, best with GPU). Default: "mobile"
-- `padding` (Integer): Padding in pixels (0-100) added around the image before detection. Default: 10
-
-```java title="PaddleOcrConfiguration.java"
-PaddleOcrConfig paddleConfig = PaddleOcrConfig.builder()
-    .modelTier("server")
-    .padding(10)
-    .build();
-```
-
-**Example - Multi-language OCR:**
-
-```java title="MultiLanguageOcr.java"
-// Configure OCR to support multiple languages simultaneously
-OcrConfig ocr = OcrConfig.builder()
-    .backend("tesseract")
-    .language("eng+fra+deu")       // English, French, and German
-    .build();
-```
-
----
-
-### OcrBackend Interface
-
-Custom OCR backend implementation for cloud-based or specialized OCR.
-
-**Interface:**
-
-```java title="Java"
-public interface OcrBackend {
-    /**
-     * Process image and extract text.
-     *
-     * @param imageData raw image bytes
-     * @param configJson OCR configuration as JSON
-     * @return extracted text, or null if processing fails
-     */
-    String processImage(byte[] imageData, String configJson) throws Exception;
-
-    /**
-     * Languages supported by this backend.
-     *
-     * @return list of language codes (empty for all languages)
-     */
-    List<String> supportedLanguages();
-}
-```
-
-**Example - Custom OCR Backend:**
-
-```java title="CustomOcrBackend.java"
-// Implement custom OCR backend for cloud-based or specialized OCR services
-class CustomOcrBackend implements OcrBackend {
-    @Override
-    public String processImage(byte[] imageData, String configJson) throws Exception {
-        // Call custom OCR service (e.g., Google Cloud Vision, AWS Textract)
-        return callCustomOcrService(imageData);
-    }
-
-    @Override
-    public List<String> supportedLanguages() {
-        return List.of("eng", "fra", "deu");
-    }
-}
-
-// Register the custom backend with Kreuzberg
-OcrBackend backend = new CustomOcrBackend();
-Kreuzberg.registerOcrBackend("custom-ocr", backend);
-```
-
----
-
-### ChunkingConfig
-
-Configuration for splitting extracted text into chunks.
-
-**Builder Methods:**
-
-```java title="ChunkingConfiguration.java"
-// Configure text chunking for RAG and embedding workflows
-ChunkingConfig chunking = ChunkingConfig.builder()
-    .maxChars(1000)              // Maximum characters per chunk
-    .maxOverlap(200)             // Character overlap between chunks
-    .preset("large")             // Preset: "small", "medium", "large"
-    .enabled(true)               // Enable chunking (default: true)
-    .embedding(embeddingMap)     // Embedding configuration
-    .sizingTokenizer("bert-base-uncased") // Measure size by token count using a HuggingFace tokenizer
-    // .sizingCharacters()       // Measure size by character count (default)
-    // .sizingCacheDir("/tmp/tokenizers") // Optional: cache directory for tokenizer files
-    .build();
-```
-
----
-
-### LanguageDetectionConfig
-
-Configuration for automatic language detection.
-
-**Builder Methods:**
-
-```java title="LanguageDetection.java"
-// Configure automatic language detection with confidence threshold
-LanguageDetectionConfig langDetect = LanguageDetectionConfig.builder()
-    .enabled(true)               // Enable language detection
-    .minConfidence(0.8)          // Minimum confidence threshold (0.0-1.0)
-    .build();
-```
-
----
-
-### PdfConfig
-
-PDF-specific extraction options.
-
-**Builder Methods:**
-
-```java title="PdfConfiguration.java"
-// Configure PDF-specific extraction options
-PdfConfig pdf = PdfConfig.builder()
-    .allowSingleColumnTables(false) // <span class="version-badge">v4.9.2</span> Allow extraction of single-column tables
-    .extractImages(true)         // Extract images from PDF
-    .extractMetadata(true)       // Extract PDF metadata
-    .renderImages(false)         // Render pages as images for processing
-    .build();
-```
-
----
-
-### ImageExtractionConfig
-
-Configuration for image extraction from documents.
-
-**Builder Methods:**
-
-```java title="ImageExtraction.java"
-// Configure image extraction settings
-ImageExtractionConfig images = ImageExtractionConfig.builder()
-    .extractImages(true)         // Enable image extraction
-    .targetDpi(150)              // Target DPI for extraction
-    .maxImageDimension(4096)     // Maximum image dimension in pixels
-    .build();
-```
-
----
-
-### ImagePreprocessingConfig
-
-Configuration for preprocessing images before OCR.
-
-**Builder Methods:**
-
-```java title="ImagePreprocessing.java"
-// Configure image preprocessing to improve OCR accuracy
-ImagePreprocessingConfig preproc = ImagePreprocessingConfig.builder()
-    .targetDpi(300)              // Target DPI for OCR
-    .denoise(true)               // Apply denoising
-    .deskew(true)                // Deskew images
-    .contrastEnhance(true)       // Enhance contrast
-    .build();
-```
-
----
-
-### ConcurrencyConfig <span class="version-badge">v4.9.2</span>
-
-Concurrency configuration for controlling parallel extraction.
-
-**Builder Methods:**
-
-```java title="ConcurrencyConfiguration.java"
-// Configure concurrency control for parallel extraction
-ConcurrencyConfig concurrency = ConcurrencyConfig.builder()
-    .maxThreads(4)               // Maximum number of concurrent threads
-    .build();
-```
-
-**Fields:**
-
-- `maxThreads` (Integer): Maximum number of concurrent threads for parallel extraction. Default: null (system default)
-
-**Example:**
-
-```java title="ConcurrencyExample.java"
-var config = ExtractionConfig.builder()
-    .concurrency(ConcurrencyConfig.builder()
-        .maxThreads(4)
-        .build())
-    .build();
-```
-
----
-
-### TokenReductionConfig
-
-Configuration for token reduction (reducing extracted text size).
-
-**Builder Methods:**
-
-```java title="TokenReduction.java"
-// Configure token reduction to minimize extracted text size
-TokenReductionConfig tokenReduce = TokenReductionConfig.builder()
-    .mode("moderate")            // Mode: "none", "light", "moderate", "aggressive"
-    .preserveImportantWords(true) // Preserve important words
-    .build();
-```
-
----
-
-### PostProcessorConfig
-
-Configuration for post-processing.
-
-**Builder Methods:**
-
-```java title="PostProcessor.java"
-// Configure post-processing for extraction results
-PostProcessorConfig postproc = PostProcessorConfig.builder()
-    .enabled(true)               // Enable post-processing
-    .build();
-```
-
----
-
-### HtmlOptions
-
-Configuration for HTML to Markdown conversion.
-
-**Builder Methods:**
-
-```java title="HtmlConfiguration.java"
-// Configure HTML to Markdown conversion options
-HtmlOptions html = HtmlOptions.builder()
-    .headingStyle("atx")         // "atx", "underlined", "atx_closed"
-    .codeBlockStyle("backticks") // "indented", "backticks", "tildes"
-    .build();
-```
-
----
-
-### KeywordConfig
-
-Configuration for keyword extraction.
-
-**Builder Methods:**
-
-```java title="KeywordExtraction.java"
-// Configure automatic keyword extraction from content
-KeywordConfig keywords = KeywordConfig.builder()
-    .enabled(true)
-    .maxKeywords(10)
-    .minKeywordLength(3)
-    .build();
-```
-
----
-
-## Results & Types
-
-### ExtractionResult
-
-Result of a document extraction operation. All fields follow camelCase naming conventions.
-
-**Accessors:**
-
-```java title="ResultAccess.java"
-// Core fields
-String content = result.getContent();                                // Extracted text content
-String mimeType = result.getMimeType();                              // Detected MIME type
-Metadata metadata = result.getMetadata();                            // Document metadata (typed)
-
-// Extraction artifacts
-List<Table> tables = result.getTables();                              // Extracted tables
-List<Chunk> chunks = result.getChunks();                              // Text chunks
-List<ExtractedImage> images = result.getImages();                    // Extracted images
-List<PageContent> pages = result.getPages();                         // Per-page content
-
-// Semantic & OCR elements
-List<Element> elements = result.getElements();                       // Semantic elements
-List<OcrElement> ocrElements = result.getOcrElements();              // OCR elements with geometry
-
-// Structure & Analysis
-Optional<DjotContent> djotContent = result.getDjotContent();         // Djot content structure
-Optional<DocumentStructure> document = result.getDocumentStructure(); // Document structure
-Optional<PageStructure> pageStructure = result.getPageStructure();   // Page structure info
-List<String> detectedLanguages = result.getDetectedLanguages();      // All detected languages
-Optional<String> detectedLanguage = result.getDetectedLanguage();    // Primary detected language
-Optional<List<ExtractedKeyword>> keywords = result.getExtractedKeywords(); // Extracted keywords
-
-// Quality & Warnings
-Optional<Double> qualityScore = result.getQualityScore();            // Quality score (0.0–1.0)
-Optional<List<ProcessingWarning>> warnings = result.getProcessingWarnings(); // Processing warnings
-Optional<List<PdfAnnotation>> annotations = result.getAnnotations();  // PDF annotations
-
-// Helper methods
-int pageCount = result.getPageCount();                               // Total page count
-int chunkCount = result.getChunkCount();                             // Total chunk count
-Optional<Object> title = result.getMetadataField("title");           // Unified metadata access
-```
-
-**Example - Accessing results:**
-
-```java title="ResultProcessing.java"
-ExtractionResult result = Kreuzberg.extractFile("document.pdf");
-
-// Display basic extraction statistics
-System.out.println("Content length: " + result.getContent().length());
-System.out.println("MIME: " + result.getMimeType());
-System.out.println("Pages: " + result.getPageCount());
-System.out.println("Chunks: " + result.getChunkCount());
-
-// Access typed metadata
-Metadata meta = result.getMetadata();
-meta.getTitle().ifPresent(t -> System.out.println("Title: " + t));
-meta.getAuthors().ifPresent(a -> System.out.println("Authors: " + String.join(", ", a)));
-
-// Process chunks for RAG workflows
-for (Chunk chunk : result.getChunks()) {
-    System.out.println("Chunk [" + chunk.getMetadata().getChunkIndex() + "]: " + chunk.getContent());
-}
-```
-
-#### Pages
-
-**Type**: `List<PageContent>`
-
-Per-page extracted content when page extraction is enabled via `PageConfig.extractPages = true`.
-
-Each page contains:
-
-- Page number (1-indexed)
-- Text content for that page
-- Tables on that page
-- Images on that page
-- Layout regions when layout detection is enabled, each with `getClass()` (String), `getConfidence()` (double, 0–1), `getBoundingBox()`, and `getAreaFraction()` (double, 0–1)
-
-**Example:**
-
-```java title="PageExtraction.java"
-import dev.kreuzberg.*;
-
-var config = ExtractionConfig.builder()
-    .pages(PageConfig.builder()
-        .extractPages(true)
-        .build())
-    .build();
-
-var result = Kreuzberg.extractFile("document.pdf", config);
-
-if (result.getPages() != null) {
-    for (var page : result.getPages()) {
-        System.out.println("Page " + page.getPageNumber() + ":");
-        System.out.println("  Content: " + page.getContent().length() + " chars");
-        System.out.println("  Tables: " + page.getTables().size());
-        System.out.println("  Images: " + page.getImages().size());
-    }
-}
-```
-
----
-
-### Accessing Per-Page Content
-
-When page extraction is enabled, access individual pages and iterate over them:
-
-```java title="IteratePages.java"
-import dev.kreuzberg.*;
-
-var config = ExtractionConfig.builder()
-    .pages(PageConfig.builder()
-        .extractPages(true)
-        .insertPageMarkers(true)
-        .markerFormat("\n\n--- Page {page_num} ---\n\n")
-        .build())
-    .build();
-
-var result = Kreuzberg.extractFile("document.pdf", config);
-
-// Access combined content with page markers
-System.out.println("Combined content with markers:");
-System.out.println(result.getContent().substring(0, 500));
-System.out.println();
-
-// Access per-page content
-if (result.getPages() != null) {
-    for (var page : result.getPages()) {
-        System.out.println("Page " + page.getPageNumber() + ":");
-        String preview = page.getContent().substring(0, Math.min(100, page.getContent().length()));
-        System.out.println("  " + preview + "...");
-        if (!page.getTables().isEmpty()) {
-            System.out.println("  Found " + page.getTables().size() + " table(s)");
-        }
-        if (!page.getImages().isEmpty()) {
-            System.out.println("  Found " + page.getImages().size() + " image(s)");
-        }
-    }
-}
-```
-
-### Metadata
-
-Typed document metadata extracted from various formats.
-
-**Accessors:**
-
-```java title="MetadataAccess.java"
-Optional<String> title = metadata.getTitle();
-Optional<String> subject = metadata.getSubject();
-Optional<List<String>> authors = metadata.getAuthors();
-Optional<List<String>> keywords = metadata.getKeywords();
-Optional<String> language = metadata.getLanguage();
-Optional<String> createdAt = metadata.getCreatedAt();
-Optional<String> modifiedAt = metadata.getModifiedAt();
-Optional<String> createdBy = metadata.getCreatedBy();
-Optional<String> modifiedBy = metadata.getModifiedBy();
-Optional<PageStructure> pages = metadata.getPages();
-Optional<String> category = metadata.getCategory();
-Optional<List<String>> tags = metadata.getTags();
-Optional<String> version = metadata.getDocumentVersion();
-Optional<String> abstractText = metadata.getAbstractText();
-Optional<String> outputFormat = metadata.getOutputFormat();
-Optional<Long> durationMs = metadata.getExtractionDurationMs();
-
-// Form-specific or post-processor metadata (legacy)
-Map<String, Object> additional = metadata.getAdditional();
-```
-
----
-
-### Table
-
-Represents a table extracted from a document.
-
-**Accessors:**
-
-```java title="TableAccess.java"
-List<List<String>> cells = table.cells();              // 2D list of cell values
-String markdown = table.markdown();                    // Markdown representation
-int pageNumber = table.pageNumber();                   // Page number (1-indexed)
-BoundingBox boundingBox = table.boundingBox();         // Bounding box coordinates
-
-// Helper methods
-int rows = table.getRowCount();                        // Number of rows
-int cols = table.getColumnCount();                     // Number of columns
-String cell = table.getCell(row, col);                // Get specific cell
-List<String> row = table.getRow(rowIndex);            // Get specific row
-```
-
-**Example:**
-
-```java title="TableProcessing.java"
-List<Table> tables = result.getTables();
-
-// Process all extracted tables
-for (Table table : tables) {
-    System.out.println("Table on page " + table.getPageNumber() + ":");
-    System.out.println("Size: " + table.getRowCount() + " x " + table.getColumnCount());
-    System.out.println(table.getMarkdown());
-
-    // Iterate through all cells in the table
-    for (int r = 0; r < table.getRowCount(); r++) {
-        for (int c = 0; c < table.getColumnCount(); c++) {
-            System.out.print(table.getCell(r, c) + " | ");
-        }
-        System.out.println();
-    }
-}
-```
-
----
-
-### Chunk
-
-Represents a chunk of extracted text (for RAG/embeddings).
-
-**Accessors:**
-
-```java title="ChunkAccess.java"
-String content = chunk.getContent();                   // Chunk text
-ChunkMetadata metadata = chunk.getMetadata();          // Chunk metadata
-Optional<List<Float>> embedding = chunk.getEmbedding(); // Embedding vector
-```
-
-**Example:**
-
-```java title="ChunkProcessing.java"
-// Configure chunking for RAG workflow
-ExtractionConfig config = ExtractionConfig.builder()
-    .chunking(ChunkingConfig.builder()
-        .maxChars(1000)
-        .maxOverlap(200)
-        .build())
-    .build();
-
-ExtractionResult result = Kreuzberg.extractFile("document.pdf", config);
-
-// Process each chunk (e.g., for embedding generation)
-for (Chunk chunk : result.getChunks()) {
-    System.out.println("Chunk " + chunk.getIndex() + ": " + chunk.getContent().substring(0, 50) + "...");
-}
-```
-
----
-
-### ChunkMetadata
-
-Metadata describing where a chunk appears within the original document.
-
-**Accessors:**
-
-```java title="ChunkMetadataAccess.java"
-long byteStart = metadata.getByteStart();              // UTF-8 start byte offset
-long byteEnd = metadata.getByteEnd();                  // UTF-8 end byte offset
-int chunkIndex = metadata.getChunkIndex();             // 0-based index
-int totalChunks = metadata.getTotalChunks();           // Total chunks in document
-Optional<Long> firstPage = metadata.getFirstPage();    // Start page number
-Optional<Long> lastPage = metadata.getLastPage();      // End page number
-Optional<Integer> tokenCount = metadata.getTokenCount(); // Token count
-Optional<HeadingContext> headings = metadata.getHeadingContext(); // Heading hierarchy
-```
-
-**Fields:**
-
-- `byteEnd` (long): UTF-8 byte offset in content (exclusive).
-- `byteStart` (long): UTF-8 byte offset in content (inclusive).
-- `chunkIndex` (int): Zero-based index of this chunk.
-- `totalChunks` (int): Total number of chunks in document.
-- `firstPage` (Optional\<Long\>): First page this chunk appears on (1-indexed).
-- `lastPage` (Optional\<Long\>): Last page this chunk appears on (1-indexed).
-- `tokenCount` (Optional\<Integer\>): Estimated token count (if configured).
-- `headingContext` (Optional\<HeadingContext\>): Heading hierarchy for section-based chunking.
-
-**Page tracking:** When `PageStructure.boundaries` is available and chunking is enabled, `firstPage` and `lastPage` are automatically calculated based on byte offsets.
-
-**Example:**
-
-```java title="ChunkMetadataExample.java"
-import dev.kreuzberg.*;
-
-var config = ExtractionConfig.builder()
-    .chunking(ChunkingConfig.builder()
-        .maxChars(500)
-        .maxOverlap(50)
-        .build())
-    .pages(PageConfig.builder()
-        .extractPages(true)
-        .build())
-    .build();
-
-var result = Kreuzberg.extractFile("document.pdf", config);
-
-if (result.getChunks() != null) {
-    for (var chunk : result.getChunks()) {
-        var meta = chunk.getMetadata();
-        String pageInfo = "";
-
-        if (meta.getFirstPage().isPresent()) {
-            int first = meta.getFirstPage().get();
-            int last = meta.getLastPage().orElse(first);
-
-            if (first == last) {
-                pageInfo = " (page " + first + ")";
-            } else {
-                pageInfo = " (pages " + first + "-" + last + ")";
-            }
-        }
-
-        System.out.printf(
-            "Chunk [%d:%d]: %d chars%s%n",
-            meta.getByteStart(),
-            meta.getByteEnd(),
-            meta.getCharCount(),
-            pageInfo
-        );
-    }
-}
-```
-
----
-
-### ExtractedImage
-
-Represents an image extracted from a document.
-
-**Accessors:**
-
-```java title="ImageAccess.java"
-byte[] data = image.data();                            // Image binary data
-String format = image.format();                        // Image format (png, jpg, etc.)
-String mimeType = image.mimeType();                    // MIME type
-int pageNumber = image.pageNumber();                   // Page number (1-indexed)
-ImageDimensions dimensions = image.dimensions();       // Image width and height
-BoundingBox boundingBox = image.boundingBox();         // Location in document
-Optional<String> ocrResult = image.ocrResult();        // Text extracted from image
-```
-
----
-
-### OcrElement
-
-Represents a low-level text element detected via OCR.
-
-**Accessors:**
-
-```java title="OcrElementAccess.java"
-String text = element.text();                          // Detected text
-BoundingBox geometry = element.geometry();             // Element coordinates
-double confidence = element.confidence();              // OCR confidence (0.0–1.0)
-int level = element.level();                           // Semantic level (e.g., word, line)
-```
-
----
-
-### BoundingBox
-
-Represents spatial coordinates for elements in a document.
-
-**Accessors:**
-
-```java title="BoundingBoxAccess.java"
-double left = box.left();                              // X-coordinate (left)
-double top = box.top();                                // Y-coordinate (top)
-double width = box.width();                            // Element width
-double height = box.height();                          // Element height
-```
-
----
-
-## Extensibility
-
-### Custom Post-Processors
-
-Post-processors enrich extraction results by transforming content or adding metadata.
-
-**Interface:**
-
-```java title="Java"
-@FunctionalInterface
-public interface PostProcessor {
-    /**
-     * Process and enrich an extraction result.
-     *
-     * @param result the extraction result
-     * @return the processed result
-     */
-    ExtractionResult process(ExtractionResult result) throws KreuzbergException;
-
-    /**
-     * Compose with another processor.
-     *
-     * @param after the next processor
-     * @return composed processor
-     */
-    default PostProcessor andThen(PostProcessor after) {
-        return result -> after.process(this.process(result));
-    }
-
-    /**
-     * Execution stage.
-     *
-     * @return the processing stage (EARLY, MIDDLE, LATE)
-     */
-    default ProcessingStage processingStage() {
-        return ProcessingStage.MIDDLE;
-    }
-
-    /**
-     * Execution priority within stage (higher = earlier).
-     *
-     * @return priority value
-     */
-    default int priority() {
-        return 0;
-    }
-}
-```
-
-**Example - Word count processor:**
-
-```java title="CustomPostProcessor.java"
-import dev.kreuzberg.*;
-
-// Create a post-processor that adds word count to metadata
-PostProcessor wordCount = result -> {
-    long count = result.getContent().split("\\s+").length;
-
-    Map<String, Object> metadata = new HashMap<>(result.getMetadata());
-    metadata.put("word_count", count);
-
-    return new ExtractionResult(
-        result.getContent(),
-        result.getMimeType(),
-        metadata,
-        result.getTables(),
-        result.getDetectedLanguages(),
-        result.getChunks(),
-        result.getImages(),
-        result.isSuccess()
-    );
-};
-
-// Register the processor with priority 50 in MIDDLE stage
-Kreuzberg.registerPostProcessor("word-count", wordCount, 50, ProcessingStage.MIDDLE);
-
-// Extract file and access the word count metadata
-ExtractionResult result = Kreuzberg.extractFile("document.pdf");
-System.out.println("Word count: " + result.getMetadata().get("word_count"));
-```
-
-**Example - Uppercase transformer:**
-
-```java title="CustomPostProcessor.java"
-// Create a post-processor that transforms content to uppercase
-PostProcessor uppercase = result -> {
-    return new ExtractionResult(
-        result.getContent().toUpperCase(),
-        result.getMimeType(),
-        result.getMetadata(),
-        result.getTables(),
-        result.getDetectedLanguages(),
-        result.getChunks(),
-        result.getImages(),
-        result.isSuccess()
-    );
-};
-
-// Register the uppercase transformer
-Kreuzberg.registerPostProcessor("uppercase", uppercase);
-```
-
----
-
-### Custom Validators
-
-Validators check extraction results for quality or completeness.
-
-**Interface:**
-
-```java title="Java"
-@FunctionalInterface
-public interface Validator {
-    /**
-     * Validate an extraction result.
-     *
-     * @param result the extraction result
-     * @throws ValidationException if validation fails
-     */
-    void validate(ExtractionResult result) throws ValidationException;
-
-    /**
-     * Compose with another validator.
-     *
-     * @param after the next validator
-     * @return composed validator
-     */
-    default Validator andThen(Validator after) {
-        return result -> {
-            this.validate(result);
-            after.validate(result);
-        };
-    }
-
-    /**
-     * Execution priority (higher = earlier).
-     *
-     * @return priority value
-     */
-    default int priority() {
-        return 0;
-    }
-}
-```
-
-**Example - Minimum content length validator:**
-
-```java title="CustomValidator.java"
-// Create a validator that ensures minimum content length
-Validator minLength = result -> {
-    if (result.getContent().length() < 100) {
-        throw new ValidationException(
-            "Content too short: " + result.getContent().length() + " < 100"
-        );
-    }
-};
-
-// Register the validator
-Kreuzberg.registerValidator("min-length", minLength);
-```
-
-**Example - Quality score validator:**
-
-```java title="CustomValidator.java"
-// Create a validator that checks extraction quality score
-Validator qualityValidator = result -> {
-    double score = result.getQualityScore() != null ? result.getQualityScore() : 0.0;
-
-    if (score < 0.5) {
-        throw new ValidationException(
-            String.format("Quality score too low: %.2f < 0.50", score)
-        );
-    }
-};
-
-// Register the quality validator
-Kreuzberg.registerValidator("quality", qualityValidator);
-```
-
----
-
-### Plugin Management
-
-Register, list, and unregister plugins.
-
-**Post-Processor Management:**
-
-```java title="PluginManagement.java"
-// Register post-processor with default settings
-Kreuzberg.registerPostProcessor("processor-name", processor);
-
-// Register with custom priority and execution stage
-Kreuzberg.registerPostProcessor("processor-name", processor, 100, ProcessingStage.EARLY);
-
-// Unregister a specific processor
-Kreuzberg.unregisterPostProcessor("processor-name");
-
-// List all registered post-processors
-List<String> processors = Kreuzberg.listPostProcessors();
-
-// Remove all post-processors
-Kreuzberg.clearPostProcessors();
-```
-
-**Validator Management:**
-
-```java title="PluginManagement.java"
-// Register validator with default priority
-Kreuzberg.registerValidator("validator-name", validator);
-
-// Register with custom priority (higher = earlier execution)
-Kreuzberg.registerValidator("validator-name", validator, 100);
-
-// Unregister a specific validator
-Kreuzberg.unregisterValidator("validator-name");
-
-// List all registered validators
-List<String> validators = Kreuzberg.listValidators();
-
-// Remove all validators
-Kreuzberg.clearValidators();
-```
-
-**OCR Backend Management:**
-
-```java title="OcrBackendManagement.java"
-// Register custom OCR backend
-Kreuzberg.registerOcrBackend("backend-name", backend);
-
-// Register with supported language filtering
-Kreuzberg.registerOcrBackend("backend-name", backend, List.of("eng", "fra", "deu"));
-
-// Unregister a specific OCR backend
-Kreuzberg.unregisterOCRBackend("backend-name");
-
-// List all registered OCR backends
-List<String> backends = Kreuzberg.listOCRBackends();
-
-// Remove all custom OCR backends
-Kreuzberg.clearOCRBackends();
-```
-
----
-
-## MIME Type Detection
-
-### DetectMimeType()
-
-Detect MIME type from file or bytes.
-
-**Signatures:**
-
-```java title="Java"
-public static String detectMimeType(String path) throws KreuzbergException
-public static String detectMimeType(String path, boolean checkExists) throws KreuzbergException
-public static String detectMimeType(byte[] data) throws KreuzbergException
-public static String detectMimeTypeFromPath(String path) throws KreuzbergException
-```
-
-**Example:**
-
-```java title="MimeTypeDetection.java"
-// Detect MIME type from file path
-String mimeType = Kreuzberg.detectMimeType("document.pdf");
-
-// Detect from path without checking file existence
-String mimeType = Kreuzberg.detectMimeType("document.pdf", false);
-
-// Detect from raw byte array
-byte[] data = /* ... */;
-String mimeType = Kreuzberg.detectMimeType(data);
-```
-
----
-
-### ValidateMimeType()
-
-Validate and normalize a MIME type string.
+Returns `KreuzbergError.Validation` if MIME type is invalid.
+Returns `KreuzbergError.UnsupportedFormat` if MIME type is not supported.
 
 **Signature:**
 
-```java title="Java"
-public static String validateMimeType(String mimeType) throws KreuzbergException
+```java
+public static ExtractionResult extractBytes(byte[] content, String mimeType, ExtractionConfig config) throws Error
 ```
 
-**Example:**
+**Parameters:**
 
-```java title="MimeTypeValidation.java"
-// Validate and normalize a MIME type string
-String validated = Kreuzberg.validateMimeType("application/pdf");
-System.out.println(validated); // "application/pdf"
-```
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `content` | `byte[]` | Yes | The byte array to extract |
+| `mimeType` | `String` | Yes | MIME type of the content |
+| `config` | `ExtractionConfig` | Yes | Extraction configuration |
+
+**Returns:** `ExtractionResult`
+
+**Errors:** Throws `ErrorException`.
+
 
 ---
 
-### GetExtensionsForMime()
+#### extractFile()
+
+Extract content from a file.
+
+This is the main entry point for file-based extraction. It performs the following steps:
+1. Check cache for existing result (if caching enabled)
+2. Detect or validate MIME type
+3. Select appropriate extractor from registry
+4. Extract content
+5. Run post-processing pipeline
+6. Store result in cache (if caching enabled)
+
+**Returns:**
+
+An `ExtractionResult` containing the extracted content and metadata.
+
+**Errors:**
+
+Returns `KreuzbergError.Io` if the file doesn't exist (NotFound) or for other file I/O errors.
+Returns `KreuzbergError.UnsupportedFormat` if MIME type is not supported.
+
+**Signature:**
+
+```java
+public static ExtractionResult extractFile(Path path, String mimeType, ExtractionConfig config) throws Error
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `path` | `Path` | Yes | Path to the file to extract |
+| `mimeType` | `Optional<String>` | No | Optional MIME type override. If None, will be auto-detected |
+| `config` | `ExtractionConfig` | Yes | Extraction configuration |
+
+**Returns:** `ExtractionResult`
+
+**Errors:** Throws `ErrorException`.
+
+
+---
+
+#### getPoolSizingHint()
+
+**Signature:**
+
+```java
+public static PoolSizeHint getPoolSizingHint(long fileSize, String mimeType)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `fileSize` | `long` | Yes | The file size |
+| `mimeType` | `String` | Yes | The mime type |
+
+**Returns:** `PoolSizeHint`
+
+
+---
+
+#### isValidFormatField()
+
+Validates whether a field name is in the known formats registry.
+
+This uses a pre-built hash set for O(1) lookups instead of linear search,
+providing significant performance improvements for repeated validations.
+
+**Returns:**
+
+`true` if the field is in KNOWN_FORMATS, `false` otherwise.
+
+**Signature:**
+
+```java
+public static boolean isValidFormatField(String field)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `field` | `String` | Yes | The field name to validate |
+
+**Returns:** `boolean`
+
+
+---
+
+#### openFileBytes()
+
+Open a file and return its bytes with zero-copy for large files.
+
+On non-WASM targets, files larger than `MMAP_THRESHOLD_BYTES` are
+memory-mapped so that the file contents are never copied to the heap.
+The mapping is read-only; the file must not be modified while the returned
+`FileBytes` is alive, which is safe for document extraction.
+
+On WASM or for small files, falls back to a plain `std.fs.read`.
+
+**Errors:**
+
+Returns `KreuzbergError.Io` for any I/O failure.
+
+**Signature:**
+
+```java
+public static FileBytes openFileBytes(String path) throws Error
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `path` | `String` | Yes | Path to the file |
+
+**Returns:** `FileBytes`
+
+**Errors:** Throws `ErrorException`.
+
+
+---
+
+#### readFileSync()
+
+Read a file synchronously.
+
+**Returns:**
+
+The file contents as bytes.
+
+**Errors:**
+
+Returns `KreuzbergError.Io` for I/O errors (these always bubble up).
+
+**Signature:**
+
+```java
+public static byte[] readFileSync(Path path) throws Error
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `path` | `Path` | Yes | Path to the file to read |
+
+**Returns:** `byte[]`
+
+**Errors:** Throws `ErrorException`.
+
+
+---
+
+#### fileExists()
+
+Check if a file exists.
+
+**Returns:**
+
+`true` if the file exists, `false` otherwise.
+
+**Signature:**
+
+```java
+public static boolean fileExists(Path path)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `path` | `Path` | Yes | Path to check |
+
+**Returns:** `boolean`
+
+
+---
+
+#### validateFileExists()
+
+Validate that a file exists.
+
+**Errors:**
+
+Returns `KreuzbergError.Io` if file doesn't exist.
+
+**Signature:**
+
+```java
+public static void validateFileExists(Path path) throws Error
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `path` | `Path` | Yes | Path to validate |
+
+**Returns:** `void`
+
+**Errors:** Throws `ErrorException`.
+
+
+---
+
+#### findFilesByExtension()
+
+Get all files in a directory with a specific extension.
+
+**Returns:**
+
+Vector of file paths with the specified extension.
+
+**Errors:**
+
+Returns `KreuzbergError.Io` for I/O errors.
+
+**Signature:**
+
+```java
+public static List<String> findFilesByExtension(Path dir, String extension, boolean recursive) throws Error
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `dir` | `Path` | Yes | Directory to search |
+| `extension` | `String` | Yes | File extension to match (without the dot) |
+| `recursive` | `boolean` | Yes | Whether to recursively search subdirectories |
+
+**Returns:** `List<String>`
+
+**Errors:** Throws `ErrorException`.
+
+
+---
+
+#### detectMimeType()
+
+Detect MIME type from a file path.
+
+Uses file extension to determine MIME type. Falls back to `mime_guess` crate
+if extension-based detection fails.
+
+**Returns:**
+
+The detected MIME type string.
+
+**Errors:**
+
+Returns `KreuzbergError.Io` if file doesn't exist (when `check_exists` is true).
+Returns `KreuzbergError.UnsupportedFormat` if MIME type cannot be determined.
+
+**Signature:**
+
+```java
+public static String detectMimeType(Path path, boolean checkExists) throws Error
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `path` | `Path` | Yes | Path to the file |
+| `checkExists` | `boolean` | Yes | Whether to verify file existence |
+
+**Returns:** `String`
+
+**Errors:** Throws `ErrorException`.
+
+
+---
+
+#### validateMimeType()
+
+Validate that a MIME type is supported.
+
+**Returns:**
+
+The validated MIME type (may be normalized).
+
+**Errors:**
+
+Returns `KreuzbergError.UnsupportedFormat` if not supported.
+
+**Signature:**
+
+```java
+public static String validateMimeType(String mimeType) throws Error
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `mimeType` | `String` | Yes | The MIME type to validate |
+
+**Returns:** `String`
+
+**Errors:** Throws `ErrorException`.
+
+
+---
+
+#### detectOrValidate()
+
+Detect or validate MIME type.
+
+If `mime_type` is provided, validates it. Otherwise, detects from `path`.
+
+**Returns:**
+
+The validated MIME type string.
+
+**Signature:**
+
+```java
+public static String detectOrValidate(String path, String mimeType) throws Error
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `path` | `Optional<String>` | No | Optional path to detect MIME type from |
+| `mimeType` | `Optional<String>` | No | Optional explicit MIME type to validate |
+
+**Returns:** `String`
+
+**Errors:** Throws `ErrorException`.
+
+
+---
+
+#### detectMimeTypeFromBytes()
+
+Detect MIME type from raw file bytes.
+
+Uses magic byte signatures to detect file type from content.
+Falls back to `infer` crate for comprehensive detection.
+
+For ZIP-based files, inspects contents to distinguish Office Open XML
+formats (DOCX, XLSX, PPTX) from plain ZIP archives.
+
+**Returns:**
+
+The detected MIME type string.
+
+**Errors:**
+
+Returns `KreuzbergError.UnsupportedFormat` if MIME type cannot be determined.
+
+**Signature:**
+
+```java
+public static String detectMimeTypeFromBytes(byte[] content) throws Error
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `content` | `byte[]` | Yes | Raw file bytes |
+
+**Returns:** `String`
+
+**Errors:** Throws `ErrorException`.
+
+
+---
+
+#### getExtensionsForMime()
 
 Get file extensions for a given MIME type.
 
-**Signature:**
-
-```java title="Java"
-public static List<String> getExtensionsForMime(String mimeType) throws KreuzbergException
-```
-
-**Example:**
-
-```java title="MimeExtensions.java"
-// Get file extensions for PDF files
-List<String> extensions = Kreuzberg.getExtensionsForMime("application/pdf");
-System.out.println(extensions); // ["pdf"]
-
-// Get file extensions for JPEG images (multiple extensions possible)
-List<String> extensions = Kreuzberg.getExtensionsForMime("image/jpeg");
-System.out.println(extensions); // ["jpg", "jpeg"]
-```
-
----
-
-## Embeddings
-
-### Embed()
-
-Generate embeddings for a list of texts synchronously.
-
-**Signature:**
-
-```java title="Java"
-public static float[][] embed(List<String> texts, EmbeddingConfig config) throws KreuzbergException
-```
-
-**Parameters:**
-
-- `texts` (List\<String\>): List of strings to embed.
-- `config` (EmbeddingConfig): Embedding configuration, or `null` for the default "balanced" preset.
-
-**Returns:** `float[][]` — one embedding vector per input text.
-
-**Throws:** `KreuzbergException` if embedding generation fails or the `embeddings` feature is not enabled.
-
-**Example:**
-
---8<-- "snippets/java/utils/standalone_embed.md"
-
----
-
-### EmbedAsync()
-
-Async variant of `embed()`. Returns a `CompletableFuture` that resolves to the embedding vectors.
-
-**Signature:**
-
-```java title="Java"
-public static CompletableFuture<float[][]> embedAsync(List<String> texts, EmbeddingConfig config)
-```
-
-Same parameters and return type as `embed()`, wrapped in a `CompletableFuture`.
-
----
-
-### GetEmbeddingPreset()
-
-Get embedding preset configuration by name.
-
-**Signature:**
-
-```java title="Java"
-public static Optional<EmbeddingPreset> getEmbeddingPreset(String name) throws KreuzbergException
-```
-
-**Example:**
-
-```java title="EmbeddingPresets.java"
-// Retrieve an embedding preset configuration by name
-Optional<EmbeddingPreset> preset = Kreuzberg.getEmbeddingPreset("default");
-if (preset.isPresent()) {
-    EmbeddingPreset p = preset.get();
-    System.out.println("Model: " + p.getModel());
-    System.out.println("Dimensions: " + p.getDimensions());
-}
-```
-
----
-
-### ListEmbeddingPresets()
-
-List all available embedding presets.
-
-**Signature:**
-
-```java title="Java"
-public static List<String> listEmbeddingPresets() throws KreuzbergException
-```
-
-**Example:**
-
-```java title="EmbeddingPresets.java"
-// List all available embedding presets
-List<String> presets = Kreuzberg.listEmbeddingPresets();
-for (String preset : presets) {
-    System.out.println("Available: " + preset);
-}
-```
-
----
-
-## PDF Rendering
-
-!!! Info "Added in v4.9.2"
-
-### Kreuzberg.renderPdfPage()
-
-Render a single page of a PDF as a PNG image.
-
-**Signature:**
-
-```java title="Java"
-public static byte[] renderPdfPage(Path path, int pageIndex, int dpi) throws IOException, KreuzbergException
-```
-
-**Parameters:**
-
-- `path` (Path): Path to the PDF file
-- `pageIndex` (int): Zero-based page index to render
-- `dpi` (int): Resolution for rendering (for example 150)
+Returns all known file extensions that map to the specified MIME type.
 
 **Returns:**
 
-- `byte[]`: PNG-encoded bytes for the requested page
-
-**Example:**
-
-```java title="RenderSinglePage.java"
-byte[] png = Kreuzberg.renderPdfPage(Path.of("document.pdf"), 0, 150);
-Files.write(Path.of("first_page.png"), png);
-```
-
----
-
-### Kreuzberg.PdfPageIterator
-
-A more memory-efficient alternative to rendering all pages at once when memory is a concern or when pages should be processed as they are rendered (for example, sending each page to a vision model for OCR). Renders one page at a time, so only one raw image is in memory at a time.
+A vector of file extensions (without leading dot) for the MIME type.
 
 **Signature:**
 
-```java title="Java"
-public static class PdfPageIterator implements Iterator<PageResult>, AutoCloseable {
-    public static PdfPageIterator open(Path path, int dpi) throws IOException, KreuzbergException;
-    public boolean hasNext();
-    public PageResult next();
-    public int pageCount();
-    public void close();
-}
-
-public record PageResult(int pageIndex, byte[] data) {}
+```java
+public static List<String> getExtensionsForMime(String mimeType) throws Error
 ```
 
-**Example:**
+**Parameters:**
 
-```java title="IteratePages.java"
-try (var iter = Kreuzberg.PdfPageIterator.open(Path.of("document.pdf"), 150)) {
-    while (iter.hasNext()) {
-        Kreuzberg.PageResult page = iter.next();
-        Files.write(Path.of("page_" + page.pageIndex() + ".png"), page.data());
-    }
-}
-```
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `mimeType` | `String` | Yes | The MIME type to look up |
+
+**Returns:** `List<String>`
+
+**Errors:** Throws `ErrorException`.
+
 
 ---
 
-## Error Handling
+#### listSupportedFormats()
 
-### Exception Hierarchy
+List all supported document formats.
 
-Kreuzberg uses a checked exception model for error handling.
+Returns a list of all file extensions and their corresponding MIME types
+that Kreuzberg can process. Derived from the centralized `FORMATS` registry.
 
-```text
-Exception
-├── IOException (from java.io)
-├── KreuzbergException
-│   ├── ParsingException
-│   ├── OcrException
-│   ├── MissingDependencyException
-│   ├── ValidationException
-│   ├── PluginException
-│   ├── CacheException
-│   └── ImageProcessingException
-```
-
-### Specific Exceptions
-
-**KreuzbergException** - Base exception for all Kreuzberg errors.
-
-```java title="ErrorHandling.java"
-// Handle general Kreuzberg exceptions
-try {
-    ExtractionResult result = Kreuzberg.extractFile("document.pdf");
-} catch (KreuzbergException e) {
-    System.err.println("Extraction failed: " + e.getMessage());
-    if (e.getCause() != null) {
-        e.getCause().printStackTrace();
-    }
-}
-```
-
-**ParsingException** - Document parsing failure.
-
-```java title="ErrorHandling.java"
-// Handle document parsing errors (e.g., corrupted files)
-try {
-    ExtractionResult result = Kreuzberg.extractFile("corrupted.pdf");
-} catch (ParsingException e) {
-    System.err.println("Failed to parse document: " + e.getMessage());
-}
-```
-
-**OcrException** - OCR processing failure.
-
-```java title="OcrErrorHandling.java"
-// Handle OCR-specific errors
-try {
-    ExtractionConfig config = ExtractionConfig.builder()
-        .forceOcr(true)
-        .build();
-    ExtractionResult result = Kreuzberg.extractFile("image.png", config);
-} catch (OcrException e) {
-    System.err.println("OCR failed: " + e.getMessage());
-}
-```
-
-**MissingDependencyException** - Required system dependency not found.
-
-```java title="DependencyErrorHandling.java"
-// Handle missing system dependencies (e.g., Tesseract not installed)
-try {
-    ExtractionResult result = Kreuzberg.extractFile("document.pdf");
-} catch (MissingDependencyException e) {
-    System.err.println("Missing dependency: " + e.getMessage());
-    System.err.println("Install Tesseract or configure alternative OCR backend");
-}
-```
-
-**ValidationException** - Configuration or validation failure.
-
-```java title="ValidationErrorHandling.java"
-// Handle validation errors from custom validators
-try {
-    validator.validate(result);
-} catch (ValidationException e) {
-    System.err.println("Validation failed: " + e.getMessage());
-}
-```
-
-### Comprehensive Error Handling
-
-```java title="ComprehensiveErrorHandling.java"
-// Comprehensive error handling for all exception types
-try {
-    ExtractionConfig config = ExtractionConfig.builder()
-        .ocr(OcrConfig.builder().backend("tesseract").language("eng").build())
-        .build();
-
-    ExtractionResult result = Kreuzberg.extractFile("document.pdf", config);
-    System.out.println("Success: " + result.getContent().length() + " characters");
-
-} catch (ParsingException e) {
-    System.err.println("Document format not supported or corrupted");
-    e.printStackTrace();
-} catch (OcrException e) {
-    System.err.println("OCR processing failed");
-    e.printStackTrace();
-} catch (MissingDependencyException e) {
-    System.err.println("Missing required dependency");
-    System.err.println("Message: " + e.getMessage());
-} catch (ValidationException e) {
-    System.err.println("Configuration validation failed");
-} catch (IOException e) {
-    System.err.println("File not found or not readable: " + e.getMessage());
-} catch (KreuzbergException e) {
-    System.err.println("Extraction failed: " + e.getMessage());
-} finally {
-    // Clean up resources if needed
-}
-```
-
----
-
-## Utility Methods
-
-### GetVersion()
-
-Get the Kreuzberg library version.
+The list is sorted alphabetically by file extension.
 
 **Signature:**
 
-```java title="Java"
-public static String getVersion()
+```java
+public static List<SupportedFormat> listSupportedFormats()
 ```
 
-**Example:**
+**Returns:** `List<SupportedFormat>`
 
-```java title="VersionInfo.java"
-// Get the Kreuzberg library version
-String version = Kreuzberg.getVersion();
-System.out.println("Kreuzberg version: " + version);
-```
 
 ---
 
-## Advanced Usage
+#### clearProcessorCache()
 
-### Configuration Discovery
+Clear the processor cache (primarily for testing when registry changes).
 
-Automatically discover configuration from kreuzberg.toml, kreuzberg.yaml, or kreuzberg.json in the current or parent directories.
+**Signature:**
 
-```java title="ConfigDiscovery.java"
-// Automatically discover configuration file in directory tree
-ExtractionConfig config = ExtractionConfig.discover();
-
-if (config != null) {
-    System.out.println("Configuration discovered!");
-    ExtractionResult result = Kreuzberg.extractFile("document.pdf", config);
-} else {
-    System.out.println("No configuration file found, using defaults");
-}
+```java
+public static void clearProcessorCache() throws Error
 ```
+
+**Returns:** `void`
+
+**Errors:** Throws `ErrorException`.
+
 
 ---
 
-### Configuration from File
+#### applyOutputFormat()
 
-Load configuration from a file explicitly.
+Apply output format conversion to the extraction result.
 
-```java title="ConfigLoading.java"
-// Load configuration from a specific file
-ExtractionConfig config = ExtractionConfig.fromFile("kreuzberg.toml");
-ExtractionResult result = Kreuzberg.extractFile("document.pdf", config);
+Records the output format in metadata and swaps in pre-rendered content
+(produced during `derive_extraction_result`) if available.
+
+This runs as the final pipeline step, after post-processors have operated
+on the plain-text `content` field.
+
+**Signature:**
+
+```java
+public static ExtractionResult applyOutputFormat(ExtractionResult result, OutputFormat outputFormat)
 ```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `result` | `ExtractionResult` | Yes | The extraction result to modify |
+| `outputFormat` | `OutputFormat` | Yes | The desired output format |
+
+**Returns:** `ExtractionResult`
+
 
 ---
 
-### Complex Configuration Example
+#### runPipeline()
 
-```java title="ComplexConfiguration.java"
-import dev.kreuzberg.*;
-import dev.kreuzberg.config.*;
-import java.nio.file.Path;
+Run the post-processing pipeline on an `InternalDocument`.
 
-public class ComplexExample {
-    public static void main(String[] args) throws Exception {
-        // Build comprehensive extraction configuration with all options
-        ExtractionConfig config = ExtractionConfig.builder()
-            .useCache(true)
-            .enableQualityProcessing(true)
-            .forceOcr(false)
+Derives `ExtractionResult` from `InternalDocument` via the derivation pipeline,
+then executes post-processing in the following order:
+1. Post-Processors - Execute by stage (Early, Middle, Late) to modify/enhance the result
+2. Quality Processing - Text cleaning and quality scoring
+3. Chunking - Text splitting if enabled
+4. Validators - Run validation hooks on the processed result (can fail fast)
 
-            // Configure OCR for multi-language support
-            .ocr(OcrConfig.builder()
-                .backend("tesseract")
-                .language("eng+fra")
-                .build())
+**Returns:**
 
-            // Configure PDF extraction options
-            .pdfOptions(PdfConfig.builder()
-                .extractImages(true)
-                .extractMetadata(true)
-                .build())
+The processed extraction result.
 
-            // Configure image preprocessing for better OCR results
-            .imagePreprocessing(ImagePreprocessingConfig.builder()
-                .targetDpi(300)
-                .denoise(true)
-                .deskew(true)
-                .contrastEnhance(true)
-                .build())
+**Errors:**
 
-            // Configure chunking for RAG workflows
-            .chunking(ChunkingConfig.builder()
-                .maxChars(1000)
-                .maxOverlap(200)
-                .enabled(true)
-                .build())
+- Validator errors bubble up immediately
+- Post-processor errors are caught and recorded in metadata
+- System errors (IO, RuntimeError equivalents) always bubble up
 
-            // Configure automatic language detection
-            .languageDetection(LanguageDetectionConfig.builder()
-                .enabled(true)
-                .minConfidence(0.8)
-                .build())
+**Signature:**
 
-            .build();
-
-        // Register custom post-processor for content transformation
-        PostProcessor uppercaser = result -> new ExtractionResult(
-            result.getContent().toUpperCase(),
-            result.getMimeType(),
-            result.getMetadata(),
-            result.getTables(),
-            result.getDetectedLanguages(),
-            result.getChunks(),
-            result.getImages(),
-            result.isSuccess()
-        );
-
-        // Register custom validator for quality checks
-        Validator minLength = result -> {
-            if (result.getContent().length() < 100) {
-                throw new ValidationException("Content too short");
-            }
-        };
-
-        Kreuzberg.registerPostProcessor("uppercase", uppercaser, 100, ProcessingStage.EARLY);
-        Kreuzberg.registerValidator("min-length", minLength);
-
-        // Extract document with all configurations applied
-        ExtractionResult result = Kreuzberg.extractFile("document.pdf", config);
-
-        // Display extraction results
-        System.out.println("Content: " + result.getContent().substring(0, 100));
-        System.out.println("Tables: " + result.getTables().size());
-        System.out.println("Images: " + result.getImages().size());
-        System.out.println("Chunks: " + result.getChunks().size());
-        System.out.println("Language: " + result.getLanguage());
-        System.out.println("MIME: " + result.getMimeType());
-    }
-}
+```java
+public static ExtractionResult runPipeline(InternalDocument doc, ExtractionConfig config) throws Error
 ```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `doc` | `InternalDocument` | Yes | The internal document produced by the extractor |
+| `config` | `ExtractionConfig` | Yes | Extraction configuration |
+
+**Returns:** `ExtractionResult`
+
+**Errors:** Throws `ErrorException`.
+
 
 ---
 
-### Batch Processing with Error Handling
+#### isPageTextBlank()
 
-```java title="BatchProcessing.java"
-import dev.kreuzberg.*;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.List;
+Determine if a page's text content indicates a blank page.
 
-public class BatchProcessor {
-    public static void main(String[] args) throws Exception {
-        // Find all PDF files in the documents directory
-        List<Path> files = Files.list(Path.of("documents/"))
-            .filter(p -> p.toString().endsWith(".pdf"))
-            .toList();
+A page is blank if it has fewer than `MIN_NON_WHITESPACE_CHARS` non-whitespace characters.
 
-        // Convert Path objects to String paths
-        List<String> filePaths = new ArrayList<>();
-        for (Path file : files) {
-            filePaths.add(file.toString());
-        }
+**Returns:**
 
-        // Configure extraction with caching enabled
-        ExtractionConfig config = ExtractionConfig.builder()
-            .useCache(true)
-            .build();
+`true` if the page is considered blank, `false` otherwise
 
-        try {
-            // Process all files in parallel
-            List<ExtractionResult> results = Kreuzberg.batchExtractFiles(filePaths, config);
+**Signature:**
 
-            // Check results for each file
-            for (int i = 0; i < filePaths.size(); i++) {
-                ExtractionResult result = results.get(i);
-                Path file = files.get(i);
-
-                if (result.isSuccess()) {
-                    System.out.println(file + ": " + result.getContent().length() + " chars");
-                } else {
-                    System.err.println(file + ": extraction failed");
-                }
-            }
-        } catch (KreuzbergException e) {
-            System.err.println("Batch extraction failed: " + e.getMessage());
-        }
-    }
-}
+```java
+public static boolean isPageTextBlank(String text)
 ```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `text` | `String` | Yes | The extracted text content of the page |
+
+**Returns:** `boolean`
+
 
 ---
 
-## Performance Tips
+#### resolveRelationships()
 
-1. **Reuse configurations** - Create one `ExtractionConfig` and use it for multiple extractions
-2. **Batch processing** - Use `batchExtractFiles()` for multiple files instead of individual calls
-3. **Cache enabled** - Keep caching enabled for repeated document processing
-4. **OCR selective** - Only enable OCR on pages that need it (`forceOcr = false`)
-5. **Image preprocessing** - Enable image preprocessing for better OCR accuracy
-6. **Async operations** - Use async methods for non-blocking extraction in concurrent scenarios
+Resolve `RelationshipTarget.Key` entries to `RelationshipTarget.Index`.
+
+Builds an anchor index from elements with non-`null` anchors, then resolves
+each key-based relationship target. Unresolvable keys are logged and skipped
+(the relationship is left as `Key` — it will be excluded from the final
+`DocumentStructure` relationships).
+
+**Signature:**
+
+```java
+public static void resolveRelationships(InternalDocument doc)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `doc` | `InternalDocument` | Yes | The internal document |
+
+**Returns:** `void`
+
 
 ---
 
-## Supported File Formats
+#### deriveDocumentStructure()
 
-- **Documents**: PDF, DOCX, DOC, XLSX, XLS, PPTX, PPT, ODT, ODP, ODS
-- **Images**: PNG, JPG, JPEG, GIF, BMP, WebP, TIFF
-- **Web**: HTML, MHTML
-- **Text**: TXT, CSV
+Derive a hierarchical `DocumentStructure` from the flat internal document.
+
+Calls `resolve_relationships` first to resolve any key-based relationship targets,
+then builds the tree.
+
+# Algorithm
+
+1. Walk elements in reading order, maintaining a stack of `(depth, NodeIndex)`.
+2. Container start markers (`ListStart`, `QuoteStart`, `GroupStart`) push
+   onto the stack; their matching end markers pop.
+3. Headings pop the stack to a shallower depth, then create a `Group` node
+   with a `Heading` child and push the group.
+4. All other elements are parented under the current stack top.
+5. Resolved relationships are mapped from element indices to node indices.
+
+**Signature:**
+
+```java
+public static DocumentStructure deriveDocumentStructure(InternalDocument doc)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `doc` | `InternalDocument` | Yes | The internal document |
+
+**Returns:** `DocumentStructure`
+
 
 ---
 
-## Java FFM API Details
+#### deriveExtractionResult()
 
-The Kreuzberg Java bindings use Java's Foreign Function & Memory (FFM) API for direct FFI without JNI overhead.
+Derive a complete `ExtractionResult` from an `InternalDocument`.
 
-**Memory Management:**
+This is the main entry point for the derivation pipeline. It:
+1. Resolves relationships (needed by renderers for footnotes)
+2. Renders plain-text content (for post-processors)
+3. Pre-renders formatted content if output_format != Plain
+4. Groups elements by page into `PageContent`
+5. Extracts OCR elements for backward compatibility
+6. Optionally derives `DocumentStructure` (assumes relationships resolved)
+7. Assembles the final `ExtractionResult`
 
-```java title="FfmMemoryManagement.java"
-// FFM API uses Arena for automatic memory management
-try (Arena arena = Arena.ofConfined()) {
-    // FFI operations use arena for memory management
-    ExtractionResult result = Kreuzberg.extractFile("document.pdf");
-} // Arena automatically cleaned up when try block exits
+**Signature:**
+
+```java
+public static ExtractionResult deriveExtractionResult(InternalDocument doc, boolean includeDocumentStructure, OutputFormat outputFormat)
 ```
 
-**Arena Types:**
+**Parameters:**
 
-- `Arena.ofConfined()` - Thread-confined arena (recommended)
-- `Arena.ofShared()` - Shared arena for multi-threaded access
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `doc` | `InternalDocument` | Yes | The internal document |
+| `includeDocumentStructure` | `boolean` | Yes | The include document structure |
+| `outputFormat` | `OutputFormat` | Yes | The output format |
+
+**Returns:** `ExtractionResult`
+
 
 ---
 
-## Troubleshooting
+#### parseJson()
 
-**"Failed to load native library"** - Ensure libkreuzberg_ffi is in system library path.
+**Signature:**
 
-```bash title="Terminal"
-export LD_LIBRARY_PATH=/path/to/libkreuzberg_ffi:$LD_LIBRARY_PATH  # Linux/Unix
-export DYLD_LIBRARY_PATH=/path/to/libkreuzberg_ffi:$DYLD_LIBRARY_PATH  # macOS
-set PATH=C:\path\to\libkreuzberg_ffi;%PATH%  # Windows
+```java
+public static StructuredDataResult parseJson(byte[] data, JsonExtractionConfig config) throws Error
 ```
 
-**"Tesseract not found"** - Install Tesseract OCR:
+**Parameters:**
 
-```bash title="Terminal"
-# Ubuntu/Debian
-sudo apt-get install tesseract-ocr
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `data` | `byte[]` | Yes | The data |
+| `config` | `Optional<JsonExtractionConfig>` | No | The configuration options |
 
-# macOS
-brew install tesseract
+**Returns:** `StructuredDataResult`
 
-# Windows
-# Download from https://github.com/UB-Mannheim/tesseract/wiki
-```
+**Errors:** Throws `ErrorException`.
 
-**"OutOfMemoryError with large files"** - Use streaming or batch processing with smaller batches.
 
 ---
 
-### LayoutDetectionConfig <span class="version-badge">v4.9.2</span>
+#### parseJsonl()
 
-Configuration for ONNX-based document layout detection.
+Parse JSONL (newline-delimited JSON) into a structured data result.
 
-**Builder Methods:**
+Each non-empty line is parsed as an independent JSON value. Blank lines
+and whitespace-only lines are skipped. The output is a pretty-printed
+JSON array of all parsed objects.
 
-```java title="LayoutDetectionConfig.java"
-LayoutDetectionConfig config = LayoutDetectionConfig.builder()
-    .applyHeuristics(true)             // Apply heuristic post-processing (default: true)
-    .confidenceThreshold(0.5)          // Min confidence threshold (0.0-1.0)
-    .tableModel("tatr")               // Table structure model: "tatr", "slanet_wired", etc.
-    .build();
+**Errors:**
+
+Returns an error if any line contains invalid JSON (with 1-based line number)
+or if the input is not valid UTF-8.
+
+**Signature:**
+
+```java
+public static StructuredDataResult parseJsonl(byte[] data, JsonExtractionConfig config) throws Error
 ```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `data` | `byte[]` | Yes | The data |
+| `config` | `Optional<JsonExtractionConfig>` | No | The configuration options |
+
+**Returns:** `StructuredDataResult`
+
+**Errors:** Throws `ErrorException`.
+
 
 ---
 
-## LLM Integration
+#### parseYaml()
 
-Kreuzberg integrates with LLMs via the `liter-llm` crate for structured extraction and VLM-based OCR. The Java binding passes LLM configuration through the FFI layer as JSON. See the [LLM Integration Guide](../guides/llm-integration.md) for full details.
+**Signature:**
 
-### Structured Extraction
-
-Use `StructuredExtractionConfig` to extract structured data from documents using an LLM:
-
-```java title="StructuredExtraction.java"
-import dev.kreuzberg.*;
-
-var schema = Map.of(
-    "type", "object",
-    "properties", Map.of(
-        "title", Map.of("type", "string"),
-        "authors", Map.of("type", "array", "items", Map.of("type", "string")),
-        "date", Map.of("type", "string")
-    ),
-    "required", List.of("title", "authors", "date"),
-    "additionalProperties", false
-);
-
-var config = ExtractionConfig.builder()
-    .structuredExtraction(StructuredExtractionConfig.builder()
-        .schema(schema)
-        .llm(LlmConfig.builder().model("openai/gpt-4o-mini").build())
-        .strict(true)
-        .build())
-    .build();
-
-ExtractionResult result = Kreuzberg.extractFileSync("paper.pdf", config);
-
-if (result.getStructuredOutput() != null) {
-    System.out.println(result.getStructuredOutput());
-}
+```java
+public static StructuredDataResult parseYaml(byte[] data) throws Error
 ```
 
-### VLM OCR
+**Parameters:**
 
-Use a vision-language model as an OCR backend:
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `data` | `byte[]` | Yes | The data |
 
-```java title="VlmOcr.java"
-var config = ExtractionConfig.builder()
-    .forceOcr(true)
-    .ocr(OcrConfig.builder()
-        .backend("vlm")
-        .vlmConfig(LlmConfig.builder().model("openai/gpt-4o-mini").build())
-        .build())
-    .build();
+**Returns:** `StructuredDataResult`
 
-ExtractionResult result = Kreuzberg.extractFileSync("scan.pdf", config);
-```
+**Errors:** Throws `ErrorException`.
 
-For configuration details including API keys, model selection, and provider setup, see the [LLM Integration Guide](../guides/llm-integration.md).
 
 ---
+
+#### parseToml()
+
+**Signature:**
+
+```java
+public static StructuredDataResult parseToml(byte[] data) throws Error
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `data` | `byte[]` | Yes | The data |
+
+**Returns:** `StructuredDataResult`
+
+**Errors:** Throws `ErrorException`.
+
+
+---
+
+#### parseText()
+
+**Signature:**
+
+```java
+public static TextExtractionResult parseText(byte[] textBytes, boolean isMarkdown) throws Error
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `textBytes` | `byte[]` | Yes | The text bytes |
+| `isMarkdown` | `boolean` | Yes | The is markdown |
+
+**Returns:** `TextExtractionResult`
+
+**Errors:** Throws `ErrorException`.
+
+
+---
+
+#### transformToDocumentStructure()
+
+Transform an `ExtractionResult` into a `DocumentStructure`.
+
+Processes pages (if available) or unified content to build a hierarchical tree:
+- Heading-driven section nesting via `Group` nodes
+- Table conversion from `Vec<Vec<String>>` to `TableGrid`
+- List detection and grouping into `List` containers
+- Image and page break nodes
+- Body/furniture content layer classification
+
+The resulting structure is validated before returning.
+
+**Signature:**
+
+```java
+public static DocumentStructure transformToDocumentStructure(ExtractionResult result)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `result` | `ExtractionResult` | Yes | The extraction result |
+
+**Returns:** `DocumentStructure`
+
+
+---
+
+#### detectListItems()
+
+Detect list items in text with support for multiple formats.
+
+Identifies bullet points, numbered items, and indented items.
+Supports formats like:
+- `- bullet item`
+- `* bullet item`
+- `• bullet item`
+- `1. numbered item`
+- `a. lettered item`
+- Indented items with leading whitespace
+
+**Returns:**
+
+A vector of ListItemMetadata structs describing detected list items
+
+**Signature:**
+
+```java
+public static List<ListItemMetadata> detectListItems(String text)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `text` | `String` | Yes | The text to search for list items |
+
+**Returns:** `List<ListItemMetadata>`
+
+
+---
+
+#### generateElementId()
+
+Generate a unique element ID for semantic content.
+
+Creates a deterministic hash-based ID from the element type, text content,
+and page number. Uses a simple wrapping multiplication algorithm for
+consistent ID generation without external dependencies.
+
+**Returns:**
+
+An ElementId suitable for referencing this semantic element
+
+**Signature:**
+
+```java
+public static ElementId generateElementId(String text, ElementType elementType, long pageNumber)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `text` | `String` | Yes | The element text content |
+| `elementType` | `ElementType` | Yes | The semantic element type |
+| `pageNumber` | `Optional<long>` | No | Optional page number for multi-page documents |
+
+**Returns:** `ElementId`
+
+
+---
+
+#### transformExtractionResultToElements()
+
+Transform an extraction result into semantic elements.
+
+This function takes a reference to an ExtractionResult and generates
+a vector of Element structs representing semantic blocks in the document.
+It detects content sections, list items, page breaks, and other structural
+elements to create an Unstructured-compatible element-based output.
+
+Handles:
+- PDF hierarchy → Title/Heading elements
+- Multi-page documents with correct page numbers
+- Table and Image extraction
+- PageBreak interleaving
+- Bounding box coordinates
+- Paragraph detection for NarrativeText
+
+**Returns:**
+
+A vector of Elements with proper semantic types and metadata.
+
+**Signature:**
+
+```java
+public static List<Element> transformExtractionResultToElements(ExtractionResult result)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `result` | `ExtractionResult` | Yes | Reference to the ExtractionResult to transform |
+
+**Returns:** `List<Element>`
+
+
+---
+
+#### parseBodyText()
+
+Parse a raw (possibly compressed) BodyText/SectionN stream.
+
+Returns the list of sections found. Each section contains zero or more
+paragraphs that carry the plain-text content.
+
+**Signature:**
+
+```java
+public static List<Section> parseBodyText(byte[] data, boolean isCompressed) throws Error
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `data` | `byte[]` | Yes | The data |
+| `isCompressed` | `boolean` | Yes | The is compressed |
+
+**Returns:** `List<Section>`
+
+**Errors:** Throws `ErrorException`.
+
+
+---
+
+#### decompressStream()
+
+Decompress a raw-deflate stream from an HWP section.
+
+HWP 5.0 compresses sections with raw deflate (no zlib header). Falls back
+to zlib if raw deflate fails, and returns the data as-is if both fail.
+
+**Signature:**
+
+```java
+public static byte[] decompressStream(byte[] data) throws Error
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `data` | `byte[]` | Yes | The data |
+
+**Returns:** `byte[]`
+
+**Errors:** Throws `ErrorException`.
+
+
+---
+
+#### extractHwpText()
+
+Extract all plain text from an HWP 5.0 document given its raw bytes.
+
+**Errors:**
+
+Returns `HwpError` if the bytes do not form a valid HWP 5.0 compound file,
+if the document is password-encrypted, or if a critical parsing step fails.
+
+**Signature:**
+
+```java
+public static String extractHwpText(byte[] bytes) throws Error
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `bytes` | `byte[]` | Yes | The bytes |
+
+**Returns:** `String`
+
+**Errors:** Throws `ErrorException`.
+
+
+---
+
+#### extractImageMetadata()
+
+Extract metadata from image bytes.
+
+Extracts dimensions, format, and EXIF data from the image.
+Attempts to decode using the standard image crate first, then falls back to
+pure Rust JP2 box parsing for JPEG 2000 formats if the standard decoder fails.
+
+**Signature:**
+
+```java
+public static ImageMetadata extractImageMetadata(byte[] bytes) throws Error
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `bytes` | `byte[]` | Yes | The bytes |
+
+**Returns:** `ImageMetadata`
+
+**Errors:** Throws `ErrorException`.
+
+
+---
+
+#### estimateContentCapacity()
+
+Estimate the capacity needed for content extracted from a file.
+
+Returns an estimated byte capacity for a string buffer that will accumulate
+extracted content. The estimation is based on:
+- The original file size
+- The content type/format
+- Empirical ratios of final content size to original file size
+
+**Returns:**
+
+An estimated capacity in bytes suitable for `String.with_capacity()`
+
+# Minimum Capacity
+
+All estimates have a minimum of 64 bytes to prevent over-optimization for very
+small files where the overhead of capacity estimation outweighs benefits.
+
+**Signature:**
+
+```java
+public static long estimateContentCapacity(long fileSize, String format)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `fileSize` | `long` | Yes | The size of the original file in bytes |
+| `format` | `String` | Yes | The file format/extension (e.g., "txt", "html", "docx", "xlsx", "pptx") |
+
+**Returns:** `long`
+
+
+---
+
+#### estimateHtmlMarkdownCapacity()
+
+Estimate capacity for HTML to Markdown conversion.
+
+HTML documents typically convert to Markdown with 60-70% of the original size.
+This function estimates capacity specifically for HTML→Markdown conversion.
+
+**Returns:**
+
+An estimated capacity for the Markdown output
+
+**Signature:**
+
+```java
+public static long estimateHtmlMarkdownCapacity(long htmlSize)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `htmlSize` | `long` | Yes | The size of the HTML file in bytes |
+
+**Returns:** `long`
+
+
+---
+
+#### estimateSpreadsheetCapacity()
+
+Estimate capacity for cell extraction from spreadsheets.
+
+When extracting cell data from Excel/ODS files, the extracted cells are typically
+40% of the compressed file size (since the file is ZIP-compressed).
+
+**Returns:**
+
+An estimated capacity for cell value accumulation
+
+**Signature:**
+
+```java
+public static long estimateSpreadsheetCapacity(long fileSize)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `fileSize` | `long` | Yes | Size of the spreadsheet file (XLSX, ODS, etc.) |
+
+**Returns:** `long`
+
+
+---
+
+#### estimatePresentationCapacity()
+
+Estimate capacity for slide content extraction from presentations.
+
+PPTX files when extracted have slide content at approximately 35% of the file size.
+This accounts for XML overhead, compression, and embedded assets.
+
+**Returns:**
+
+An estimated capacity for slide content accumulation
+
+**Signature:**
+
+```java
+public static long estimatePresentationCapacity(long fileSize)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `fileSize` | `long` | Yes | Size of the PPTX file in bytes |
+
+**Returns:** `long`
+
+
+---
+
+#### estimateTableMarkdownCapacity()
+
+Estimate capacity for markdown table generation.
+
+Markdown tables have predictable size: ~12 bytes per cell on average
+(accounting for separators, pipes, padding, and cell content).
+
+**Returns:**
+
+An estimated capacity for the markdown table output
+
+**Signature:**
+
+```java
+public static long estimateTableMarkdownCapacity(long rowCount, long colCount)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `rowCount` | `long` | Yes | Number of rows in the table |
+| `colCount` | `long` | Yes | Number of columns in the table |
+
+**Returns:** `long`
+
+
+---
+
+#### decompressGzip()
+
+Decompress gzip bytes, returning the raw decompressed data.
+
+**Signature:**
+
+```java
+public static byte[] decompressGzip(byte[] bytes, SecurityLimits limits) throws Error
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `bytes` | `byte[]` | Yes | The bytes |
+| `limits` | `SecurityLimits` | Yes | The security limits |
+
+**Returns:** `byte[]`
+
+**Errors:** Throws `ErrorException`.
+
+
+---
+
+#### extractGzip()
+
+Extract both metadata and text content from gzip in a single decompression pass.
+
+This avoids the overhead of decompressing the data multiple times when both
+metadata and text content are needed.
+
+If the decompressed data is a TAR archive, delegates to TAR extraction functions.
+
+**Signature:**
+
+```java
+public static ArchiveMetadataAHashMapStringString extractGzip(byte[] bytes, SecurityLimits limits) throws Error
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `bytes` | `byte[]` | Yes | The bytes |
+| `limits` | `SecurityLimits` | Yes | The security limits |
+
+**Returns:** `ArchiveMetadataAHashMapStringString`
+
+**Errors:** Throws `ErrorException`.
+
+
+---
+
+#### extractGzipMetadata()
+
+Extract metadata from a gzip-compressed file.
+
+Gzip wraps a single stream, so the metadata contains one entry
+with the original filename (from gzip header) and decompressed size.
+
+If the decompressed data is a TAR archive, delegates to TAR extraction.
+
+**Signature:**
+
+```java
+public static ArchiveMetadata extractGzipMetadata(byte[] bytes, SecurityLimits limits) throws Error
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `bytes` | `byte[]` | Yes | The bytes |
+| `limits` | `SecurityLimits` | Yes | The security limits |
+
+**Returns:** `ArchiveMetadata`
+
+**Errors:** Throws `ErrorException`.
+
+
+---
+
+#### extractGzipTextContent()
+
+Extract text content from a gzip-compressed file.
+
+Decompresses and attempts to read the result as UTF-8 text.
+
+If the decompressed data is a TAR archive, delegates to TAR extraction.
+
+**Signature:**
+
+```java
+public static AHashMap extractGzipTextContent(byte[] bytes, SecurityLimits limits) throws Error
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `bytes` | `byte[]` | Yes | The bytes |
+| `limits` | `SecurityLimits` | Yes | The security limits |
+
+**Returns:** `AHashMap`
+
+**Errors:** Throws `ErrorException`.
+
+
+---
+
+#### extractGzipWithBytes()
+
+Extract metadata, text content, and raw file bytes from gzip in a single pass.
+
+Similar to `extract_gzip` but also returns the raw file bytes for recursive extraction.
+For TAR-within-GZIP, delegates to TAR file bytes extraction.
+
+**Signature:**
+
+```java
+public static GzipWithBytesResult extractGzipWithBytes(byte[] bytes, SecurityLimits limits) throws Error
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `bytes` | `byte[]` | Yes | The bytes |
+| `limits` | `SecurityLimits` | Yes | The security limits |
+
+**Returns:** `GzipWithBytesResult`
+
+**Errors:** Throws `ErrorException`.
+
+
+---
+
+#### extract7zMetadata()
+
+Extract metadata from a 7z archive.
+
+**Returns:**
+
+Returns `ArchiveMetadata` containing:
+- Format: "7Z"
+- File list with paths, sizes, and directory flags
+- Total file count
+- Total uncompressed size
+
+**Errors:**
+
+Returns an error if the 7z archive cannot be read or parsed,
+or if security limits are exceeded.
+
+**Signature:**
+
+```java
+public static ArchiveMetadata extract7zMetadata(byte[] bytes, SecurityLimits limits) throws Error
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `bytes` | `byte[]` | Yes | The 7z archive bytes |
+| `limits` | `SecurityLimits` | Yes | Security limits for archive extraction |
+
+**Returns:** `ArchiveMetadata`
+
+**Errors:** Throws `ErrorException`.
+
+
+---
+
+#### extract7zTextContent()
+
+Extract text content from files within a 7z archive.
+
+Only extracts files with common text extensions: .txt, .md, .json, .xml, .html, .csv, .log, .yaml, .toml
+
+**Returns:**
+
+Returns a `HashMap` mapping file paths to their text content.
+Binary files and files with non-text extensions are excluded.
+
+**Errors:**
+
+Returns an error if the 7z archive cannot be read or parsed.
+
+**Signature:**
+
+```java
+public static AHashMap extract7zTextContent(byte[] bytes, SecurityLimits limits) throws Error
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `bytes` | `byte[]` | Yes | The 7z archive bytes |
+| `limits` | `SecurityLimits` | Yes | The security limits |
+
+**Returns:** `AHashMap`
+
+**Errors:** Throws `ErrorException`.
+
+
+---
+
+#### extract7zFileBytes()
+
+Extract raw file bytes for all non-directory entries in a 7z archive.
+
+Returns a `HashMap` mapping file paths to their raw byte content.
+Respects security limits for file count and total archive size.
+
+**Errors:**
+
+Returns an error if the 7z archive cannot be read or if security limits are exceeded.
+
+**Signature:**
+
+```java
+public static AHashMap extract7zFileBytes(byte[] bytes, SecurityLimits limits) throws Error
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `bytes` | `byte[]` | Yes | The 7z archive bytes |
+| `limits` | `SecurityLimits` | Yes | Security limits for archive extraction |
+
+**Returns:** `AHashMap`
+
+**Errors:** Throws `ErrorException`.
+
+
+---
+
+#### extractTarMetadata()
+
+Extract metadata from a TAR archive.
+
+**Returns:**
+
+Returns `ArchiveMetadata` containing:
+- Format: "TAR"
+- File list with paths, sizes, and directory flags
+- Total file count
+- Total uncompressed size
+
+**Errors:**
+
+Returns an error if the TAR archive cannot be read or parsed,
+or if security limits are exceeded.
+
+**Signature:**
+
+```java
+public static ArchiveMetadata extractTarMetadata(byte[] bytes, SecurityLimits limits) throws Error
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `bytes` | `byte[]` | Yes | The TAR archive bytes (can be compressed with gzip or bzip2) |
+| `limits` | `SecurityLimits` | Yes | Security limits for archive extraction |
+
+**Returns:** `ArchiveMetadata`
+
+**Errors:** Throws `ErrorException`.
+
+
+---
+
+#### extractTarTextContent()
+
+Extract text content from files within a TAR archive.
+
+Only extracts files with common text extensions: .txt, .md, .json, .xml, .html, .csv, .log, .yaml, .toml
+
+**Returns:**
+
+Returns a `HashMap` mapping file paths to their text content.
+Binary files and files with non-text extensions are excluded.
+
+**Errors:**
+
+Returns an error if the TAR archive cannot be read or parsed.
+
+**Signature:**
+
+```java
+public static AHashMap extractTarTextContent(byte[] bytes, SecurityLimits limits) throws Error
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `bytes` | `byte[]` | Yes | The TAR archive bytes (can be compressed with gzip or bzip2) |
+| `limits` | `SecurityLimits` | Yes | The security limits |
+
+**Returns:** `AHashMap`
+
+**Errors:** Throws `ErrorException`.
+
+
+---
+
+#### extractTarFileBytes()
+
+Extract raw file bytes for all non-directory entries in a TAR archive.
+
+Returns a `HashMap` mapping file paths to their raw byte content.
+Respects security limits for file count and total archive size.
+
+**Errors:**
+
+Returns an error if the TAR archive cannot be read or if security limits are exceeded.
+
+**Signature:**
+
+```java
+public static AHashMap extractTarFileBytes(byte[] bytes, SecurityLimits limits) throws Error
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `bytes` | `byte[]` | Yes | The TAR archive bytes |
+| `limits` | `SecurityLimits` | Yes | Security limits for archive extraction |
+
+**Returns:** `AHashMap`
+
+**Errors:** Throws `ErrorException`.
+
+
+---
+
+#### extractZipMetadata()
+
+Extract metadata from a ZIP archive.
+
+**Returns:**
+
+Returns `ArchiveMetadata` containing:
+- Format: "ZIP"
+- File list with paths, sizes, and directory flags
+- Total file count
+- Total uncompressed size
+
+**Errors:**
+
+Returns an error if the ZIP archive cannot be read or parsed,
+or if security limits are exceeded.
+
+**Signature:**
+
+```java
+public static ArchiveMetadata extractZipMetadata(byte[] bytes, SecurityLimits limits) throws Error
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `bytes` | `byte[]` | Yes | The ZIP archive bytes |
+| `limits` | `SecurityLimits` | Yes | Security limits for archive extraction |
+
+**Returns:** `ArchiveMetadata`
+
+**Errors:** Throws `ErrorException`.
+
+
+---
+
+#### extractZipTextContent()
+
+Extract text content from files within a ZIP archive.
+
+Only extracts files with common text extensions: .txt, .md, .json, .xml, .html, .csv, .log, .yaml, .toml
+
+**Returns:**
+
+Returns a `HashMap` mapping file paths to their text content.
+Binary files and files with non-text extensions are excluded.
+
+**Errors:**
+
+Returns an error if the ZIP archive cannot be read or parsed.
+
+**Signature:**
+
+```java
+public static AHashMap extractZipTextContent(byte[] bytes, SecurityLimits limits) throws Error
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `bytes` | `byte[]` | Yes | The ZIP archive bytes |
+| `limits` | `SecurityLimits` | Yes | The security limits |
+
+**Returns:** `AHashMap`
+
+**Errors:** Throws `ErrorException`.
+
+
+---
+
+#### extractZipFileBytes()
+
+Extract raw file bytes for all non-directory entries in a ZIP archive.
+
+Returns a `HashMap` mapping file paths to their raw byte content.
+Respects security limits for file count and total archive size.
+
+**Errors:**
+
+Returns an error if the ZIP archive cannot be read or if security limits are exceeded.
+
+**Signature:**
+
+```java
+public static AHashMap extractZipFileBytes(byte[] bytes, SecurityLimits limits) throws Error
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `bytes` | `byte[]` | Yes | The ZIP archive bytes |
+| `limits` | `SecurityLimits` | Yes | Security limits for archive extraction |
+
+**Returns:** `AHashMap`
+
+**Errors:** Throws `ErrorException`.
+
+
+---
+
+#### parseEmlContent()
+
+Parse .eml file content (RFC822 format)
+
+**Signature:**
+
+```java
+public static EmailExtractionResult parseEmlContent(byte[] data) throws Error
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `data` | `byte[]` | Yes | The data |
+
+**Returns:** `EmailExtractionResult`
+
+**Errors:** Throws `ErrorException`.
+
+
+---
+
+#### parseMsgContent()
+
+Parse .msg file content (Outlook format).
+
+Reads MSG files directly via the CFB (OLE Compound Document) format,
+extracting text properties and attachment metadata without the overhead
+of hex-encoding attachment binary data (which caused hangs on large files
+with the previous `msg_parser` dependency).
+
+Some MSG files have FAT headers declaring more sectors than the file
+actually contains.  The strict `cfb` crate rejects these.  When that
+happens we pad the data with zero bytes so the sector count matches
+the FAT and retry – the real streams are still within the original
+data range and parse correctly.
+
+**Signature:**
+
+```java
+public static EmailExtractionResult parseMsgContent(byte[] data, int fallbackCodepage) throws Error
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `data` | `byte[]` | Yes | The data |
+| `fallbackCodepage` | `Optional<int>` | No | The fallback codepage |
+
+**Returns:** `EmailExtractionResult`
+
+**Errors:** Throws `ErrorException`.
+
+
+---
+
+#### extractEmailContent()
+
+Extract email content from either .eml or .msg format
+
+**Signature:**
+
+```java
+public static EmailExtractionResult extractEmailContent(byte[] data, String mimeType, int fallbackCodepage) throws Error
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `data` | `byte[]` | Yes | The data |
+| `mimeType` | `String` | Yes | The mime type |
+| `fallbackCodepage` | `Optional<int>` | No | The fallback codepage |
+
+**Returns:** `EmailExtractionResult`
+
+**Errors:** Throws `ErrorException`.
+
+
+---
+
+#### buildEmailTextOutput()
+
+Build text output from email extraction result
+
+**Signature:**
+
+```java
+public static String buildEmailTextOutput(EmailExtractionResult result)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `result` | `EmailExtractionResult` | Yes | The email extraction result |
+
+**Returns:** `String`
+
+
+---
+
+#### readExcelFile()
+
+**Signature:**
+
+```java
+public static ExcelWorkbook readExcelFile(String filePath) throws Error
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `filePath` | `String` | Yes | Path to the file |
+
+**Returns:** `ExcelWorkbook`
+
+**Errors:** Throws `ErrorException`.
+
+
+---
+
+#### readExcelBytes()
+
+**Signature:**
+
+```java
+public static ExcelWorkbook readExcelBytes(byte[] data, String fileExtension) throws Error
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `data` | `byte[]` | Yes | The data |
+| `fileExtension` | `String` | Yes | The file extension |
+
+**Returns:** `ExcelWorkbook`
+
+**Errors:** Throws `ErrorException`.
+
+
+---
+
+#### excelToText()
+
+Convert an Excel workbook to plain text (space-separated cells, one row per line).
+
+Each sheet is separated by a blank line. Sheet names are included as headers.
+This produces text suitable for quality scoring against ground truth.
+
+**Signature:**
+
+```java
+public static String excelToText(ExcelWorkbook workbook)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `workbook` | `ExcelWorkbook` | Yes | The excel workbook |
+
+**Returns:** `String`
+
+
+---
+
+#### excelToMarkdown()
+
+**Signature:**
+
+```java
+public static String excelToMarkdown(ExcelWorkbook workbook)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `workbook` | `ExcelWorkbook` | Yes | The excel workbook |
+
+**Returns:** `String`
+
+
+---
+
+#### convertHtmlToMarkdown()
+
+Convert HTML with optional configuration and output format.
+
+Uses sensible defaults if no configuration is provided:
+- `extract_metadata = true` (parse YAML frontmatter)
+- `include_document_structure = true` (populate document tree)
+- `preprocessing.enabled = false` (disable HTML preprocessing)
+
+Supports both markdown and djot output based on the output_format parameter.
+Defaults to Markdown for backward compatibility.
+
+# WASM Limitations
+
+In WASM builds, HTML files larger than 2MB will be rejected with an error
+to prevent stack overflow. For larger files, use the native library.
+
+**Returns:**
+
+A markdown or djot string, or an error if conversion fails
+
+**Signature:**
+
+```java
+public static String convertHtmlToMarkdown(String html, ConversionOptions options, KreuzbergOutputFormat outputFormat) throws Error
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `html` | `String` | Yes | The HTML string to convert |
+| `options` | `Optional<ConversionOptions>` | No | Optional conversion options; defaults will be used if None |
+| `outputFormat` | `Optional<KreuzbergOutputFormat>` | No | Optional output format; defaults to Markdown if None |
+
+**Returns:** `String`
+
+**Errors:** Throws `ErrorException`.
+
+
+---
+
+#### convertHtmlToMarkdownWithMetadata()
+
+Convert HTML with direct metadata extraction and output format support.
+
+Extracts metadata directly from HTML using the metadata extraction
+capabilities of the `html-to-markdown-rs` library, without relying
+on YAML frontmatter in the converted markdown.
+
+Supports both markdown and djot output based on the output_format parameter.
+Defaults to Markdown for backward compatibility.
+
+# WASM Limitations
+
+In WASM builds, HTML files larger than 2MB will be rejected with an error
+to prevent stack overflow. For larger files, use the native library.
+
+**Returns:**
+
+A tuple of (markdown/djot content, optional metadata), or an error if conversion fails
+
+**Signature:**
+
+```java
+public static StringOptionHtmlMetadata convertHtmlToMarkdownWithMetadata(String html, ConversionOptions options, KreuzbergOutputFormat outputFormat) throws Error
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `html` | `String` | Yes | The HTML string to convert |
+| `options` | `Optional<ConversionOptions>` | No | Optional conversion options; defaults will be used if None |
+| `outputFormat` | `Optional<KreuzbergOutputFormat>` | No | Optional output format; defaults to Markdown if None |
+
+**Returns:** `StringOptionHtmlMetadata`
+
+**Errors:** Throws `ErrorException`.
+
+
+---
+
+#### convertHtmlToMarkdownWithTables()
+
+Convert HTML to markdown/djot/plain with metadata, structured tables, and document structure.
+
+Performs a single unified `convert()` call with `include_document_structure: true`,
+`extract_metadata: true`, and `extract_images: true` to capture content, metadata,
+structured table data, and the full semantic document tree in one pass.
+
+Returns `(content, optional_metadata, tables, optional_document_structure)`.
+
+**Signature:**
+
+```java
+public static DocumentStructure convertHtmlToMarkdownWithTables(String html, ConversionOptions options, KreuzbergOutputFormat outputFormat) throws Error
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `html` | `String` | Yes | The html |
+| `options` | `Optional<ConversionOptions>` | No | The options to use |
+| `outputFormat` | `Optional<KreuzbergOutputFormat>` | No | The kreuzberg output format |
+
+**Returns:** `DocumentStructure`
+
+**Errors:** Throws `ErrorException`.
+
+
+---
+
+#### extractHtmlInlineImages()
+
+Extract inline images (data URIs and SVGs) from HTML.
+
+Uses a single `convert()` call with `extract_images = true` to collect
+inline images embedded in the HTML document. Uses plain text output format
+for minimal conversion overhead since only images are needed.
+Returns an empty vector when no images are found.
+
+**Signature:**
+
+```java
+public static List<InlineImage> extractHtmlInlineImages(String html, ConversionOptions options) throws Error
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `html` | `String` | Yes | The html |
+| `options` | `Optional<ConversionOptions>` | No | The options to use |
+
+**Returns:** `List<InlineImage>`
+
+**Errors:** Throws `ErrorException`.
+
+
+---
+
+#### extractDocText()
+
+Extract text from DOC bytes.
+
+Parses the OLE/CFB compound document, reads the FIB (File Information Block),
+and extracts text from the piece table.
+
+**Signature:**
+
+```java
+public static DocExtractionResult extractDocText(byte[] content) throws Error
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `content` | `byte[]` | Yes | The content to process |
+
+**Returns:** `DocExtractionResult`
+
+**Errors:** Throws `ErrorException`.
+
+
+---
+
+#### parseDrawing()
+
+Parse a drawing object starting after the `<w:drawing>` Start event.
+
+This function reads events until it encounters the closing `</w:drawing>` tag,
+parsing the drawing type (inline or anchored), extent, properties, and image references.
+
+**Signature:**
+
+```java
+public static Drawing parseDrawing(Reader reader)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `reader` | `Reader` | Yes | The reader |
+
+**Returns:** `Drawing`
+
+
+---
+
+#### collectAndConvertOmathPara()
+
+Collect an `m:oMathPara` subtree and convert to LaTeX (display math).
+The reader should be positioned right after the `<m:oMathPara>` start tag.
+
+**Signature:**
+
+```java
+public static String collectAndConvertOmathPara(Reader reader)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `reader` | `Reader` | Yes | The reader |
+
+**Returns:** `String`
+
+
+---
+
+#### collectAndConvertOmath()
+
+Collect an `m:oMath` subtree and convert to LaTeX (inline math).
+The reader should be positioned right after the `<m:oMath>` start tag.
+
+**Signature:**
+
+```java
+public static String collectAndConvertOmath(Reader reader)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `reader` | `Reader` | Yes | The reader |
+
+**Returns:** `String`
+
+
+---
+
+#### parseDocument()
+
+Parse a DOCX document from bytes and return the structured document.
+
+**Signature:**
+
+```java
+public static Document parseDocument(byte[] bytes) throws Error
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `bytes` | `byte[]` | Yes | The bytes |
+
+**Returns:** `Document`
+
+**Errors:** Throws `ErrorException`.
+
+
+---
+
+#### extractTextFromBytes()
+
+Extract text from DOCX bytes.
+
+**Signature:**
+
+```java
+public static String extractTextFromBytes(byte[] bytes) throws Error
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `bytes` | `byte[]` | Yes | The bytes |
+
+**Returns:** `String`
+
+**Errors:** Throws `ErrorException`.
+
+
+---
+
+#### parseSectionProperties()
+
+Parse a `w:sectPr` XML element (roxmltree node) into `SectionProperties`.
+
+**Signature:**
+
+```java
+public static SectionProperties parseSectionProperties(Node node)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `node` | `Node` | Yes | The node |
+
+**Returns:** `SectionProperties`
+
+
+---
+
+#### parseSectionPropertiesStreaming()
+
+Parse section properties from a quick_xml event stream.
+
+Reads events from the reader until `</w:sectPr>` is encountered,
+extracting the same properties as the roxmltree parser.
+
+**Important:** This function advances the reader past the closing `</w:sectPr>` tag.
+The caller must not attempt to process the `w:sectPr` end event again.
+
+**Signature:**
+
+```java
+public static SectionProperties parseSectionPropertiesStreaming(Reader reader)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `reader` | `Reader` | Yes | The reader |
+
+**Returns:** `SectionProperties`
+
+
+---
+
+#### parseStylesXml()
+
+Parse `word/styles.xml` content into a `StyleCatalog`.
+
+Uses `roxmltree` for tree-based XML parsing, consistent with the
+office metadata parsing approach used elsewhere in the codebase.
+
+**Signature:**
+
+```java
+public static StyleCatalog parseStylesXml(String xml) throws Error
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `xml` | `String` | Yes | The xml |
+
+**Returns:** `StyleCatalog`
+
+**Errors:** Throws `ErrorException`.
+
+
+---
+
+#### parseTableProperties()
+
+Parse table-level properties from streaming XML reader.
+
+Expects the reader to be positioned just after the `<w:tblPr>` start tag.
+Reads all child elements until the matching `</w:tblPr>` end tag.
+
+**Signature:**
+
+```java
+public static TableProperties parseTableProperties(Reader reader)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `reader` | `Reader` | Yes | The reader |
+
+**Returns:** `TableProperties`
+
+
+---
+
+#### parseRowProperties()
+
+Parse row-level properties from streaming XML reader.
+
+Expects the reader to be positioned just after the `<w:trPr>` start tag.
+
+**Signature:**
+
+```java
+public static RowProperties parseRowProperties(Reader reader)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `reader` | `Reader` | Yes | The reader |
+
+**Returns:** `RowProperties`
+
+
+---
+
+#### parseCellProperties()
+
+Parse cell-level properties from streaming XML reader.
+
+Expects the reader to be positioned just after the `<w:tcPr>` start tag.
+
+**Signature:**
+
+```java
+public static CellProperties parseCellProperties(Reader reader)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `reader` | `Reader` | Yes | The reader |
+
+**Returns:** `CellProperties`
+
+
+---
+
+#### parseTableGrid()
+
+Parse table grid (column widths) from streaming XML reader.
+
+Expects the reader to be positioned just after the `<w:tblGrid>` start tag.
+
+**Signature:**
+
+```java
+public static TableGrid parseTableGrid(Reader reader)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `reader` | `Reader` | Yes | The reader |
+
+**Returns:** `TableGrid`
+
+
+---
+
+#### parseThemeXml()
+
+Parse `word/theme/theme1.xml` content into a `Theme`.
+
+Uses `roxmltree` for tree-based XML parsing of DrawingML theme elements.
+
+**Returns:**
+* `Ok(Theme)` - The parsed theme
+* `Err(KreuzbergError)` - If parsing fails
+
+**Signature:**
+
+```java
+public static Theme parseThemeXml(String xml) throws Error
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `xml` | `String` | Yes | The theme XML content as a string |
+
+**Returns:** `Theme`
+
+**Errors:** Throws `ErrorException`.
+
+
+---
+
+#### extractText()
+
+Extract text from DOCX bytes.
+
+**Signature:**
+
+```java
+public static String extractText(byte[] bytes) throws Error
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `bytes` | `byte[]` | Yes | The bytes |
+
+**Returns:** `String`
+
+**Errors:** Throws `ErrorException`.
+
+
+---
+
+#### extractTextWithPageBreaks()
+
+Extract text and page boundaries from DOCX bytes.
+
+Detects explicit page breaks (`<w:br w:type="page"/>`) in the document XML and maps them to
+character offsets in the extracted text. This is a best-effort approach that only detects
+explicit page breaks, not automatic pagination.
+
+**Returns:**
+* `Ok((String, Option<Vec<PageBoundary>>))` - Extracted text and optional page boundaries
+* `Err(KreuzbergError)` - If extraction fails
+
+# Limitations
+- Only detects explicit page breaks, not reflowed content
+- Page numbers are estimates, not guaranteed accurate
+- Word's pagination may differ from detected breaks
+- No page dimensions available (would require layout engine)
+
+# Performance
+Performs two passes: one with docx-lite for text extraction and one for page break detection.
+
+**Signature:**
+
+```java
+public static StringOptionVecPageBoundary extractTextWithPageBreaks(byte[] bytes) throws Error
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `bytes` | `byte[]` | Yes | The DOCX file contents as bytes |
+
+**Returns:** `StringOptionVecPageBoundary`
+
+**Errors:** Throws `ErrorException`.
+
+
+---
+
+#### detectPageBreaksFromDocx()
+
+Detect explicit page break positions in document.xml and extract full text with page boundaries.
+
+This is a convenience function for the extractor that combines text extraction with page
+break detection. It returns the extracted text along with page boundaries.
+
+**Returns:**
+* `Ok(Option<Vec<PageBoundary>>)` - Optional page boundaries
+* `Err(KreuzbergError)` - If extraction fails
+
+# Limitations
+- Only detects explicit page breaks, not reflowed content
+- Page numbers are estimates based on detected breaks
+
+**Signature:**
+
+```java
+public static Optional<List<PageBoundary>> detectPageBreaksFromDocx(byte[] bytes) throws Error
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `bytes` | `byte[]` | Yes | The DOCX file contents (ZIP archive) |
+
+**Returns:** `Optional<List<PageBoundary>>`
+
+**Errors:** Throws `ErrorException`.
+
+
+---
+
+#### detectTablePageNumbers()
+
+Compute the 1-based page number for each top-level table in the document.
+
+Scans `word/document.xml` for page-break markers (`<w:br w:type="page"/>`) and
+top-level table opens (`<w:tbl>`), walking them in document order. Nested tables
+(tables inside table cells) are skipped by tracking the nesting depth.
+
+Returns a `Vec<usize>` with one entry per top-level table in document order.
+If the document cannot be read or parsed, returns an empty Vec (callers should
+fall back to page 1 for all tables).
+
+# Limitations
+- Only detects explicit page breaks, not reflowed/automatic pagination.
+
+**Signature:**
+
+```java
+public static List<Long> detectTablePageNumbers(byte[] bytes) throws Error
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `bytes` | `byte[]` | Yes | The bytes |
+
+**Returns:** `List<Long>`
+
+**Errors:** Throws `ErrorException`.
+
+
+---
+
+#### extractOoxmlEmbeddedObjects()
+
+Extract embedded objects from an OOXML ZIP archive and recursively process them.
+
+Scans the given `embeddings_prefix` directory (e.g. `word/embeddings/` or
+`ppt/embeddings/`) inside the ZIP archive for embedded files. Known formats
+(.xlsx, .pdf, .docx, .pptx, etc.) are recursively extracted. OLE compound
+files (oleObject*.bin) are skipped with a warning unless their format can be
+identified.
+
+Returns `(children, warnings)` suitable for attaching to `InternalDocument`.
+
+**Signature:**
+
+```java
+public static VecArchiveEntryVecProcessingWarning extractOoxmlEmbeddedObjects(byte[] zipBytes, String embeddingsPrefix, String sourceLabel, ExtractionConfig config)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `zipBytes` | `byte[]` | Yes | The zip bytes |
+| `embeddingsPrefix` | `String` | Yes | The embeddings prefix |
+| `sourceLabel` | `String` | Yes | The source label |
+| `config` | `ExtractionConfig` | Yes | The configuration options |
+
+**Returns:** `VecArchiveEntryVecProcessingWarning`
+
+
+---
+
+#### detectImageFormat()
+
+Detect image format from raw bytes using magic byte signatures.
+
+Returns a format string like "jpeg", "png", etc. Used by both DOCX and PPTX extractors.
+
+**Signature:**
+
+```java
+public static Str detectImageFormat(byte[] data)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `data` | `byte[]` | Yes | The data |
+
+**Returns:** `Str`
+
+
+---
+
+#### extractPptText()
+
+Extract text from PPT bytes.
+
+Parses the OLE/CFB compound document, reads the "PowerPoint Document" stream,
+and extracts text from TextCharsAtom and TextBytesAtom records.
+
+When `include_master_slides` is `true`, master slide content (placeholder text
+like "Click to edit Master title style") is included instead of being skipped.
+
+**Signature:**
+
+```java
+public static PptExtractionResult extractPptText(byte[] content) throws Error
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `content` | `byte[]` | Yes | The content to process |
+
+**Returns:** `PptExtractionResult`
+
+**Errors:** Throws `ErrorException`.
+
+
+---
+
+#### extractPptTextWithOptions()
+
+Extract text from PPT bytes with configurable master slide inclusion.
+
+When `include_master_slides` is `true`, `RT_MAIN_MASTER` containers are not
+skipped, so master slide placeholder text is included in the output.
+
+**Signature:**
+
+```java
+public static PptExtractionResult extractPptTextWithOptions(byte[] content, boolean includeMasterSlides) throws Error
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `content` | `byte[]` | Yes | The content to process |
+| `includeMasterSlides` | `boolean` | Yes | The include master slides |
+
+**Returns:** `PptExtractionResult`
+
+**Errors:** Throws `ErrorException`.
+
+
+---
+
+#### extractPptxFromPath()
+
+Extract PPTX content from a file path.
+
+**Returns:**
+
+A `PptxExtractionResult` containing extracted content, metadata, and images.
+
+**Signature:**
+
+```java
+public static PptxExtractionResult extractPptxFromPath(String path, PptxExtractionOptions options) throws Error
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `path` | `String` | Yes | Path to the PPTX file |
+| `options` | `PptxExtractionOptions` | Yes | Extraction options controlling image extraction, formatting, etc. |
+
+**Returns:** `PptxExtractionResult`
+
+**Errors:** Throws `ErrorException`.
+
+
+---
+
+#### extractPptxFromBytes()
+
+Extract PPTX content from a byte buffer.
+
+**Returns:**
+
+A `PptxExtractionResult` containing extracted content, metadata, and images.
+
+**Signature:**
+
+```java
+public static PptxExtractionResult extractPptxFromBytes(byte[] data, PptxExtractionOptions options) throws Error
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `data` | `byte[]` | Yes | Raw PPTX file bytes |
+| `options` | `PptxExtractionOptions` | Yes | Extraction options controlling image extraction, formatting, etc. |
+
+**Returns:** `PptxExtractionResult`
+
+**Errors:** Throws `ErrorException`.
+
+
+---
+
+#### parseXmlSvg()
+
+Parse XML with optional SVG mode.
+
+In SVG mode, only text from SVG text-bearing elements (`<text>`, `<tspan>`,
+`<title>`, `<desc>`, `<textPath>`) is extracted, without element name prefixes.
+Attribute values are also omitted in SVG mode.
+
+**Signature:**
+
+```java
+public static XmlExtractionResult parseXmlSvg(byte[] xmlBytes, boolean preserveWhitespace) throws Error
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `xmlBytes` | `byte[]` | Yes | The xml bytes |
+| `preserveWhitespace` | `boolean` | Yes | The preserve whitespace |
+
+**Returns:** `XmlExtractionResult`
+
+**Errors:** Throws `ErrorException`.
+
+
+---
+
+#### parseXml()
+
+**Signature:**
+
+```java
+public static XmlExtractionResult parseXml(byte[] xmlBytes, boolean preserveWhitespace) throws Error
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `xmlBytes` | `byte[]` | Yes | The xml bytes |
+| `preserveWhitespace` | `boolean` | Yes | The preserve whitespace |
+
+**Returns:** `XmlExtractionResult`
+
+**Errors:** Throws `ErrorException`.
+
+
+---
+
+#### cellsToText()
+
+Converts a 2D vector of cell strings into a GitHub-Flavored Markdown table.
+
+# Behavior
+
+- The first row is treated as the header row
+- A separator row is inserted after the header
+- Pipe characters (`|`) in cell content are automatically escaped with backslash
+- Irregular tables (rows with varying column counts) are padded with empty cells to match the header
+- Returns an empty string for empty input
+
+**Returns:**
+
+A `String` containing the GFM markdown table representation
+
+Converts a 2D vector of cell strings into plain text with tab-separated columns.
+
+# Behavior
+
+- Rows are separated by newlines
+- Cells within a row are separated by tab characters
+- No pipe delimiters or separator rows (unlike markdown tables)
+- Returns an empty string for empty input
+
+**Returns:**
+
+A `String` containing the plain text table representation
+
+**Signature:**
+
+```java
+public static String cellsToText(List<List<String>> cells)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `cells` | `List<List<String>>` | Yes | A slice of vectors representing table rows, where each inner vector contains cell values |
+
+**Returns:** `String`
+
+
+---
+
+#### cellsToMarkdown()
+
+**Signature:**
+
+```java
+public static String cellsToMarkdown(List<List<String>> cells)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `cells` | `List<List<String>>` | Yes | The cells |
+
+**Returns:** `String`
+
+
+---
+
+#### parseJotdownAttributes()
+
+Parse jotdown attributes into our Attributes representation.
+
+Converts jotdown's internal attribute representation to Kreuzberg's
+standardized Attributes struct, handling IDs, classes, and key-value pairs.
+
+**Signature:**
+
+```java
+public static Attributes parseJotdownAttributes(Attributes attrs)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `attrs` | `Attributes` | Yes | The attributes |
+
+**Returns:** `Attributes`
+
+
+---
+
+#### renderAttributes()
+
+Render attributes to djot attribute syntax.
+
+Converts Kreuzberg's Attributes struct back to djot attribute syntax:
+{.class #id key="value"}
+
+**Signature:**
+
+```java
+public static String renderAttributes(Attributes attrs)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `attrs` | `Attributes` | Yes | The attributes |
+
+**Returns:** `String`
+
+
+---
+
+#### djotContentToDjot()
+
+Convert DjotContent back to djot markup.
+
+This function takes a `DjotContent` structure and generates valid djot markup
+from it, preserving:
+- Block structure (headings, code blocks, lists, blockquotes, etc.)
+- Inline formatting (strong, emphasis, highlight, subscript, superscript, etc.)
+- Attributes where present ({.class #id key="value"})
+
+**Returns:**
+
+A String containing valid djot markup
+
+**Signature:**
+
+```java
+public static String djotContentToDjot(DjotContent content)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `content` | `DjotContent` | Yes | The DjotContent to convert |
+
+**Returns:** `String`
+
+
+---
+
+#### extractionResultToDjot()
+
+Convert any ExtractionResult to djot format.
+
+This function converts an `ExtractionResult` to djot markup:
+- If `djot_content` is `Some`, uses `djot_content_to_djot` for full fidelity conversion
+- Otherwise, wraps the plain text content in paragraphs
+
+**Returns:**
+
+A `Result` containing the djot markup string
+
+**Signature:**
+
+```java
+public static String extractionResultToDjot(ExtractionResult result) throws Error
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `result` | `ExtractionResult` | Yes | The ExtractionResult to convert |
+
+**Returns:** `String`
+
+**Errors:** Throws `ErrorException`.
+
+
+---
+
+#### djotToHtml()
+
+Render djot content to HTML.
+
+This function takes djot source text and renders it to HTML using jotdown's
+built-in HTML renderer.
+
+**Returns:**
+
+A `Result` containing the rendered HTML string
+
+**Signature:**
+
+```java
+public static String djotToHtml(String djotSource) throws Error
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `djotSource` | `String` | Yes | The djot markup text to render |
+
+**Returns:** `String`
+
+**Errors:** Throws `ErrorException`.
+
+
+---
+
+#### extractCompleteDjotContent()
+
+Extract complete djot content with 100% feature extraction.
+
+Processes ALL djot events to build a rich DjotContent structure including:
+- Block structure (headings, lists, blockquotes, divs, sections, code blocks)
+- Inline formatting (strong, emphasis, highlight, subscript, superscript, insert, delete)
+- Attributes (classes, IDs, key-value pairs)
+- Links and images with full metadata (href, src, alt, title)
+- Math blocks (inline & display)
+- Definition lists (term/description pairs)
+- Task lists with checked state
+- Raw blocks (HTML/LaTeX)
+- Footnotes (references and definitions)
+- Captions
+- Smart punctuation
+- All other djot features
+
+**Signature:**
+
+```java
+public static DjotContent extractCompleteDjotContent(List<Event> events, Metadata metadata, List<Table> tables)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `events` | `List<Event>` | Yes | The events |
+| `metadata` | `Metadata` | Yes | The metadata |
+| `tables` | `List<Table>` | Yes | The tables |
+
+**Returns:** `DjotContent`
+
+
+---
+
+#### extractTablesFromEvents()
+
+Extract tables from Djot events.
+
+Parses table events and extracts table data as a Vec<Vec<String>>,
+converting each table to markdown representation for storage.
+
+**Signature:**
+
+```java
+public static List<Table> extractTablesFromEvents(List<Event> events)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `events` | `List<Event>` | Yes | The events |
+
+**Returns:** `List<Table>`
+
+
+---
+
+#### extractTextFromEvents()
+
+Extract plain text from Djot events.
+
+Processes djot events and extracts plain text content, handling:
+- Text content
+- Line breaks (soft, hard, blank)
+- Smart punctuation (quotes, dashes, ellipsis)
+- Special symbols and footnote references
+
+**Signature:**
+
+```java
+public static String extractTextFromEvents(List<Event> events)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `events` | `List<Event>` | Yes | The events |
+
+**Returns:** `String`
+
+
+---
+
+#### renderBlockToDjot()
+
+Render a single block to djot markup.
+
+**Signature:**
+
+```java
+public static String renderBlockToDjot(FormattedBlock block, long indentLevel)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `block` | `FormattedBlock` | Yes | The formatted block |
+| `indentLevel` | `long` | Yes | The indent level |
+
+**Returns:** `String`
+
+
+---
+
+#### renderListItem()
+
+Render a list item with the given marker.
+
+**Signature:**
+
+```java
+public static String renderListItem(FormattedBlock item, String indent, String marker)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `item` | `FormattedBlock` | Yes | The formatted block |
+| `indent` | `String` | Yes | The indent |
+| `marker` | `String` | Yes | The marker |
+
+**Returns:** `String`
+
+
+---
+
+#### renderInlineContent()
+
+Render inline content to djot markup.
+
+**Signature:**
+
+```java
+public static String renderInlineContent(List<InlineElement> elements)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `elements` | `List<InlineElement>` | Yes | The elements |
+
+**Returns:** `String`
+
+
+---
+
+#### extractFrontmatter()
+
+Extract YAML frontmatter from document content.
+
+Frontmatter is expected to be delimited by `---` or `...` at the start of the document.
+This implementation properly handles edge cases:
+- `---` appearing within YAML strings or arrays
+- Both `---` and `...` as end delimiters (YAML spec compliant)
+- Multiline YAML values containing dashes
+
+Returns a tuple of (parsed YAML value, remaining content after frontmatter).
+
+**Signature:**
+
+```java
+public static OptionYamlValueString extractFrontmatter(String content)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `content` | `String` | Yes | The content to process |
+
+**Returns:** `OptionYamlValueString`
+
+
+---
+
+#### extractMetadataFromYaml()
+
+Extract metadata from YAML frontmatter.
+
+Extracts the following YAML fields into Kreuzberg metadata:
+- **Standard fields**: title, author, date, description (as subject)
+- **Extended fields**: abstract, subject, category, tags, language, version
+- **Array fields** (keywords, tags): stored as `Vec<String>` in typed fields
+
+**Returns:**
+
+A `Metadata` struct populated with extracted fields
+
+**Signature:**
+
+```java
+public static Metadata extractMetadataFromYaml(YamlValue yaml)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `yaml` | `YamlValue` | Yes | The parsed YAML value from frontmatter |
+
+**Returns:** `Metadata`
+
+
+---
+
+#### extractTitleFromContent()
+
+Extract first heading as title from content.
+
+Searches for the first level-1 heading (# Title) in the content
+and returns it as a potential title if no title was found in frontmatter.
+
+**Returns:**
+
+Some(title) if a heading is found, None otherwise
+
+**Signature:**
+
+```java
+public static Optional<String> extractTitleFromContent(String content)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `content` | `String` | Yes | The document content to search |
+
+**Returns:** `Optional<String>`
+
+
+---
+
+#### collectIwaPaths()
+
+Collects all .iwa file paths from a ZIP archive.
+
+Opens the ZIP from `content`, iterates every entry, and returns the names of
+all entries whose path ends with `.iwa`. Entries that cannot be read are
+silently skipped (consistent with the per-extractor `filter_map` pattern).
+
+**Signature:**
+
+```java
+public static List<String> collectIwaPaths(byte[] content) throws Error
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `content` | `byte[]` | Yes | The content to process |
+
+**Returns:** `List<String>`
+
+**Errors:** Throws `ErrorException`.
+
+
+---
+
+#### readIwaFile()
+
+Read and Snappy-decompress a single `.iwa` file from the ZIP archive.
+
+Apple IWA files use a custom framing format:
+Each block in the file is: `[type: u8][length: u24 LE][payload: length bytes]`
+- type `0x00`: Snappy-compressed block → decompress payload with raw Snappy
+- type `0x01`: Uncompressed block → use payload as-is
+
+Multiple blocks are concatenated to form the decompressed IWA stream.
+
+**Signature:**
+
+```java
+public static byte[] readIwaFile(byte[] content, String path) throws Error
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `content` | `byte[]` | Yes | The content to process |
+| `path` | `String` | Yes | Path to the file |
+
+**Returns:** `byte[]`
+
+**Errors:** Throws `ErrorException`.
+
+
+---
+
+#### decodeIwaStream()
+
+Decode an Apple IWA byte stream into the raw protobuf payload.
+
+IWA framing: each block = 1 byte type + 3 bytes LE length + N bytes payload
+- type 0x00 → Snappy-compressed, decompress with `snap.raw.Decoder`
+- type 0x01 → Uncompressed, use as-is
+
+**Signature:**
+
+```java
+public static byte[] decodeIwaStream(byte[] data) throws String
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `data` | `byte[]` | Yes | The data |
+
+**Returns:** `byte[]`
+
+**Errors:** Throws `StringException`.
+
+
+---
+
+#### extractTextFromProto()
+
+Extract all UTF-8 text strings from a raw protobuf byte slice.
+
+This uses a simple wire-format scanner without a full schema:
+- Field type 2 (length-delimited) with a valid UTF-8 payload of ≥3 bytes is
+  treated as a text string candidate.
+- We skip binary blobs (non-UTF-8) and very short noise strings.
+
+This approach avoids the need for `prost-build` and generated proto code while
+still extracting human-readable text reliably from iWork documents.
+
+**Signature:**
+
+```java
+public static List<String> extractTextFromProto(byte[] data)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `data` | `byte[]` | Yes | The data |
+
+**Returns:** `List<String>`
+
+
+---
+
+#### extractTextFromIwaFiles()
+
+Extract all text from an iWork ZIP archive by reading specified IWA entries.
+
+`iwa_paths` should list the IWA file paths to read (e.g. `["Index/Document.iwa"]`).
+Returns a flat joined string of all text found across all IWA files.
+
+**Signature:**
+
+```java
+public static String extractTextFromIwaFiles(byte[] content, List<String> iwaPaths) throws Error
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `content` | `byte[]` | Yes | The content to process |
+| `iwaPaths` | `List<String>` | Yes | The iwa paths |
+
+**Returns:** `String`
+
+**Errors:** Throws `ErrorException`.
+
+
+---
+
+#### extractMetadataFromZip()
+
+Extract metadata from an iWork ZIP archive.
+
+Attempts to read `Metadata/Properties.plist` and
+`Metadata/BuildVersionHistory.plist` from the ZIP. These files are XML plists
+containing authorship and creation information. If the files cannot be read
+or parsed, an empty `Metadata` is returned.
+
+**Signature:**
+
+```java
+public static Metadata extractMetadataFromZip(byte[] content)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `content` | `byte[]` | Yes | The content to process |
+
+**Returns:** `Metadata`
+
+
+---
+
+#### dedupText()
+
+Deduplicate a list of text strings while preserving order.
+Adjacent duplicates and near-duplicates are removed.
+
+**Signature:**
+
+```java
+public static List<String> dedupText(List<String> texts)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `texts` | `List<String>` | Yes | The texts |
+
+**Returns:** `List<String>`
+
+
+---
+
+#### hexDigitToU8()
+
+Convert a hex digit character to its numeric value.
+
+Returns None if the character is not a valid hex digit.
+
+**Signature:**
+
+```java
+public static Optional<Byte> hexDigitToU8(byte c)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `c` | `byte` | Yes | The c |
+
+**Returns:** `Optional<Byte>`
+
+
+---
+
+#### parseHexByte()
+
+Parse a hex-encoded byte from two bytes.
+
+Returns the decoded byte if both bytes are valid hex digits.
+
+**Signature:**
+
+```java
+public static Optional<Byte> parseHexByte(byte h1, byte h2)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `h1` | `byte` | Yes | The h1 |
+| `h2` | `byte` | Yes | The h2 |
+
+**Returns:** `Optional<Byte>`
+
+
+---
+
+#### parseRtfControlWord()
+
+Parse an RTF control word and extract its value.
+
+Returns a tuple of (control_word, optional_numeric_value).
+
+**Signature:**
+
+```java
+public static StringOptionI32 parseRtfControlWord(Peekable chars)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `chars` | `Peekable` | Yes | The peekable |
+
+**Returns:** `StringOptionI32`
+
+
+---
+
+#### normalizeWhitespace()
+
+Normalize whitespace in a string.
+
+- Collapses multiple consecutive spaces/tabs into a single space
+- Preserves single newlines (paragraph breaks from \par)
+- Collapses multiple consecutive newlines into a double newline
+- Trims leading/trailing whitespace from each line
+- Trims leading/trailing blank lines
+
+**Signature:**
+
+```java
+public static String normalizeWhitespace(String s)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `s` | `String` | Yes | The s |
+
+**Returns:** `String`
+
+
+---
+
+#### extractPictImage()
+
+Extract image metadata and binary data from within a `\pict` group.
+
+Parses the image type (`\jpegblip`, `\pngblip`, etc.), dimensions, and
+collects the hex-encoded image data that follows the control words.
+Returns the parsed image and a metadata string for text representation.
+
+**Signature:**
+
+```java
+public static StringOptionRtfImage extractPictImage(Peekable chars)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `chars` | `Peekable` | Yes | The peekable |
+
+**Returns:** `StringOptionRtfImage`
+
+
+---
+
+#### parseRtfDatetime()
+
+Parse a `{\\creatim ...}` or `{\\revtim ...}` RTF info block into ISO 8601 format.
+
+**Signature:**
+
+```java
+public static Optional<String> parseRtfDatetime(String segment)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `segment` | `String` | Yes | The segment |
+
+**Returns:** `Optional<String>`
+
+
+---
+
+#### extractRtfMetadata()
+
+Extract metadata from the RTF `\\info` block and augment with computed statistics.
+
+**Signature:**
+
+```java
+public static AHashMap extractRtfMetadata(String rtfContent, String extractedText)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `rtfContent` | `String` | Yes | The rtf content |
+| `extractedText` | `String` | Yes | The extracted text |
+
+**Returns:** `AHashMap`
+
+
+---
+
+#### extractRtfFormatting()
+
+Extract formatting metadata from RTF content.
+
+This performs a lightweight pass over the RTF to extract:
+- Bold/italic/underline formatting state changes
+- Color table and color references
+- Header/footer text
+- Hyperlink field instructions
+
+**Signature:**
+
+```java
+public static RtfFormattingData extractRtfFormatting(String content)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `content` | `String` | Yes | The content to process |
+
+**Returns:** `RtfFormattingData`
+
+
+---
+
+#### spansToAnnotations()
+
+Convert RTF formatting spans into `TextAnnotation` vectors for a paragraph.
+
+Given the byte range of a paragraph within the full extracted text,
+produces annotations from the formatting spans that overlap.
+
+**Signature:**
+
+```java
+public static List<TextAnnotation> spansToAnnotations(long paraStart, long paraEnd, RtfFormattingData formatting)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `paraStart` | `long` | Yes | The para start |
+| `paraEnd` | `long` | Yes | The para end |
+| `formatting` | `RtfFormattingData` | Yes | The rtf formatting data |
+
+**Returns:** `List<TextAnnotation>`
+
+
+---
+
+#### extractTextFromRtf()
+
+Extract text and image metadata from RTF document.
+
+This function extracts plain text from an RTF document by:
+1. Tracking group nesting depth with a state stack
+2. Skipping known destination groups (fonttbl, stylesheet, info, etc.)
+3. Skipping `{\*\...}` ignorable destination groups
+4. Converting encoded characters to Unicode
+5. Extracting text while skipping formatting groups
+6. Detecting and extracting image metadata (\pict sections)
+7. Normalizing whitespace
+
+**Signature:**
+
+```java
+public static StringVecTableVecRtfImageVecParagraphMetaRtfFormattingData extractTextFromRtf(String content, boolean plain)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `content` | `String` | Yes | The content to process |
+| `plain` | `boolean` | Yes | The plain |
+
+**Returns:** `StringVecTableVecRtfImageVecParagraphMetaRtfFormattingData`
+
+
+---
+
+#### ensureInitialized()
+
+Ensure built-in extractors are registered.
+
+This function is called automatically on first extraction operation.
+It's safe to call multiple times - registration only happens once,
+unless the registry was cleared, in which case extractors are re-registered.
+
+**Signature:**
+
+```java
+public static void ensureInitialized() throws Error
+```
+
+**Returns:** `void`
+
+**Errors:** Throws `ErrorException`.
+
+
+---
+
+#### registerDefaultExtractors()
+
+Register all built-in extractors with the global registry.
+
+This function should be called once at application startup to register
+the default extractors (PlainText, Markdown, XML, etc.).
+
+**Note:** This is called automatically on first extraction operation.
+Explicit calling is optional.
+
+**Signature:**
+
+```java
+public static void registerDefaultExtractors() throws Error
+```
+
+**Returns:** `void`
+
+**Errors:** Throws `ErrorException`.
+
+
+---
+
+#### extractPanicMessage()
+
+Extracts a human-readable message from a panic payload.
+
+Attempts to downcast the panic payload to common types (String, &str)
+to extract a meaningful error message.
+
+Message is truncated to 4KB to prevent DoS attacks via extremely large panic messages.
+
+**Returns:**
+
+A string representation of the panic message (truncated if necessary)
+
+**Signature:**
+
+```java
+public static String extractPanicMessage(Any panicInfo)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `panicInfo` | `Any` | Yes | The panic payload from catch_unwind |
+
+**Returns:** `String`
+
+
+---
+
+#### registerExtractor()
+
+Register a document extractor with the global registry.
+
+The extractor will be registered for all MIME types it supports and will be
+available for document extraction. The extractor's `name()` method is used as
+the registration name.
+
+**Returns:**
+
+- `Ok(())` if registration succeeded
+- `Err(...)` if validation failed or initialization failed
+
+**Errors:**
+
+- `KreuzbergError.Validation` - Invalid extractor name (empty or contains whitespace)
+- Any error from the extractor's `initialize()` method
+
+**Signature:**
+
+```java
+public static void registerExtractor(DocumentExtractor extractor) throws Error
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `extractor` | `DocumentExtractor` | Yes | The extractor implementation wrapped in Arc |
+
+**Returns:** `void`
+
+**Errors:** Throws `ErrorException`.
+
+
+---
+
+#### unregisterExtractor()
+
+Unregister a document extractor by name.
+
+Removes the extractor from the global registry and calls its `shutdown()` method.
+
+**Returns:**
+
+- `Ok(())` if the extractor was unregistered or didn't exist
+- `Err(...)` if the shutdown method failed
+
+**Signature:**
+
+```java
+public static void unregisterExtractor(String name) throws Error
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `name` | `String` | Yes | Name of the extractor to unregister |
+
+**Returns:** `void`
+
+**Errors:** Throws `ErrorException`.
+
+
+---
+
+#### listExtractors()
+
+List all registered extractors.
+
+Returns the names of all extractors currently registered in the global registry.
+
+**Returns:**
+
+A vector of extractor names.
+
+**Signature:**
+
+```java
+public static List<String> listExtractors() throws Error
+```
+
+**Returns:** `List<String>`
+
+**Errors:** Throws `ErrorException`.
+
+
+---
+
+#### clearExtractors()
+
+Clear all extractors from the global registry.
+
+Removes all extractors and calls their `shutdown()` methods.
+
+**Returns:**
+
+- `Ok(())` if all extractors were cleared successfully
+- `Err(...)` if any shutdown method failed
+
+**Signature:**
+
+```java
+public static void clearExtractors() throws Error
+```
+
+**Returns:** `void`
+
+**Errors:** Throws `ErrorException`.
+
+
+---
+
+#### registerOcrBackend()
+
+Register an OCR backend with the global registry.
+
+The OCR backend will be registered with its name from the `name()` method
+and can be used for OCR processing via the extraction pipeline.
+
+**Returns:**
+
+- `Ok(())` if registration succeeded
+- `Err(...)` if validation failed or initialization failed
+
+**Errors:**
+
+- `KreuzbergError.Validation` - Invalid backend name (empty or contains whitespace)
+- Any error from the backend's `initialize()` method
+
+**Signature:**
+
+```java
+public static void registerOcrBackend(OcrBackend backend) throws Error
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `backend` | `OcrBackend` | Yes | The OCR backend implementation wrapped in Arc |
+
+**Returns:** `void`
+
+**Errors:** Throws `ErrorException`.
+
+
+---
+
+#### unregisterOcrBackend()
+
+Unregister an OCR backend by name.
+
+Removes the OCR backend from the global registry and calls its `shutdown()` method.
+
+**Returns:**
+
+- `Ok(())` if the backend was unregistered or didn't exist
+- `Err(...)` if the shutdown method failed
+
+**Signature:**
+
+```java
+public static void unregisterOcrBackend(String name) throws Error
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `name` | `String` | Yes | Name of the OCR backend to unregister |
+
+**Returns:** `void`
+
+**Errors:** Throws `ErrorException`.
+
+
+---
+
+#### listOcrBackends()
+
+List all registered OCR backends.
+
+Returns the names of all OCR backends currently registered in the global registry.
+
+**Returns:**
+
+A vector of OCR backend names.
+
+**Signature:**
+
+```java
+public static List<String> listOcrBackends() throws Error
+```
+
+**Returns:** `List<String>`
+
+**Errors:** Throws `ErrorException`.
+
+
+---
+
+#### clearOcrBackends()
+
+Clear all OCR backends from the global registry.
+
+Removes all OCR backends and calls their `shutdown()` methods.
+
+**Returns:**
+
+- `Ok(())` if all backends were cleared successfully
+- `Err(...)` if any shutdown method failed
+
+**Signature:**
+
+```java
+public static void clearOcrBackends() throws Error
+```
+
+**Returns:** `void`
+
+**Errors:** Throws `ErrorException`.
+
+
+---
+
+#### listPostProcessors()
+
+List all registered post-processor names.
+
+Returns a vector of all post-processor names currently registered in the
+global registry.
+
+**Returns:**
+
+- `Ok(Vec<String>)` - Vector of post-processor names
+- `Err(...)` if the registry lock is poisoned
+
+**Signature:**
+
+```java
+public static List<String> listPostProcessors() throws Error
+```
+
+**Returns:** `List<String>`
+
+**Errors:** Throws `ErrorException`.
+
+
+---
+
+#### getOcrBackendRegistry()
+
+Get the global OCR backend registry.
+
+**Signature:**
+
+```java
+public static RwLock getOcrBackendRegistry()
+```
+
+**Returns:** `RwLock`
+
+
+---
+
+#### getDocumentExtractorRegistry()
+
+Get the global document extractor registry.
+
+**Signature:**
+
+```java
+public static RwLock getDocumentExtractorRegistry()
+```
+
+**Returns:** `RwLock`
+
+
+---
+
+#### getPostProcessorRegistry()
+
+Get the global post-processor registry.
+
+**Signature:**
+
+```java
+public static RwLock getPostProcessorRegistry()
+```
+
+**Returns:** `RwLock`
+
+
+---
+
+#### getValidatorRegistry()
+
+Get the global validator registry.
+
+**Signature:**
+
+```java
+public static RwLock getValidatorRegistry()
+```
+
+**Returns:** `RwLock`
+
+
+---
+
+#### getRendererRegistry()
+
+Get the global renderer registry.
+
+**Signature:**
+
+```java
+public static RwLock getRendererRegistry()
+```
+
+**Returns:** `RwLock`
+
+
+---
+
+#### registerRenderer()
+
+Register a renderer with the global registry.
+
+**Returns:**
+
+- `Ok(())` if registration succeeded
+- `Err(...)` if validation failed
+
+**Signature:**
+
+```java
+public static void registerRenderer(Renderer renderer) throws Error
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `renderer` | `Renderer` | Yes | The renderer implementation wrapped in Arc |
+
+**Returns:** `void`
+
+**Errors:** Throws `ErrorException`.
+
+
+---
+
+#### unregisterRenderer()
+
+Unregister a renderer by name.
+
+Removes the renderer from the global registry.
+
+**Returns:**
+
+- `Ok(())` if the renderer was unregistered or didn't exist
+
+**Signature:**
+
+```java
+public static void unregisterRenderer(String name) throws Error
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `name` | `String` | Yes | Name of the renderer to unregister |
+
+**Returns:** `void`
+
+**Errors:** Throws `ErrorException`.
+
+
+---
+
+#### listRenderers()
+
+List all registered renderers.
+
+Returns the names of all renderers currently registered in the global registry.
+
+**Returns:**
+
+A vector of renderer names.
+
+**Signature:**
+
+```java
+public static List<String> listRenderers()
+```
+
+**Returns:** `List<String>`
+
+
+---
+
+#### clearRenderers()
+
+Clear all renderers from the global registry and re-register built-in defaults.
+
+**Returns:**
+
+- `Ok(())` if all renderers were cleared and defaults re-registered
+
+**Signature:**
+
+```java
+public static void clearRenderers() throws Error
+```
+
+**Returns:** `void`
+
+**Errors:** Throws `ErrorException`.
+
+
+---
+
+#### validatePluginsAtStartup()
+
+Validate plugin registries at startup and emit diagnostic logs.
+
+This function is designed to be called when the API server starts
+to help diagnose configuration issues early. It checks:
+
+- Whether OCR backends are registered (warns if none)
+- Whether document extractors are registered (warns if none)
+- Environment variables that might affect plugin initialization
+- File permission issues in containerized environments
+
+For Kubernetes deployments, this logs information that helps with
+troubleshooting in the container logs.
+
+**Returns:**
+
+- `Ok(PluginHealthStatus)` with diagnostic information
+- `Err(KreuzbergError)` if critical issues are detected (currently always succeeds)
+
+**Signature:**
+
+```java
+public static PluginHealthStatus validatePluginsAtStartup() throws Error
+```
+
+**Returns:** `PluginHealthStatus`
+
+**Errors:** Throws `ErrorException`.
+
+
+---
+
+#### registerValidator()
+
+Register a validator with the global registry.
+
+The validator will be registered with its default priority and will be called
+during extraction validation. The validator's `name()` method is used as the
+registration name.
+
+**Returns:**
+
+- `Ok(())` if registration succeeded
+- `Err(...)` if validation failed or initialization failed
+
+**Errors:**
+
+- `KreuzbergError.Validation` - Invalid validator name (empty or contains whitespace)
+- Any error from the validator's `initialize()` method
+
+**Signature:**
+
+```java
+public static void registerValidator(Validator validator) throws Error
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `validator` | `Validator` | Yes | The validator implementation wrapped in Arc |
+
+**Returns:** `void`
+
+**Errors:** Throws `ErrorException`.
+
+
+---
+
+#### unregisterValidator()
+
+Unregister a validator by name.
+
+Removes the validator from the global registry and calls its `shutdown()` method.
+
+**Returns:**
+
+- `Ok(())` if the validator was unregistered or didn't exist
+- `Err(...)` if the shutdown method failed
+
+**Signature:**
+
+```java
+public static void unregisterValidator(String name) throws Error
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `name` | `String` | Yes | Name of the validator to unregister |
+
+**Returns:** `void`
+
+**Errors:** Throws `ErrorException`.
+
+
+---
+
+#### listValidators()
+
+List all registered validators.
+
+Returns the names of all validators currently registered in the global registry.
+
+**Returns:**
+
+A vector of validator names.
+
+**Signature:**
+
+```java
+public static List<String> listValidators() throws Error
+```
+
+**Returns:** `List<String>`
+
+**Errors:** Throws `ErrorException`.
+
+
+---
+
+#### clearValidators()
+
+Clear all validators from the global registry.
+
+Removes all validators and calls their `shutdown()` methods.
+
+**Returns:**
+
+- `Ok(())` if all validators were cleared successfully
+- `Err(...)` if any shutdown method failed
+
+**Signature:**
+
+```java
+public static void clearValidators() throws Error
+```
+
+**Returns:** `void`
+
+**Errors:** Throws `ErrorException`.
+
+
+---
+
+#### renderDjot()
+
+Render an `InternalDocument` to Djot markup.
+
+**Signature:**
+
+```java
+public static String renderDjot(InternalDocument doc)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `doc` | `InternalDocument` | Yes | The internal document |
+
+**Returns:** `String`
+
+
+---
+
+#### renderHtml()
+
+Render an `InternalDocument` to HTML5.
+
+**Signature:**
+
+```java
+public static String renderHtml(InternalDocument doc)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `doc` | `InternalDocument` | Yes | The internal document |
+
+**Returns:** `String`
+
+
+---
+
+#### renderJson()
+
+Render an `InternalDocument` as a JSON tree string.
+
+Walks the flat element list and builds a heading-driven section tree.
+Returns a JSON string (always valid JSON).
+
+**Signature:**
+
+```java
+public static String renderJson(InternalDocument doc)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `doc` | `InternalDocument` | Yes | The internal document |
+
+**Returns:** `String`
+
+
+---
+
+#### renderMarkdown()
+
+Render an `InternalDocument` to GFM Markdown.
+
+**Signature:**
+
+```java
+public static String renderMarkdown(InternalDocument doc)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `doc` | `InternalDocument` | Yes | The internal document |
+
+**Returns:** `String`
+
+
+---
+
+#### renderPlain()
+
+Render an `InternalDocument` to plain text.
+
+**Signature:**
+
+```java
+public static String renderPlain(InternalDocument doc)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `doc` | `InternalDocument` | Yes | The internal document |
+
+**Returns:** `String`
+
+
+---
+
+#### sanitizeFilename()
+
+Sanitize a file path to return only the filename (no directory).
+
+Prevents PII from appearing in traces.
+
+**Signature:**
+
+```java
+public static String sanitizeFilename(String path)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `path` | `String` | Yes | Path to the file |
+
+**Returns:** `String`
+
+
+---
+
+#### getMetrics()
+
+Get the global extraction metrics, initialising on first call.
+
+Uses the global `opentelemetry.global.meter` to create instruments.
+
+**Signature:**
+
+```java
+public static ExtractionMetrics getMetrics()
+```
+
+**Returns:** `ExtractionMetrics`
+
+
+---
+
+#### recordErrorOnCurrentSpan()
+
+Record an error on the current span using semantic conventions.
+
+Sets `otel.status_code = "ERROR"`, `kreuzberg.error.type`, and `error.message`.
+
+**Signature:**
+
+```java
+public static void recordErrorOnCurrentSpan(KreuzbergError error)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `error` | `KreuzbergError` | Yes | The kreuzberg error |
+
+**Returns:** `void`
+
+
+---
+
+#### recordSuccessOnCurrentSpan()
+
+Record extraction success on the current span.
+
+**Signature:**
+
+```java
+public static void recordSuccessOnCurrentSpan()
+```
+
+**Returns:** `void`
+
+
+---
+
+#### sanitizePath()
+
+Sanitize a file path to return only the filename.
+
+Prevents PII (personally identifiable information) from appearing in
+traces by only recording filenames instead of full paths.
+
+**Signature:**
+
+```java
+public static String sanitizePath(String path)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `path` | `String` | Yes | Path to the file |
+
+**Returns:** `String`
+
+
+---
+
+#### extractorSpan()
+
+Create an extractor-level span with semantic convention fields.
+
+Returns a `tracing.Span` with all `kreuzberg.extractor.*` and
+`kreuzberg.document.*` fields pre-allocated (set to `Empty` for
+lazy recording).
+
+**Signature:**
+
+```java
+public static Span extractorSpan(String extractorName, String mimeType, long sizeBytes)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `extractorName` | `String` | Yes | The extractor name |
+| `mimeType` | `String` | Yes | The mime type |
+| `sizeBytes` | `long` | Yes | The size bytes |
+
+**Returns:** `Span`
+
+
+---
+
+#### pipelineStageSpan()
+
+Create a pipeline stage span.
+
+**Signature:**
+
+```java
+public static Span pipelineStageSpan(String stage)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `stage` | `String` | Yes | The stage |
+
+**Returns:** `Span`
+
+
+---
+
+#### pipelineProcessorSpan()
+
+Create a pipeline processor span.
+
+**Signature:**
+
+```java
+public static Span pipelineProcessorSpan(String stage, String processorName)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `stage` | `String` | Yes | The stage |
+| `processorName` | `String` | Yes | The processor name |
+
+**Returns:** `Span`
+
+
+---
+
+#### ocrSpan()
+
+Create an OCR operation span.
+
+**Signature:**
+
+```java
+public static Span ocrSpan(String backend, String language)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `backend` | `String` | Yes | The backend |
+| `language` | `String` | Yes | The language |
+
+**Returns:** `Span`
+
+
+---
+
+#### modelInferenceSpan()
+
+Create a model inference span.
+
+**Signature:**
+
+```java
+public static Span modelInferenceSpan(String modelName)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `modelName` | `String` | Yes | The model name |
+
+**Returns:** `Span`
+
+
+---
+
+#### fromUtf8()
+
+Validates and converts bytes to string using SIMD when available.
+
+This function attempts to use SIMD UTF-8 validation if the `simd-utf8` feature
+is enabled and the platform supports it. Otherwise, it falls back to the standard
+`std.str.from_utf8()` validation.
+
+**Returns:**
+
+`Ok(&str)` if the bytes are valid UTF-8, `Err(std.str.Utf8Error)` otherwise.
+
+**Safety:**
+
+This function is safe and does not use any unsafe code directly. The underlying
+SIMD validation (when enabled) is contained within the simdutf8 crate and is safe.
+
+**Signature:**
+
+```java
+public static String fromUtf8(byte[] bytes) throws Utf8Error
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `bytes` | `byte[]` | Yes | The byte slice to validate and convert |
+
+**Returns:** `String`
+
+**Errors:** Throws `Utf8ErrorException`.
+
+
+---
+
+#### stringFromUtf8()
+
+Validates and converts owned bytes to String using SIMD when available.
+
+This function converts bytes to an owned String, validating UTF-8 using SIMD
+when available. The caller's bytes are consumed to create the String.
+
+**Returns:**
+
+`Ok(String)` if the bytes are valid UTF-8, `Err(std.string.FromUtf8Error)` otherwise.
+
+# Performance
+
+When enabled, SIMD validation significantly reduces the time spent on validation,
+especially for large text documents.
+
+**Signature:**
+
+```java
+public static String stringFromUtf8(byte[] bytes) throws FromUtf8Error
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `bytes` | `byte[]` | Yes | The byte vector to validate and convert |
+
+**Returns:** `String`
+
+**Errors:** Throws `FromUtf8ErrorException`.
+
+
+---
+
+#### isValidUtf8()
+
+Validates bytes as UTF-8 without conversion to string slice.
+
+Returns `true` if the bytes represent valid UTF-8, `false` otherwise.
+This is useful when you only need to check validity without constructing a string.
+
+**Returns:**
+
+`true` if valid UTF-8, `false` otherwise.
+
+# Performance
+
+This function is optimized for early exit on invalid sequences.
+
+**Signature:**
+
+```java
+public static boolean isValidUtf8(byte[] bytes)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `bytes` | `byte[]` | Yes | The byte slice to validate |
+
+**Returns:** `boolean`
+
+
+---
+
+#### calculateQualityScore()
+
+**Signature:**
+
+```java
+public static double calculateQualityScore(String text, AHashMap metadata)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `text` | `String` | Yes | The text |
+| `metadata` | `Optional<AHashMap>` | No | The a hash map |
+
+**Returns:** `double`
+
+
+---
+
+#### cleanExtractedText()
+
+**Signature:**
+
+```java
+public static String cleanExtractedText(String text)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `text` | `String` | Yes | The text |
+
+**Returns:** `String`
+
+
+---
+
+#### normalizeSpaces()
+
+**Signature:**
+
+```java
+public static String normalizeSpaces(String text)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `text` | `String` | Yes | The text |
+
+**Returns:** `String`
+
+
+---
+
+#### reduceTokens()
+
+Reduces token count in text while preserving meaning and structure.
+
+This function removes stopwords, redundancy, and applies compression techniques
+based on the specified reduction level. Supports 64 languages with automatic
+stopword removal and optional semantic clustering.
+
+**Returns:**
+
+Returns the reduced text with preserved structure (markdown, code blocks).
+
+**Errors:**
+
+Returns an error if the language hint is invalid or stopwords cannot be loaded.
+
+**Signature:**
+
+```java
+public static String reduceTokens(String text, TokenReductionConfig config, String languageHint) throws Error
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `text` | `String` | Yes | The input text to reduce |
+| `config` | `TokenReductionConfig` | Yes | Configuration specifying reduction level and options |
+| `languageHint` | `Optional<String>` | No | Optional ISO 639-3 language code (e.g., "eng", "spa") |
+
+**Returns:** `String`
+
+**Errors:** Throws `ErrorException`.
+
+
+---
+
+#### batchReduceTokens()
+
+Reduces token count for multiple texts efficiently using parallel processing.
+
+This function processes multiple texts in parallel using Rayon, providing
+significant performance improvements for batch operations. All texts use the
+same configuration and language hint for consistency.
+
+**Returns:**
+
+Returns a vector of reduced texts in the same order as the input.
+
+**Errors:**
+
+Returns an error if the language hint is invalid or stopwords cannot be loaded.
+
+**Signature:**
+
+```java
+public static List<String> batchReduceTokens(List<String> texts, TokenReductionConfig config, String languageHint) throws Error
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `texts` | `List<String>` | Yes | Slice of text references to reduce |
+| `config` | `TokenReductionConfig` | Yes | Configuration specifying reduction level and options |
+| `languageHint` | `Optional<String>` | No | Optional ISO 639-3 language code (e.g., "eng", "spa") |
+
+**Returns:** `List<String>`
+
+**Errors:** Throws `ErrorException`.
+
+
+---
+
+#### getReductionStatistics()
+
+Calculates detailed statistics comparing original and reduced text.
+
+Provides comprehensive metrics including reduction percentages and absolute
+counts for both characters and tokens. Useful for analyzing the effectiveness
+of token reduction and monitoring compression ratios.
+
+**Returns:**
+
+Returns a tuple with the following statistics (in order):
+1. `char_reduction` (f64) - Character reduction ratio (0.0 to 1.0)
+2. `token_reduction` (f64) - Token reduction ratio (0.0 to 1.0)
+3. `original_chars` (usize) - Original character count
+4. `reduced_chars` (usize) - Reduced character count
+5. `original_tokens` (usize) - Original token count (whitespace-delimited)
+6. `reduced_tokens` (usize) - Reduced token count (whitespace-delimited)
+
+**Signature:**
+
+```java
+public static F64F64UsizeUsizeUsizeUsize getReductionStatistics(String original, String reduced)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `original` | `String` | Yes | The original text before reduction |
+| `reduced` | `String` | Yes | The reduced text after applying token reduction |
+
+**Returns:** `F64F64UsizeUsizeUsizeUsize`
+
+
+---
+
+#### bold()
+
+Create a bold annotation for the given byte range.
+
+**Signature:**
+
+```java
+public static TextAnnotation bold(int start, int end)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `start` | `int` | Yes | The start |
+| `end` | `int` | Yes | The end |
+
+**Returns:** `TextAnnotation`
+
+
+---
+
+#### italic()
+
+Create an italic annotation for the given byte range.
+
+**Signature:**
+
+```java
+public static TextAnnotation italic(int start, int end)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `start` | `int` | Yes | The start |
+| `end` | `int` | Yes | The end |
+
+**Returns:** `TextAnnotation`
+
+
+---
+
+#### underline()
+
+Create an underline annotation for the given byte range.
+
+**Signature:**
+
+```java
+public static TextAnnotation underline(int start, int end)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `start` | `int` | Yes | The start |
+| `end` | `int` | Yes | The end |
+
+**Returns:** `TextAnnotation`
+
+
+---
+
+#### link()
+
+Create a link annotation for the given byte range.
+
+**Signature:**
+
+```java
+public static TextAnnotation link(int start, int end, String url, String title)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `start` | `int` | Yes | The start |
+| `end` | `int` | Yes | The end |
+| `url` | `String` | Yes | The URL to fetch |
+| `title` | `Optional<String>` | No | The title |
+
+**Returns:** `TextAnnotation`
+
+
+---
+
+#### code()
+
+Create a code (inline) annotation for the given byte range.
+
+**Signature:**
+
+```java
+public static TextAnnotation code(int start, int end)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `start` | `int` | Yes | The start |
+| `end` | `int` | Yes | The end |
+
+**Returns:** `TextAnnotation`
+
+
+---
+
+#### strikethrough()
+
+Create a strikethrough annotation for the given byte range.
+
+**Signature:**
+
+```java
+public static TextAnnotation strikethrough(int start, int end)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `start` | `int` | Yes | The start |
+| `end` | `int` | Yes | The end |
+
+**Returns:** `TextAnnotation`
+
+
+---
+
+#### subscript()
+
+Create a subscript annotation for the given byte range.
+
+**Signature:**
+
+```java
+public static TextAnnotation subscript(int start, int end)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `start` | `int` | Yes | The start |
+| `end` | `int` | Yes | The end |
+
+**Returns:** `TextAnnotation`
+
+
+---
+
+#### superscript()
+
+Create a superscript annotation for the given byte range.
+
+**Signature:**
+
+```java
+public static TextAnnotation superscript(int start, int end)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `start` | `int` | Yes | The start |
+| `end` | `int` | Yes | The end |
+
+**Returns:** `TextAnnotation`
+
+
+---
+
+#### fontSize()
+
+Create a font size annotation for the given byte range.
+
+**Signature:**
+
+```java
+public static TextAnnotation fontSize(int start, int end, String value)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `start` | `int` | Yes | The start |
+| `end` | `int` | Yes | The end |
+| `value` | `String` | Yes | The value |
+
+**Returns:** `TextAnnotation`
+
+
+---
+
+#### color()
+
+Create a color annotation for the given byte range.
+
+**Signature:**
+
+```java
+public static TextAnnotation color(int start, int end, String value)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `start` | `int` | Yes | The start |
+| `end` | `int` | Yes | The end |
+| `value` | `String` | Yes | The value |
+
+**Returns:** `TextAnnotation`
+
+
+---
+
+#### highlight()
+
+Create a highlight annotation for the given byte range.
+
+**Signature:**
+
+```java
+public static TextAnnotation highlight(int start, int end)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `start` | `int` | Yes | The start |
+| `end` | `int` | Yes | The end |
+
+**Returns:** `TextAnnotation`
+
+
+---
+
+#### classifyUri()
+
+Classify a URL string into the appropriate `UriKind`.
+
+- `mailto:` → `Email`
+- `#` prefix → `Anchor`
+- everything else → `Hyperlink`
+
+**Signature:**
+
+```java
+public static UriKind classifyUri(String url)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `url` | `String` | Yes | The URL to fetch |
+
+**Returns:** `UriKind`
+
+
+---
+
+#### safeDecode()
+
+Decode raw bytes into UTF-8, using heuristics and fallback encodings when necessary.
+
+The function prefers an explicit `encoding`, falls back to the cached guess, probes
+an encoding detector, and finally tries a small curated list before returning a
+mojibake-cleaned string.
+
+**Signature:**
+
+```java
+public static String safeDecode(byte[] byteData, String encoding)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `byteData` | `byte[]` | Yes | The byte data |
+| `encoding` | `Optional<String>` | No | The encoding |
+
+**Returns:** `String`
+
+
+---
+
+#### calculateTextConfidence()
+
+Estimate how trustworthy a decoded string is on a 0.0–1.0 scale.
+
+Scores close to 1.0 indicate mostly printable characters, whereas lower scores
+point to mojibake, control characters, or suspicious character mixes.
+
+**Signature:**
+
+```java
+public static double calculateTextConfidence(String text)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `text` | `String` | Yes | The text |
+
+**Returns:** `double`
+
+
+---
+
+#### fixMojibake()
+
+Strip control characters and replacement glyphs that typically arise from mojibake.
+
+**Signature:**
+
+```java
+public static Str fixMojibake(String text)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `text` | `String` | Yes | The text |
+
+**Returns:** `Str`
+
+
+---
+
+#### snakeToCamel()
+
+Recursively convert snake_case keys in a JSON Value to camelCase.
+
+This is used by language bindings (Node.js, Go, Java, C#, etc.) to provide
+a consistent camelCase API for consumers even though the Rust core uses snake_case.
+
+**Signature:**
+
+```java
+public static Value snakeToCamel(Value val)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `val` | `Value` | Yes | The value |
+
+**Returns:** `Value`
+
+
+---
+
+#### camelToSnake()
+
+Recursively convert camelCase keys in a JSON Value to snake_case.
+
+This is the inverse of `snake_to_camel`. Used by WASM bindings to accept
+camelCase config from JavaScript while the Rust core expects snake_case.
+
+**Signature:**
+
+```java
+public static Value camelToSnake(Value val)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `val` | `Value` | Yes | The value |
+
+**Returns:** `Value`
+
+
+---
+
+#### isMarkdownHeader()
+
+Check whether a line is a markdown ATX header (`# ...` through `###### ...`).
+
+**Signature:**
+
+```java
+public static boolean isMarkdownHeader(String line)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `line` | `String` | Yes | The line |
+
+**Returns:** `boolean`
+
+
+---
+
+#### createStringBufferPool()
+
+Create a pre-configured string buffer pool for batch processing.
+
+**Returns:**
+
+A pool configured for text accumulation with reasonable defaults.
+
+**Signature:**
+
+```java
+public static StringBufferPool createStringBufferPool(long poolSize, long bufferCapacity)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `poolSize` | `long` | Yes | Maximum number of buffers to keep in the pool |
+| `bufferCapacity` | `long` | Yes | Initial capacity for each buffer in bytes |
+
+**Returns:** `StringBufferPool`
+
+
+---
+
+#### createByteBufferPool()
+
+Create a pre-configured byte buffer pool for batch processing.
+
+**Returns:**
+
+A pool configured for binary data handling with reasonable defaults.
+
+**Signature:**
+
+```java
+public static ByteBufferPool createByteBufferPool(long poolSize, long bufferCapacity)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `poolSize` | `long` | Yes | Maximum number of buffers to keep in the pool |
+| `bufferCapacity` | `long` | Yes | Initial capacity for each buffer in bytes |
+
+**Returns:** `ByteBufferPool`
+
+
+---
+
+#### estimatePoolSize()
+
+Estimate optimal pool sizing based on file size and document type.
+
+This function uses the file size and MIME type to estimate how many
+buffers and what capacity they should have. The estimates are conservative
+to avoid starving large document processing.
+
+**Returns:**
+
+A `PoolSizeHint` with recommended pool configuration
+
+**Signature:**
+
+```java
+public static PoolSizeHint estimatePoolSize(long fileSize, String mimeType)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `fileSize` | `long` | Yes | Size of the file in bytes |
+| `mimeType` | `String` | Yes | MIME type of the document (e.g., "application/pdf") |
+
+**Returns:** `PoolSizeHint`
+
+
+---
+
+#### acquireStringBuffer()
+
+Acquire a string buffer from the global pool.
+
+The returned buffer is automatically returned to the pool when dropped.
+
+**Signature:**
+
+```java
+public static PooledString acquireStringBuffer()
+```
+
+**Returns:** `PooledString`
+
+
+---
+
+#### internLanguageCode()
+
+Get or intern a language code string.
+
+Returns an `InternedString` that is guaranteed to be deduplicated with any other
+intern call for the same language code.
+
+**Returns:**
+
+An `InternedString` pointing to the deduplicated string
+
+**Signature:**
+
+```java
+public static InternedString internLanguageCode(String langCode)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `langCode` | `String` | Yes | The language code to intern (e.g., "en", "es", "fr") |
+
+**Returns:** `InternedString`
+
+
+---
+
+#### internMimeType()
+
+Get or intern a MIME type string.
+
+Returns an `InternedString` that is guaranteed to be deduplicated with any other
+intern call for the same MIME type. This reduces memory usage and allows
+fast pointer-based comparisons.
+
+**Returns:**
+
+An `InternedString` pointing to the deduplicated string
+
+**Signature:**
+
+```java
+public static InternedString internMimeType(String mimeType)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `mimeType` | `String` | Yes | The MIME type string to intern |
+
+**Returns:** `InternedString`
+
+
+---
+
+#### xmlTagName()
+
+Converts XML tag name bytes to a string, avoiding allocation when possible.
+
+**Signature:**
+
+```java
+public static Str xmlTagName(byte[] name)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `name` | `byte[]` | Yes | The name |
+
+**Returns:** `Str`
+
+
+---
+
+#### escapeHtmlEntities()
+
+Escape `&`, `<`, and `>` in text destined for markdown/HTML output.
+
+Underscores are intentionally **not** escaped. In extracted PDF text they are
+literal content (e.g. identifiers like `CTC_ARP_01`), not markdown italic
+delimiters.
+
+Uses a single-pass scan: if no special characters are found, returns a
+borrowed `Cow` with no allocation.
+
+**Signature:**
+
+```java
+public static Str escapeHtmlEntities(String text)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `text` | `String` | Yes | The text |
+
+**Returns:** `Str`
+
+
+---
+
+#### detectColumns()
+
+Detect column positions from word x-coordinates.
+
+Groups words by approximate x-position (within `column_threshold` pixels)
+and returns the median x-position for each detected column, sorted left to right.
+
+**Signature:**
+
+```java
+public static List<Integer> detectColumns(List<HocrWord> words, int columnThreshold)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `words` | `List<HocrWord>` | Yes | The words |
+| `columnThreshold` | `int` | Yes | The column threshold |
+
+**Returns:** `List<Integer>`
+
+
+---
+
+#### detectRows()
+
+Detect row positions from word y-coordinates.
+
+Groups words by their vertical center position and returns the median
+y-position for each detected row. The `row_threshold_ratio` is multiplied
+by the median word height to determine the grouping threshold.
+
+**Signature:**
+
+```java
+public static List<Integer> detectRows(List<HocrWord> words, double rowThresholdRatio)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `words` | `List<HocrWord>` | Yes | The words |
+| `rowThresholdRatio` | `double` | Yes | The row threshold ratio |
+
+**Returns:** `List<Integer>`
+
+
+---
+
+#### reconstructTable()
+
+Reconstruct a table grid from words with bounding box positions.
+
+Takes detected words and reconstructs a 2D table by:
+1. Detecting column positions (grouping by x-coordinate within `column_threshold`)
+2. Detecting row positions (grouping by y-center within `row_threshold_ratio` * median height)
+3. Assigning words to cells based on closest row/column
+4. Combining words within the same cell
+
+Returns a `Vec<Vec<String>>` where each inner `Vec` is a row of cell texts.
+
+**Signature:**
+
+```java
+public static List<List<String>> reconstructTable(List<HocrWord> words, int columnThreshold, double rowThresholdRatio)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `words` | `List<HocrWord>` | Yes | The words |
+| `columnThreshold` | `int` | Yes | The column threshold |
+| `rowThresholdRatio` | `double` | Yes | The row threshold ratio |
+
+**Returns:** `List<List<String>>`
+
+
+---
+
+#### tableToMarkdown()
+
+Convert a table grid to markdown format.
+
+The first row is treated as the header row, with a separator line added after it.
+Pipe characters in cell content are escaped.
+
+**Signature:**
+
+```java
+public static String tableToMarkdown(List<List<String>> table)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `table` | `List<List<String>>` | Yes | The table |
+
+**Returns:** `String`
+
+
+---
+
+#### loadServerConfig()
+
+Load ServerConfig with proper precedence order.
+
+This function implements the configuration hierarchy:
+1. File (if provided)
+2. Environment variables (via apply_env_overrides)
+3. Defaults
+
+The config file can be in flat format (server settings at root) or nested format
+(server settings under [server] section alongside other configs like [ocr]).
+
+**Returns:**
+
+A configured ServerConfig with proper precedence applied.
+
+**Errors:**
+
+Returns an error if:
+- The config file path is provided but cannot be read
+- The config file contains invalid server configuration
+- Environment variable overrides contain invalid values
+
+**Signature:**
+
+```java
+public static ServerConfig loadServerConfig(String configPath) throws Error
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `configPath` | `Optional<String>` | No | Optional path to a ServerConfig file (TOML, YAML, or JSON) |
+
+**Returns:** `ServerConfig`
+
+**Errors:** Throws `ErrorException`.
+
+
+---
+
+#### createRouter()
+
+Create the API router with all routes configured.
+
+This is public to allow users to embed the router in their own applications.
+
+**Signature:**
+
+```java
+public static Router createRouter(ExtractionConfig config)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `config` | `ExtractionConfig` | Yes | Default extraction configuration. Per-request configs override these defaults. |
+
+**Returns:** `Router`
+
+
+---
+
+#### createRouterWithLimits()
+
+Create the API router with custom size limits.
+
+This allows fine-grained control over request body and multipart field size limits.
+
+**Signature:**
+
+```java
+public static Router createRouterWithLimits(ExtractionConfig config, ApiSizeLimits limits)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `config` | `ExtractionConfig` | Yes | Default extraction configuration. Per-request configs override these defaults. |
+| `limits` | `ApiSizeLimits` | Yes | Size limits for request bodies and multipart uploads. |
+
+**Returns:** `Router`
+
+
+---
+
+#### createRouterWithLimitsAndServerConfig()
+
+Create the API router with custom size limits and server configuration.
+
+This function provides full control over request limits, CORS, and server settings via ServerConfig.
+
+**Signature:**
+
+```java
+public static Router createRouterWithLimitsAndServerConfig(ExtractionConfig config, ApiSizeLimits limits, ServerConfig serverConfig)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `config` | `ExtractionConfig` | Yes | Default extraction configuration. Per-request configs override these defaults. |
+| `limits` | `ApiSizeLimits` | Yes | Size limits for request bodies and multipart uploads. |
+| `serverConfig` | `ServerConfig` | Yes | Server configuration including host, port, and CORS settings. |
+
+**Returns:** `Router`
+
+
+---
+
+#### serve()
+
+Start the API server with config file discovery.
+
+Searches for kreuzberg.toml/yaml/json in current and parent directories.
+If no config file is found, uses default configuration.
+
+# Environment Variables
+
+```bash
+# Python/Docker usage
+export KREUZBERG_HOST=0.0.0.0
+export KREUZBERG_PORT=8000
+
+# CORS configuration (IMPORTANT for production security)
+# Default: allows all origins (permits CSRF attacks)
+# Production: set to comma-separated list of allowed origins
+export KREUZBERG_CORS_ORIGINS="<https://app.example.com,https://api.example.com">
+
+# Upload size limits (default: 100 MB)
+# Modern approach (in bytes):
+export KREUZBERG_MAX_REQUEST_BODY_BYTES=104857600       # 100 MB
+export KREUZBERG_MAX_MULTIPART_FIELD_BYTES=104857600    # 100 MB per file
+
+python -m kreuzberg.api
+```
+
+**Signature:**
+
+```java
+public static void serve(Str host, short port) throws Error
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `host` | `Str` | Yes | IP address to bind to (e.g., "127.0.0.1" or "0.0.0.0") |
+| `port` | `short` | Yes | Port number to bind to (e.g., 8000) |
+
+**Returns:** `void`
+
+**Errors:** Throws `ErrorException`.
+
+
+---
+
+#### serveWithConfig()
+
+Start the API server with explicit config.
+
+Uses default size limits (100 MB). For custom limits, use `serve_with_config_and_limits`.
+
+**Signature:**
+
+```java
+public static void serveWithConfig(Str host, short port, ExtractionConfig config) throws Error
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `host` | `Str` | Yes | IP address to bind to (e.g., "127.0.0.1" or "0.0.0.0") |
+| `port` | `short` | Yes | Port number to bind to (e.g., 8000) |
+| `config` | `ExtractionConfig` | Yes | Default extraction configuration for all requests |
+
+**Returns:** `void`
+
+**Errors:** Throws `ErrorException`.
+
+
+---
+
+#### serveWithConfigAndLimits()
+
+Start the API server with explicit config and size limits.
+
+**Signature:**
+
+```java
+public static void serveWithConfigAndLimits(Str host, short port, ExtractionConfig config, ApiSizeLimits limits) throws Error
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `host` | `Str` | Yes | IP address to bind to (e.g., "127.0.0.1" or "0.0.0.0") |
+| `port` | `short` | Yes | Port number to bind to (e.g., 8000) |
+| `config` | `ExtractionConfig` | Yes | Default extraction configuration for all requests |
+| `limits` | `ApiSizeLimits` | Yes | Size limits for request bodies and multipart uploads |
+
+**Returns:** `void`
+
+**Errors:** Throws `ErrorException`.
+
+
+---
+
+#### serveWithServerConfig()
+
+Start the API server with explicit extraction config and server config.
+
+This function accepts a fully-configured ServerConfig, including CORS origins,
+size limits, host, and port. It respects all ServerConfig fields without
+re-parsing environment variables, making it ideal for CLI usage where
+configuration precedence has already been applied.
+
+**Signature:**
+
+```java
+public static void serveWithServerConfig(ExtractionConfig extractionConfig, ServerConfig serverConfig) throws Error
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `extractionConfig` | `ExtractionConfig` | Yes | Default extraction configuration for all requests |
+| `serverConfig` | `ServerConfig` | Yes | Server configuration including host, port, CORS, and size limits |
+
+**Returns:** `void`
+
+**Errors:** Throws `ErrorException`.
+
+
+---
+
+#### serveDefault()
+
+Start the API server with default host and port.
+
+Defaults: host = "127.0.0.1", port = 8000
+
+Uses config file discovery (searches current/parent directories for kreuzberg.toml/yaml/json).
+Validates plugins at startup to help diagnose configuration issues.
+
+**Signature:**
+
+```java
+public static void serveDefault() throws Error
+```
+
+**Returns:** `void`
+
+**Errors:** Throws `ErrorException`.
+
+
+---
+
+#### mapKreuzbergErrorToMcp()
+
+Map Kreuzberg errors to MCP error responses with appropriate error codes.
+
+This function ensures different error types are properly differentiated in MCP responses:
+- `Validation` errors → `INVALID_PARAMS` (-32602)
+- `UnsupportedFormat` errors → `INVALID_PARAMS` (-32602)
+- `Parsing` errors → `PARSE_ERROR` (-32700)
+- `Io` errors → `INTERNAL_ERROR` (-32603) with context preserved
+- `Cancelled` errors → `REQUEST_CANCELLED` (-32800)
+- All other errors → `INTERNAL_ERROR` (-32603)
+
+The error message and source chain are preserved to aid debugging.
+
+**Signature:**
+
+```java
+public static McpError mapKreuzbergErrorToMcp(KreuzbergError error)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `error` | `KreuzbergError` | Yes | The kreuzberg error |
+
+**Returns:** `McpError`
+
+
+---
+
+#### startMcpServer()
+
+Start the Kreuzberg MCP server.
+
+This function initializes and runs the MCP server using stdio transport.
+It will block until the server is shut down.
+
+**Errors:**
+
+Returns an error if the server fails to start or encounters a fatal error.
+
+**Signature:**
+
+```java
+public static void startMcpServer() throws ErrorSendSync
+```
+
+**Returns:** `void`
+
+**Errors:** Throws `ErrorSendSyncException`.
+
+
+---
+
+#### startMcpServerWithConfig()
+
+Start MCP server with custom extraction config.
+
+This variant allows specifying a custom extraction configuration
+(e.g., loaded from a file) instead of using defaults.
+
+**Signature:**
+
+```java
+public static void startMcpServerWithConfig(ExtractionConfig config) throws ErrorSendSync
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `config` | `ExtractionConfig` | Yes | The configuration options |
+
+**Returns:** `void`
+
+**Errors:** Throws `ErrorSendSyncException`.
+
+
+---
+
+#### validatePageBoundaries()
+
+Validates the consistency and correctness of page boundaries.
+
+# Validation Rules
+
+1. Boundaries must be sorted by byte_start (monotonically increasing)
+2. Boundaries must not overlap (byte_end[i] <= byte_start[i+1])
+3. Each boundary must have byte_start < byte_end
+
+**Returns:**
+
+Returns `Ok(())` if all boundaries are valid.
+Returns `KreuzbergError.Validation` if any boundary is invalid.
+
+**Signature:**
+
+```java
+public static void validatePageBoundaries(List<PageBoundary> boundaries) throws Error
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `boundaries` | `List<PageBoundary>` | Yes | Page boundary markers to validate |
+
+**Returns:** `void`
+
+**Errors:** Throws `ErrorException`.
+
+
+---
+
+#### calculatePageRange()
+
+Calculate which pages a byte range spans.
+
+**Returns:**
+
+A tuple of (first_page, last_page) where page numbers are 1-indexed.
+Returns (None, None) if boundaries are empty or chunk doesn't overlap any page.
+
+**Errors:**
+
+Returns `KreuzbergError.Validation` if boundaries are invalid.
+
+**Signature:**
+
+```java
+public static OptionUsizeOptionUsize calculatePageRange(long byteStart, long byteEnd, List<PageBoundary> boundaries) throws Error
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `byteStart` | `long` | Yes | Starting byte offset of the chunk |
+| `byteEnd` | `long` | Yes | Ending byte offset of the chunk |
+| `boundaries` | `List<PageBoundary>` | Yes | Page boundary markers from the document |
+
+**Returns:** `OptionUsizeOptionUsize`
+
+**Errors:** Throws `ErrorException`.
+
+
+---
+
+#### detectPlainTextBoundaries()
+
+Detect structural boundaries in plain text.
+
+Iterates lines and checks each against heuristics for ALL-CAPS headers,
+numbered sections, and title lines. Returns boundaries sorted by byte offset.
+
+**Signature:**
+
+```java
+public static List<DetectedBoundary> detectPlainTextBoundaries(String text)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `text` | `String` | Yes | The text |
+
+**Returns:** `List<DetectedBoundary>`
+
+
+---
+
+#### classifyChunk()
+
+Classify a single chunk based on its content and optional heading context.
+
+Rules are evaluated in priority order. The first matching rule determines
+the returned `ChunkType`. When no rule matches, `ChunkType.Unknown`
+is returned.
+
+  (only available when using `ChunkerType.Markdown`).
+
+**Signature:**
+
+```java
+public static ChunkType classifyChunk(String content, HeadingContext headingContext)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `content` | `String` | Yes | The text content of the chunk (may be trimmed or raw). |
+| `headingContext` | `Optional<HeadingContext>` | No | Optional heading hierarchy this chunk falls under |
+
+**Returns:** `ChunkType`
+
+
+---
+
+#### chunkText()
+
+Split text into chunks with optional page boundary tracking.
+
+This is the primary API function for chunking text. It supports both plain text
+and Markdown with configurable chunk size, overlap, and page boundary mapping.
+
+**Returns:**
+
+A ChunkingResult containing all chunks and their metadata.
+
+**Signature:**
+
+```java
+public static ChunkingResult chunkText(String text, ChunkingConfig config, List<PageBoundary> pageBoundaries) throws Error
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `text` | `String` | Yes | The text to split into chunks |
+| `config` | `ChunkingConfig` | Yes | Chunking configuration (max size, overlap, type) |
+| `pageBoundaries` | `Optional<List<PageBoundary>>` | No | Optional page boundary markers for mapping chunks to pages |
+
+**Returns:** `ChunkingResult`
+
+**Errors:** Throws `ErrorException`.
+
+
+---
+
+#### chunkTextWithHeadingSource()
+
+Chunk text with an optional separate markdown source for heading context resolution.
+
+When `heading_source` is provided, it is used instead of `text` for building the
+heading map. This is needed when `text` is plain text (no markdown headings) but
+the original document had headings that were stripped during rendering.
+
+**Signature:**
+
+```java
+public static ChunkingResult chunkTextWithHeadingSource(String text, ChunkingConfig config, List<PageBoundary> pageBoundaries, String headingSource) throws Error
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `text` | `String` | Yes | The text |
+| `config` | `ChunkingConfig` | Yes | The configuration options |
+| `pageBoundaries` | `Optional<List<PageBoundary>>` | No | The page boundaries |
+| `headingSource` | `Optional<String>` | No | The heading source |
+
+**Returns:** `ChunkingResult`
+
+**Errors:** Throws `ErrorException`.
+
+
+---
+
+#### chunkTextWithType()
+
+Chunk text with explicit type specification.
+
+This is a convenience function that constructs a ChunkingConfig from individual
+parameters and calls `chunk_text`.
+
+**Returns:**
+
+A ChunkingResult containing all chunks and their metadata.
+
+**Signature:**
+
+```java
+public static ChunkingResult chunkTextWithType(String text, long maxCharacters, long overlap, boolean trim, ChunkerType chunkerType) throws Error
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `text` | `String` | Yes | The text to split into chunks |
+| `maxCharacters` | `long` | Yes | Maximum characters per chunk |
+| `overlap` | `long` | Yes | Character overlap between consecutive chunks |
+| `trim` | `boolean` | Yes | Whether to trim whitespace from boundaries |
+| `chunkerType` | `ChunkerType` | Yes | Type of chunker to use (Text or Markdown) |
+
+**Returns:** `ChunkingResult`
+
+**Errors:** Throws `ErrorException`.
+
+
+---
+
+#### chunkTextsBatch()
+
+Batch process multiple texts with the same configuration.
+
+This convenience function applies the same chunking configuration to multiple
+texts in sequence.
+
+**Returns:**
+
+A vector of ChunkingResult objects, one per input text.
+
+**Errors:**
+
+Returns an error if chunking any individual text fails.
+
+**Signature:**
+
+```java
+public static List<ChunkingResult> chunkTextsBatch(List<String> texts, ChunkingConfig config) throws Error
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `texts` | `List<String>` | Yes | Slice of text strings to chunk |
+| `config` | `ChunkingConfig` | Yes | Chunking configuration to apply to all texts |
+
+**Returns:** `List<ChunkingResult>`
+
+**Errors:** Throws `ErrorException`.
+
+
+---
+
+#### mergeSegments()
+
+Merge segments into chunks guided by topic boundaries.
+
+  starts a new topic group.
+* `max_characters` – maximum characters per output chunk.
+* `overlap` – number of characters from the tail of the previous group to
+  prepend to the next group's first chunk.
+
+# Panics (debug)
+
+Debug-asserts that `segments.len() == boundaries.len()`.
+
+**Signature:**
+
+```java
+public static List<MergedChunk> mergeSegments(String sourceText, List<Segment> segments, List<Boolean> boundaries, long maxCharacters, long overlap)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `sourceText` | `String` | Yes | The source text |
+| `segments` | `List<Segment>` | Yes | The segments |
+| `boundaries` | `List<Boolean>` | Yes | The boundaries |
+| `maxCharacters` | `long` | Yes | The max characters |
+| `overlap` | `long` | Yes | The overlap |
+
+**Returns:** `List<MergedChunk>`
+
+
+---
+
+#### cosineSimilarity()
+
+Compute cosine similarity between two vectors.
+
+Returns a value in `[-1.0, 1.0]`. If either vector has near-zero magnitude
+the function returns `0.0` rather than producing `NaN`.
+
+**Signature:**
+
+```java
+public static float cosineSimilarity(List<Float> a, List<Float> b)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `a` | `List<Float>` | Yes | The a |
+| `b` | `List<Float>` | Yes | The b |
+
+**Returns:** `float`
+
+
+---
+
+#### detectTopicBoundaries()
+
+Detect topic boundaries across a sequence of text segments.
+
+Embeds all segments in a single batch, then marks a boundary wherever the
+cosine similarity between consecutive embeddings drops below `threshold`.
+Pre-existing forced boundaries (e.g. from structural cues) are preserved.
+
+  decided and should not be overridden
+* `embedding_config` — model and batch-size configuration forwarded to
+  `crate.embeddings.embed_texts`
+* `threshold` — similarity below this value triggers a new boundary
+
+**Returns:**
+
+A `Vec<bool>` of the same length as `segment_texts` where `true` marks the
+start of a new topic group.
+
+**Signature:**
+
+```java
+public static List<Boolean> detectTopicBoundaries(List<String> segmentTexts, List<Boolean> forcedBoundaries, EmbeddingConfig embeddingConfig, float threshold) throws Error
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `segmentTexts` | `List<String>` | Yes | The segment texts |
+| `forcedBoundaries` | `List<Boolean>` | Yes | The forced boundaries |
+| `embeddingConfig` | `EmbeddingConfig` | Yes | The embedding config |
+| `threshold` | `float` | Yes | The threshold |
+
+**Returns:** `List<Boolean>`
+
+**Errors:** Throws `ErrorException`.
+
+
+---
+
+#### chunkSemantic()
+
+Split text into semantically coherent chunks.
+
+Splits text into fine-grained segments, detects structural (and optionally
+embedding-based) topic boundaries, then merges segments into chunks that
+respect those boundaries and the configured size budget.
+
+**Signature:**
+
+```java
+public static ChunkingResult chunkSemantic(String text, ChunkingConfig config, List<PageBoundary> pageBoundaries) throws Error
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `text` | `String` | Yes | The text |
+| `config` | `ChunkingConfig` | Yes | The configuration options |
+| `pageBoundaries` | `Optional<List<PageBoundary>>` | No | The page boundaries |
+
+**Returns:** `ChunkingResult`
+
+**Errors:** Throws `ErrorException`.
+
+
+---
+
+#### precomputeUtf8Boundaries()
+
+Pre-computes valid UTF-8 character boundaries for a text string.
+
+This function performs a single O(n) pass through the text to identify all valid
+UTF-8 character boundaries, storing them in a BitVec for O(1) lookups.
+
+**Returns:**
+
+A BitVec where each bit represents whether a byte offset is a valid UTF-8 character boundary.
+The BitVec has length `text.len() + 1` (includes the end position).
+
+**Signature:**
+
+```java
+public static BitVec precomputeUtf8Boundaries(String text)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `text` | `String` | Yes | The text to analyze |
+
+**Returns:** `BitVec`
+
+
+---
+
+#### validateUtf8Boundaries()
+
+Validates that byte offsets in page boundaries fall on valid UTF-8 character boundaries.
+
+This function ensures that all page boundary positions are at valid UTF-8 character
+boundaries within the text. This is CRITICAL to prevent text corruption when boundaries
+are created from language bindings or external sources, particularly with multibyte
+UTF-8 characters (emoji, CJK characters, combining marks, etc.).
+
+**Performance Strategy**: Uses adaptive validation to optimize for different boundary counts:
+- **Small sets (≤10 boundaries)**: O(k) approach using Rust's native `is_char_boundary()` for each position
+- **Large sets (>10 boundaries)**: O(n) precomputation with O(1) lookups via BitVec
+
+For typical PDF documents with 1-10 page boundaries, the fast path provides 30-50% faster
+validation than always precomputing. For documents with 100+ boundaries, batch precomputation
+is 2-4% faster overall due to amortized costs. This gives ~2-4% improvement across all scenarios.
+
+**Returns:**
+
+Returns `Ok(())` if all boundaries are at valid UTF-8 character boundaries.
+Returns `KreuzbergError.Validation` if any boundary is at an invalid position.
+
+# UTF-8 Boundary Safety
+
+Rust strings use UTF-8 encoding where characters can be 1-4 bytes. For example:
+- ASCII letters: 1 byte each
+- Emoji (🌍): 4 bytes but 1 character
+- CJK characters (中): 3 bytes but 1 character
+
+This function checks that all byte_start and byte_end values are at character boundaries
+using an adaptive strategy: direct calls for small boundary sets, or precomputed BitVec
+for large sets.
+
+**Signature:**
+
+```java
+public static void validateUtf8Boundaries(String text, List<PageBoundary> boundaries) throws Error
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `text` | `String` | Yes | The text being chunked |
+| `boundaries` | `List<PageBoundary>` | Yes | Page boundary markers to validate |
+
+**Returns:** `void`
+
+**Errors:** Throws `ErrorException`.
+
+
+---
+
+#### registerChunkingProcessor()
+
+Register the chunking processor with the global registry.
+
+This function should be called once at application startup to register
+the chunking post-processor.
+
+**Note:** This is called automatically on first use.
+Explicit calling is optional.
+
+**Signature:**
+
+```java
+public static void registerChunkingProcessor() throws Error
+```
+
+**Returns:** `void`
+
+**Errors:** Throws `ErrorException`.
+
+
+---
+
+#### createClient()
+
+Create a liter-llm `DefaultClient` from kreuzberg's `LlmConfig`.
+
+The `model` field from the config is passed as a model hint so that
+liter-llm can resolve the correct provider automatically.
+
+When `api_key` is `null`, liter-llm falls back to the provider's standard
+environment variable (e.g., `OPENAI_API_KEY`).
+
+**Signature:**
+
+```java
+public static DefaultClient createClient(LlmConfig config) throws Error
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `config` | `LlmConfig` | Yes | The configuration options |
+
+**Returns:** `DefaultClient`
+
+**Errors:** Throws `ErrorException`.
+
+
+---
+
+#### renderTemplate()
+
+Render a Jinja2 template with the given context variables.
+
+**Signature:**
+
+```java
+public static String renderTemplate(String template, Value context) throws Error
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `template` | `String` | Yes | The template |
+| `context` | `Value` | Yes | The value |
+
+**Returns:** `String`
+
+**Errors:** Throws `ErrorException`.
+
+
+---
+
+#### extractStructured()
+
+Extract structured data from document content using an LLM with JSON schema.
+
+Sends the document content to the configured LLM with a JSON schema constraint,
+returning structured data that conforms to the schema.
+
+**Returns:**
+
+A `serde_json.Value` conforming to the provided JSON schema.
+
+**Errors:**
+
+Returns an error if:
+- The LLM client cannot be created (invalid provider/credentials).
+- The LLM request fails (network, rate-limit, etc.).
+- The LLM response cannot be parsed as valid JSON.
+
+**Signature:**
+
+```java
+public static LlmUsage extractStructured(String content, StructuredExtractionConfig config) throws Error
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `content` | `String` | Yes | The extracted document text to send to the LLM. |
+| `config` | `StructuredExtractionConfig` | Yes | Structured extraction configuration including schema and LLM settings. |
+
+**Returns:** `LlmUsage`
+
+**Errors:** Throws `ErrorException`.
+
+
+---
+
+#### vlmOcr()
+
+Perform OCR on an image using a vision language model.
+
+Sends the image to a VLM (e.g., GPT-4o, Claude) which extracts text.
+The language hint is included in the prompt when the document language
+is not English.
+
+  (e.g., `"eng"`, `"de"`, `"fra"`)
+* `config` - LLM provider/model configuration
+
+**Returns:**
+
+Extracted text from the image, or an error if the VLM call fails.
+
+**Errors:**
+
+- `KreuzbergError.Ocr` if the VLM returns no content or the API call fails
+- `KreuzbergError.MissingDependency` if the liter-llm client cannot be created
+
+**Signature:**
+
+```java
+public static LlmUsage vlmOcr(byte[] imageBytes, String imageMimeType, String language, LlmConfig config) throws Error
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `imageBytes` | `byte[]` | Yes | Raw image data (JPEG, PNG, WebP, etc.) |
+| `imageMimeType` | `String` | Yes | MIME type of the image (e.g., `"image/png"`) |
+| `language` | `String` | Yes | ISO 639 language code or Tesseract language name |
+| `config` | `LlmConfig` | Yes | LLM provider/model configuration |
+
+**Returns:** `LlmUsage`
+
+**Errors:** Throws `ErrorException`.
+
+
+---
+
+#### normalize()
+
+L2-normalize a vector.
+
+**Signature:**
+
+```java
+public static List<Float> normalize(List<Float> v)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `v` | `List<Float>` | Yes | The v |
+
+**Returns:** `List<Float>`
+
+
+---
+
+#### getPreset()
+
+Get a preset by name.
+
+**Signature:**
+
+```java
+public static Optional<EmbeddingPreset> getPreset(String name)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `name` | `String` | Yes | The name |
+
+**Returns:** `Optional<EmbeddingPreset>`
+
+
+---
+
+#### presetChunkSize()
+
+Get the chunk_size for a preset by name.
+
+**Signature:**
+
+```java
+public static Optional<Long> presetChunkSize(String name)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `name` | `String` | Yes | The name |
+
+**Returns:** `Optional<Long>`
+
+
+---
+
+#### listPresets()
+
+List all available preset names.
+
+**Signature:**
+
+```java
+public static List<String> listPresets()
+```
+
+**Returns:** `List<String>`
+
+
+---
+
+#### warmModel()
+
+Eagerly download and cache an embedding model without returning the handle.
+
+This triggers the same download and initialization as `get_or_init_engine`
+but discards the result, making it suitable for cache-warming scenarios
+where the caller doesn't need to use the model immediately.
+
+**Note**: This function downloads AND initializes the ONNX model, which
+requires ONNX Runtime and uses significant memory. For download-only
+scenarios (e.g., init containers), use `download_model` instead.
+
+**Signature:**
+
+```java
+public static void warmModel(EmbeddingModelType modelType, String cacheDir) throws Error
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `modelType` | `EmbeddingModelType` | Yes | The embedding model type |
+| `cacheDir` | `Optional<String>` | No | The cache dir |
+
+**Returns:** `void`
+
+**Errors:** Throws `ErrorException`.
+
+
+---
+
+#### downloadModel()
+
+Download an embedding model's files without initializing ONNX Runtime.
+
+Downloads the model files (ONNX model, tokenizer, config) from HuggingFace
+to the cache directory. Subsequent calls to `warm_model` or
+`get_or_init_engine` will find the files cached and skip the download step.
+
+This is ideal for init containers or CI environments where you want to
+pre-populate the cache without loading models into memory.
+
+**Signature:**
+
+```java
+public static void downloadModel(EmbeddingModelType modelType, String cacheDir) throws Error
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `modelType` | `EmbeddingModelType` | Yes | The embedding model type |
+| `cacheDir` | `Optional<String>` | No | The cache dir |
+
+**Returns:** `void`
+
+**Errors:** Throws `ErrorException`.
+
+
+---
+
+#### generateEmbeddingsForChunks()
+
+Generate embeddings for text chunks using the specified configuration.
+
+This function modifies chunks in-place, populating their `embedding` field
+with generated embedding vectors. It uses batch processing for efficiency.
+
+**Returns:**
+
+Returns `Ok(())` if embeddings were generated successfully, or an error if
+model initialization or embedding generation fails.
+
+**Signature:**
+
+```java
+public static void generateEmbeddingsForChunks(List<Chunk> chunks, EmbeddingConfig config) throws Error
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `chunks` | `List<Chunk>` | Yes | Mutable reference to vector of chunks to generate embeddings for |
+| `config` | `EmbeddingConfig` | Yes | Embedding configuration specifying model and parameters |
+
+**Returns:** `void`
+
+**Errors:** Throws `ErrorException`.
+
+
+---
+
+#### calculateSmartDpi()
+
+Calculate smart DPI based on page dimensions, memory constraints, and target DPI
+
+**Signature:**
+
+```java
+public static int calculateSmartDpi(double pageWidth, double pageHeight, int targetDpi, int maxDimension, double maxMemoryMb)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `pageWidth` | `double` | Yes | The page width |
+| `pageHeight` | `double` | Yes | The page height |
+| `targetDpi` | `int` | Yes | The target dpi |
+| `maxDimension` | `int` | Yes | The max dimension |
+| `maxMemoryMb` | `double` | Yes | The max memory mb |
+
+**Returns:** `int`
+
+
+---
+
+#### calculateOptimalDpi()
+
+Calculate optimal DPI with min/max constraints
+
+**Signature:**
+
+```java
+public static int calculateOptimalDpi(double pageWidth, double pageHeight, int targetDpi, int maxDimension, int minDpi, int maxDpi)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `pageWidth` | `double` | Yes | The page width |
+| `pageHeight` | `double` | Yes | The page height |
+| `targetDpi` | `int` | Yes | The target dpi |
+| `maxDimension` | `int` | Yes | The max dimension |
+| `minDpi` | `int` | Yes | The min dpi |
+| `maxDpi` | `int` | Yes | The max dpi |
+
+**Returns:** `int`
+
+
+---
+
+#### normalizeImageDpi()
+
+Normalize image DPI based on extraction configuration
+
+**Returns:**
+* `NormalizeResult` containing processed image data and metadata
+
+**Signature:**
+
+```java
+public static NormalizeResult normalizeImageDpi(byte[] rgbData, long width, long height, ExtractionConfig config, double currentDpi) throws Error
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `rgbData` | `byte[]` | Yes | RGB image data as a flat `Vec<u8>` (height * width * 3 bytes, row-major) |
+| `width` | `long` | Yes | Image width in pixels |
+| `height` | `long` | Yes | Image height in pixels |
+| `config` | `ExtractionConfig` | Yes | Extraction configuration containing DPI settings |
+| `currentDpi` | `Optional<double>` | No | Optional current DPI of the image (defaults to 72 if None) |
+
+**Returns:** `NormalizeResult`
+
+**Errors:** Throws `ErrorException`.
+
+
+---
+
+#### resizeImage()
+
+Resize an image using fast_image_resize with appropriate algorithm based on scale factor
+
+**Signature:**
+
+```java
+public static DynamicImage resizeImage(DynamicImage image, int newWidth, int newHeight, double scaleFactor) throws Error
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `image` | `DynamicImage` | Yes | The dynamic image |
+| `newWidth` | `int` | Yes | The new width |
+| `newHeight` | `int` | Yes | The new height |
+| `scaleFactor` | `double` | Yes | The scale factor |
+
+**Returns:** `DynamicImage`
+
+**Errors:** Throws `ErrorException`.
+
+
+---
+
+#### detectLanguages()
+
+Detect languages in text using whatlang.
+
+Returns a list of detected language codes (ISO 639-3 format).
+Returns `null` if no languages could be detected with sufficient confidence.
+
+**Signature:**
+
+```java
+public static Optional<List<String>> detectLanguages(String text, LanguageDetectionConfig config) throws Error
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `text` | `String` | Yes | The text to analyze for language detection |
+| `config` | `LanguageDetectionConfig` | Yes | Optional configuration for language detection |
+
+**Returns:** `Optional<List<String>>`
+
+**Errors:** Throws `ErrorException`.
+
+
+---
+
+#### registerLanguageDetectionProcessor()
+
+Register the language detection processor with the global registry.
+
+This function should be called once at application startup to register
+the language detection post-processor.
+
+**Note:** This is called automatically on first use.
+Explicit calling is optional.
+
+**Signature:**
+
+```java
+public static void registerLanguageDetectionProcessor() throws Error
+```
+
+**Returns:** `void`
+
+**Errors:** Throws `ErrorException`.
+
+
+---
+
+#### getStopwords()
+
+Get stopwords for a language with normalization.
+
+This function provides a user-friendly interface to the stopwords registry with:
+- **Case-insensitive lookup**: "EN", "en", "En" all work
+- **Locale normalization**: "en-US", "en_GB", "es-ES" extract to "en", "es"
+- **Consistent behavior**: Returns `null` for unsupported languages
+
+# Language Code Format
+
+Accepts multiple formats:
+- ISO 639-1 two-letter codes: `"en"`, `"es"`, `"de"`, etc.
+- Uppercase variants: `"EN"`, `"ES"`, `"DE"`
+- Locale codes with hyphen: `"en-US"`, `"es-ES"`, `"pt-BR"`
+- Locale codes with underscore: `"en_US"`, `"es_ES"`, `"pt_BR"`
+
+All formats are normalized to lowercase two-letter ISO 639-1 codes.
+
+**Returns:**
+
+- `Some(&HashSet<String>)` if the language is supported (64 languages available)
+- `null` if the language is not supported
+
+# Performance
+
+This function performs two operations:
+1. String normalization (lowercase + truncate) - O(1) for typical language codes
+2. HashMap lookup in STOPWORDS - O(1) average case
+
+Total overhead is negligible (~10-50ns on modern CPUs).
+
+**Signature:**
+
+```java
+public static Optional<AHashSet> getStopwords(String lang)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `lang` | `String` | Yes | The lang |
+
+**Returns:** `Optional<AHashSet>`
+
+
+---
+
+#### getStopwordsWithFallback()
+
+Get stopwords for a language with fallback support.
+
+This function attempts to retrieve stopwords for the primary language,
+and if not available, falls back to a secondary language. This is useful
+for handling scenarios where:
+- A detected language isn't supported
+- You want to use English as a fallback for unknown languages
+- You need graceful degradation for multilingual content
+
+Both language codes support the same normalization as `get_stopwords()`:
+- Case-insensitive lookup (EN, en, En all work)
+- Locale codes normalized (en-US, en_GB extract to "en")
+
+**Returns:**
+
+- `Some(&HashSet<String>)` if either language is supported
+- `null` if neither language is supported
+
+# Common Patterns
+
+
+# Performance
+
+This function performs at most two HashMap lookups:
+1. Try primary language (O(1) average case)
+2. If None, try fallback language (O(1) average case)
+
+Total overhead is negligible (~10-100ns on modern CPUs).
+
+**Signature:**
+
+```java
+public static Optional<AHashSet> getStopwordsWithFallback(String language, String fallback)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `language` | `String` | Yes | Primary language code to try first |
+| `fallback` | `String` | Yes | Fallback language code to use if primary not available |
+
+**Returns:** `Optional<AHashSet>`
+
+
+---
+
+#### extractKeywords()
+
+Extract keywords from text using the specified algorithm.
+
+This is the unified entry point for keyword extraction. The algorithm
+used is determined by `config.algorithm`.
+
+**Returns:**
+
+A vector of keywords sorted by relevance (highest score first).
+
+**Errors:**
+
+Returns an error if:
+- The specified algorithm feature is not enabled
+- Keyword extraction fails
+
+**Signature:**
+
+```java
+public static List<Keyword> extractKeywords(String text, KeywordConfig config) throws Error
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `text` | `String` | Yes | The text to extract keywords from |
+| `config` | `KeywordConfig` | Yes | Keyword extraction configuration |
+
+**Returns:** `List<Keyword>`
+
+**Errors:** Throws `ErrorException`.
+
+
+---
+
+#### registerKeywordProcessor()
+
+Register the keyword extraction processor with the global registry.
+
+This function should be called once at application startup to register
+the keyword extraction post-processor.
+
+**Note:** This is called automatically on first use.
+Explicit calling is optional.
+
+**Signature:**
+
+```java
+public static void registerKeywordProcessor() throws Error
+```
+
+**Returns:** `void`
+
+**Errors:** Throws `ErrorException`.
+
+
+---
+
+#### tsvRowToElement()
+
+Convert a Tesseract TSV row to a unified OcrElement.
+
+Preserves:
+- Axis-aligned bounding box
+- Recognition confidence (Tesseract doesn't have separate detection confidence)
+- Hierarchical level information
+
+**Returns:**
+
+An `OcrElement` with rectangle geometry and Tesseract metadata.
+
+**Signature:**
+
+```java
+public static OcrElement tsvRowToElement(TsvRow row)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `row` | `TsvRow` | Yes | Parsed TSV row from Tesseract output |
+
+**Returns:** `OcrElement`
+
+
+---
+
+#### elementToHocrWord()
+
+Convert an OcrElement to an HocrWord for table reconstruction.
+
+This enables reuse of the existing table detection algorithms from
+html-to-markdown-rs with PaddleOCR results.
+
+**Returns:**
+
+An `HocrWord` suitable for table reconstruction algorithms.
+
+**Signature:**
+
+```java
+public static HocrWord elementToHocrWord(OcrElement element)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `element` | `OcrElement` | Yes | Unified OCR element with geometry and text |
+
+**Returns:** `HocrWord`
+
+
+---
+
+#### elementsToHocrWords()
+
+Convert a vector of OcrElements to HocrWords for batch table processing.
+
+Filters to word-level elements only, as table reconstruction
+works best with word-level granularity.
+
+**Returns:**
+
+A vector of HocrWords filtered by confidence and element level.
+
+**Signature:**
+
+```java
+public static List<HocrWord> elementsToHocrWords(List<OcrElement> elements, double minConfidence)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `elements` | `List<OcrElement>` | Yes | Slice of OCR elements to convert |
+| `minConfidence` | `double` | Yes | Minimum recognition confidence threshold (0.0-1.0) |
+
+**Returns:** `List<HocrWord>`
+
+
+---
+
+#### parseHocrToInternalDocument()
+
+Parse hOCR HTML into an `InternalDocument` with full spatial and confidence metadata.
+
+This is the primary entry point. It replaces the older `convert_hocr_to_markdown` path
+by producing structured `InternalElement`s directly, preserving OCR geometry and
+confidence that the markdown conversion discards.
+
+# Output mapping
+
+| hOCR element   | kreuzberg element                             |
+|---------------|-----------------------------------------------|
+| `ocr_page`    | `PageBreak` between consecutive pages         |
+| `ocr_par`     | `OcrText { level: Block }` with union bbox    |
+| `ocr_line`    | newline separator within a paragraph          |
+| `ocrx_word`   | word text, bbox, `x_wconf` → `OcrConfidence` |
+
+Page numbers come from the `ppageno` title property (converted to 1-indexed).
+
+**Signature:**
+
+```java
+public static InternalDocument parseHocrToInternalDocument(String hocrHtml)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `hocrHtml` | `String` | Yes | The hocr html |
+
+**Returns:** `InternalDocument`
+
+
+---
+
+#### assembleOcrMarkdown()
+
+Assemble structured markdown from OCR elements using layout detection results.
+
+Both inputs must be in the same pixel coordinate space (from the same
+rendered page image). Returns plain text join when `detection` is `null`.
+
+`recognized_tables` provides pre-computed markdown for Table regions
+(from TATR or other table structure recognizer). When empty, Table
+regions fall back to heuristic grid reconstruction from OCR elements.
+
+**Signature:**
+
+```java
+public static String assembleOcrMarkdown(List<OcrElement> elements, DetectionResult detection, int imgWidth, int imgHeight, List<RecognizedTable> recognizedTables)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `elements` | `List<OcrElement>` | Yes | The elements |
+| `detection` | `Optional<DetectionResult>` | No | The detection result |
+| `imgWidth` | `int` | Yes | The img width |
+| `imgHeight` | `int` | Yes | The img height |
+| `recognizedTables` | `List<RecognizedTable>` | Yes | The recognized tables |
+
+**Returns:** `String`
+
+
+---
+
+#### recognizePageTables()
+
+Run TATR table recognition for all Table regions in a page.
+
+For each Table detection, crops the page image, runs TATR inference,
+matches OCR elements to cells, and produces markdown tables.
+
+**Signature:**
+
+```java
+public static List<RecognizedTable> recognizePageTables(RgbImage pageImage, DetectionResult detection, List<OcrElement> elements, TatrModel tatrModel)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `pageImage` | `RgbImage` | Yes | The rgb image |
+| `detection` | `DetectionResult` | Yes | The detection result |
+| `elements` | `List<OcrElement>` | Yes | The elements |
+| `tatrModel` | `TatrModel` | Yes | The tatr model |
+
+**Returns:** `List<RecognizedTable>`
+
+
+---
+
+#### extractWordsFromTsv()
+
+Extract words from Tesseract TSV output and convert to HocrWord format.
+
+This parses Tesseract's TSV format (level, page_num, block_num, ...) and
+converts it to the HocrWord format used for table reconstruction.
+
+**Signature:**
+
+```java
+public static List<HocrWord> extractWordsFromTsv(String tsvData, double minConfidence) throws OcrError
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `tsvData` | `String` | Yes | The tsv data |
+| `minConfidence` | `double` | Yes | The min confidence |
+
+**Returns:** `List<HocrWord>`
+
+**Errors:** Throws `OcrErrorException`.
+
+
+---
+
+#### computeHash()
+
+Compute a blake3 hash string from input data.
+
+Returns a 32-character hex string (128 bits of blake3 output).
+
+**Signature:**
+
+```java
+public static String computeHash(String data)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `data` | `String` | Yes | The data |
+
+**Returns:** `String`
+
+
+---
+
+#### validateTesseractVersion()
+
+**Signature:**
+
+```java
+public static void validateTesseractVersion(int version) throws OcrError
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `version` | `int` | Yes | The version |
+
+**Returns:** `void`
+
+**Errors:** Throws `OcrErrorException`.
+
+
+---
+
+#### ensureOrtAvailable()
+
+Ensure ONNX Runtime is discoverable. Safe to call multiple times (no-op after first).
+
+When the `ort-bundled` feature is enabled the ORT binaries are embedded via the
+official Microsoft release and no system library search is needed.
+
+**Signature:**
+
+```java
+public static void ensureOrtAvailable()
+```
+
+**Returns:** `void`
+
+
+---
+
+#### isLanguageSupported()
+
+Check if a language code is supported by PaddleOCR.
+
+**Signature:**
+
+```java
+public static boolean isLanguageSupported(String lang)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `lang` | `String` | Yes | The lang |
+
+**Returns:** `boolean`
+
+
+---
+
+#### languageToScriptFamily()
+
+Map a PaddleOCR language code to its script family.
+
+Script families group languages that share a single recognition model.
+For example, French, German, and Spanish all use the `latin` rec model.
+Chinese simplified, traditional, and Japanese share the `chinese` rec model.
+
+# Script Families (11, all PP-OCRv5)
+
+| Family | Languages |
+|---|---|
+| `english` | English |
+| `chinese` | Chinese (simplified+traditional), Japanese |
+| `latin` | French, German, Spanish, Italian, 40+ more |
+| `korean` | Korean |
+| `eslav` | Russian, Ukrainian, Belarusian |
+| `thai` | Thai |
+| `greek` | Greek |
+| `arabic` | Arabic, Persian, Urdu |
+| `devanagari` | Hindi, Marathi, Sanskrit, Nepali |
+| `tamil` | Tamil |
+| `telugu` | Telugu |
+
+**Signature:**
+
+```java
+public static String languageToScriptFamily(String paddleLang)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `paddleLang` | `String` | Yes | The paddle lang |
+
+**Returns:** `String`
+
+
+---
+
+#### mapLanguageCode()
+
+Map Kreuzberg language codes to PaddleOCR language codes.
+
+**Signature:**
+
+```java
+public static Optional<String> mapLanguageCode(String kreuzbergCode)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `kreuzbergCode` | `String` | Yes | The kreuzberg code |
+
+**Returns:** `Optional<String>`
+
+
+---
+
+#### resolveCacheDir()
+
+Resolve the cache directory for the auto-rotate model.
+
+**Signature:**
+
+```java
+public static String resolveCacheDir()
+```
+
+**Returns:** `String`
+
+
+---
+
+#### detectAndRotate()
+
+Detect orientation and return a corrected image if rotation is needed.
+
+Returns `Ok(Some(rotated_bytes))` if rotation was applied,
+`Ok(None)` if no rotation needed (0° or low confidence).
+
+**Signature:**
+
+```java
+public static Optional<byte[]> detectAndRotate(DocOrientationDetector detector, byte[] imageBytes) throws Error
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `detector` | `DocOrientationDetector` | Yes | The doc orientation detector |
+| `imageBytes` | `byte[]` | Yes | The image bytes |
+
+**Returns:** `Optional<byte[]>`
+
+**Errors:** Throws `ErrorException`.
+
+
+---
+
+#### buildCellGrid()
+
+Build a 2D cell grid from TATR detections.
+
+The grid is `[num_rows][num_cols]` where each cell is the intersection
+of a row bounding box and a column bounding box.
+
+Processing steps:
+1. Widen all rows to span the full table width (min x1 to max x2 across rows)
+2. Apply NMS using IoB: sort by confidence descending, remove detections
+   whose IoB with any higher-confidence detection exceeds `NMS_IOB_THRESHOLD`
+3. For each (row, column) pair, compute the intersection rectangle
+
+If `table_bbox` is provided, it is used to clip the row widening bounds.
+
+**Signature:**
+
+```java
+public static List<List<CellBBox>> buildCellGrid(TatrResult result, F324 tableBbox)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `result` | `TatrResult` | Yes | The tatr result |
+| `tableBbox` | `Optional<F324>` | No | The [f32;4] |
+
+**Returns:** `List<List<CellBBox>>`
+
+
+---
+
+#### applyHeuristics()
+
+Apply Docling-style postprocessing heuristics to raw detections.
+
+This implements the key heuristics from `docling/utils/layout_postprocessor.py`:
+1. Per-class confidence thresholds
+2. Full-page picture removal (>90% page area)
+3. Overlap resolution (IoU > 0.8 or containment > 0.8)
+4. Cross-type overlap handling (KVR vs Table)
+
+**Signature:**
+
+```java
+public static List<LayoutDetection> applyHeuristics(List<LayoutDetection> detections, float pageWidth, float pageHeight)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `detections` | `List<LayoutDetection>` | Yes | The detections |
+| `pageWidth` | `float` | Yes | The page width |
+| `pageHeight` | `float` | Yes | The page height |
+
+**Returns:** `List<LayoutDetection>`
+
+
+---
+
+#### greedyNms()
+
+Standard greedy Non-Maximum Suppression.
+
+Sorts detections by confidence (descending), then iteratively removes
+detections that have IoU > `iou_threshold` with any higher-confidence detection.
+
+This is required for YOLO models. RT-DETR is NMS-free.
+
+**Signature:**
+
+```java
+public static List<LayoutDetection> greedyNms(List<LayoutDetection> detections, float iouThreshold)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `detections` | `List<LayoutDetection>` | Yes | The detections |
+| `iouThreshold` | `float` | Yes | The iou threshold |
+
+**Returns:** `List<LayoutDetection>`
+
+
+---
+
+#### preprocessImagenet()
+
+Preprocess an image for models using ImageNet normalization (e.g., RT-DETR).
+
+Pipeline: resize to target_size x target_size (bilinear) -> rescale /255 -> ImageNet normalize -> NCHW f32.
+
+Uses a single vectorized pass over contiguous pixel data for maximum throughput.
+
+**Signature:**
+
+```java
+public static Array4 preprocessImagenet(RgbImage img, int targetSize)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `img` | `RgbImage` | Yes | The rgb image |
+| `targetSize` | `int` | Yes | The target size |
+
+**Returns:** `Array4`
+
+
+---
+
+#### preprocessImagenetLetterbox()
+
+Preprocess with aspect-preserving letterbox and ImageNet normalization.
+
+Pipeline: letterbox-resize to target_size × target_size (Lanczos3, aspect-preserving)
+          → rescale /255 → ImageNet normalize → NCHW f32.
+
+Unlike `preprocess_imagenet` which squashes the image to a square (distorting
+aspect ratio), this preserves the original proportions and pads with the ImageNet
+mean color. This produces more accurate detection coordinates because the model
+sees undistorted geometry.
+
+Returns `(tensor, scale, pad_x, pad_y)`:
+- `scale`: resize factor applied (for mapping detections back)
+- `pad_x`, `pad_y`: top-left offset of the resized image within the padded square
+
+**Signature:**
+
+```java
+public static Array4F32F32U32U32 preprocessImagenetLetterbox(RgbImage img, int targetSize)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `img` | `RgbImage` | Yes | The rgb image |
+| `targetSize` | `int` | Yes | The target size |
+
+**Returns:** `Array4F32F32U32U32`
+
+
+---
+
+#### preprocessRescale()
+
+Preprocess with rescale only (no ImageNet normalization).
+
+Pipeline: resize to target_size x target_size -> rescale /255 -> NCHW f32.
+
+**Signature:**
+
+```java
+public static Array4 preprocessRescale(RgbImage img, int targetSize)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `img` | `RgbImage` | Yes | The rgb image |
+| `targetSize` | `int` | Yes | The target size |
+
+**Returns:** `Array4`
+
+
+---
+
+#### preprocessLetterbox()
+
+Letterbox preprocessing for YOLOX-style models.
+
+Resizes the image to fit within (target_width x target_height) while maintaining
+aspect ratio, padding the remaining area with value 114.0 (raw pixel value).
+No normalization — values are 0-255 as YOLOX expects.
+
+Returns the NCHW tensor and the scale ratio (for rescaling detections back).
+
+**Signature:**
+
+```java
+public static Array4F32F32 preprocessLetterbox(RgbImage img, int targetWidth, int targetHeight)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `img` | `RgbImage` | Yes | The rgb image |
+| `targetWidth` | `int` | Yes | The target width |
+| `targetHeight` | `int` | Yes | The target height |
+
+**Returns:** `Array4F32F32`
+
+
+---
+
+#### buildSession()
+
+Build an optimized ORT session from an ONNX model file.
+
+`thread_budget` controls the number of intra-op threads for this session.
+Pass the result of `crate.core.config.concurrency.resolve_thread_budget`
+to respect the user's `ConcurrencyConfig`.
+
+When `accel` is `null` or `Auto`, uses platform defaults:
+- macOS: CoreML (Neural Engine / GPU)
+- Linux: CUDA (GPU)
+- Others: CPU only
+
+ORT silently falls back to CPU if the requested EP is unavailable.
+
+**Signature:**
+
+```java
+public static Session buildSession(String path, AccelerationConfig accel, long threadBudget) throws LayoutError
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `path` | `String` | Yes | Path to the file |
+| `accel` | `Optional<AccelerationConfig>` | No | The acceleration config |
+| `threadBudget` | `long` | Yes | The thread budget |
+
+**Returns:** `Session`
+
+**Errors:** Throws `LayoutErrorException`.
+
+
+---
+
+#### configFromExtraction()
+
+Convert a `LayoutDetectionConfig` into a `LayoutEngineConfig`.
+
+**Signature:**
+
+```java
+public static LayoutEngineConfig configFromExtraction(LayoutDetectionConfig layoutConfig)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `layoutConfig` | `LayoutDetectionConfig` | Yes | The layout detection config |
+
+**Returns:** `LayoutEngineConfig`
+
+
+---
+
+#### createEngine()
+
+Create a `LayoutEngine` from a `LayoutDetectionConfig`.
+
+Ensures ORT is available, then creates the engine with model download.
+
+**Signature:**
+
+```java
+public static LayoutEngine createEngine(LayoutDetectionConfig layoutConfig) throws LayoutError
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `layoutConfig` | `LayoutDetectionConfig` | Yes | The layout detection config |
+
+**Returns:** `LayoutEngine`
+
+**Errors:** Throws `LayoutErrorException`.
+
+
+---
+
+#### takeOrCreateEngine()
+
+Take the cached layout engine, or create a new one if the cache is empty.
+
+The caller owns the engine for the duration of its work and should
+return it via `return_engine` when done. This avoids holding the
+global mutex during inference.
+
+**Signature:**
+
+```java
+public static LayoutEngine takeOrCreateEngine(LayoutDetectionConfig layoutConfig) throws LayoutError
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `layoutConfig` | `LayoutDetectionConfig` | Yes | The layout detection config |
+
+**Returns:** `LayoutEngine`
+
+**Errors:** Throws `LayoutErrorException`.
+
+
+---
+
+#### returnEngine()
+
+Return a layout engine to the global cache for reuse by future extractions.
+
+**Signature:**
+
+```java
+public static void returnEngine(LayoutEngine engine)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `engine` | `LayoutEngine` | Yes | The layout engine |
+
+**Returns:** `void`
+
+
+---
+
+#### takeOrCreateTatr()
+
+Take the cached TATR model, or create a new one if the cache is empty.
+
+Returns `null` if the model cannot be loaded. Once a load attempt fails,
+subsequent calls return `null` immediately without retrying, avoiding
+repeated download attempts and redundant warning logs.
+
+**Signature:**
+
+```java
+public static Optional<TatrModel> takeOrCreateTatr(AccelerationConfig accel)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `accel` | `Optional<AccelerationConfig>` | No | The acceleration config |
+
+**Returns:** `Optional<TatrModel>`
+
+
+---
+
+#### returnTatr()
+
+Return a TATR model to the global cache for reuse.
+
+**Signature:**
+
+```java
+public static void returnTatr(TatrModel model)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `model` | `TatrModel` | Yes | The tatr model |
+
+**Returns:** `void`
+
+
+---
+
+#### takeOrCreateSlanet()
+
+Take a cached SLANeXT model for the given variant, or create a new one.
+
+**Signature:**
+
+```java
+public static Optional<SlanetModel> takeOrCreateSlanet(String variant, AccelerationConfig accel)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `variant` | `String` | Yes | The variant |
+| `accel` | `Optional<AccelerationConfig>` | No | The acceleration config |
+
+**Returns:** `Optional<SlanetModel>`
+
+
+---
+
+#### returnSlanet()
+
+Return a SLANeXT model to the global cache for reuse.
+
+**Signature:**
+
+```java
+public static void returnSlanet(String variant, SlanetModel model)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `variant` | `String` | Yes | The variant |
+| `model` | `SlanetModel` | Yes | The slanet model |
+
+**Returns:** `void`
+
+
+---
+
+#### takeOrCreateTableClassifier()
+
+Take a cached table classifier, or create a new one.
+
+**Signature:**
+
+```java
+public static Optional<TableClassifier> takeOrCreateTableClassifier(AccelerationConfig accel)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `accel` | `Optional<AccelerationConfig>` | No | The acceleration config |
+
+**Returns:** `Optional<TableClassifier>`
+
+
+---
+
+#### returnTableClassifier()
+
+Return a table classifier to the global cache for reuse.
+
+**Signature:**
+
+```java
+public static void returnTableClassifier(TableClassifier model)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `model` | `TableClassifier` | Yes | The table classifier |
+
+**Returns:** `void`
+
+
+---
+
+#### extractAnnotationsFromDocument()
+
+Extract annotations from all pages of a PDF document.
+
+Iterates over every page and every annotation on each page, mapping
+pdfium annotation subtypes to `PdfAnnotationType` and collecting
+content text and bounding boxes where available.
+
+Annotations that cannot be read are silently skipped.
+
+**Returns:**
+
+A `Vec<PdfAnnotation>` containing all successfully extracted annotations.
+
+**Signature:**
+
+```java
+public static List<PdfAnnotation> extractAnnotationsFromDocument(PdfDocument document)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `document` | `PdfDocument` | Yes | A reference to the loaded pdfium `PdfDocument`. |
+
+**Returns:** `List<PdfAnnotation>`
+
+
+---
+
+#### extractBookmarks()
+
+Extract bookmarks (outlines) from a PDF document loaded via lopdf.
+
+Walks the `/Outlines` tree in the document catalog, collecting each bookmark's
+title and destination. Returns an empty `Vec` if the document has no outlines.
+
+**Signature:**
+
+```java
+public static List<Uri> extractBookmarks(Document document)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `document` | `Document` | Yes | The document |
+
+**Returns:** `List<Uri>`
+
+
+---
+
+#### extractBundledPdfium()
+
+Extract bundled PDFium library to temporary directory.
+
+# Behavior
+
+- Embeds PDFium library using `include_bytes!`
+- Extracts to `$TMPDIR/kreuzberg-pdfium/` (non-WASM only)
+- Reuses extracted library if size matches
+- Sets permissions to 0755 on Unix
+- Returns path to extracted library
+- **Thread-safe**: Synchronized with a global `Mutex` to prevent concurrent writes
+
+# Concurrency
+
+This function is fully thread-safe. When multiple threads call it simultaneously,
+only the first thread performs the actual extraction while others wait. This prevents
+the "file too short" error that occurs when one thread reads a partially-written file.
+
+# WASM Handling
+
+On WASM targets (wasm32-*), this function returns an error with a helpful
+message directing users to use WASM-specific initialization. WASM PDFium
+is initialized through the runtime, not via file extraction.
+
+**Errors:**
+
+Returns `std.io.Error` if:
+- Cannot create extraction directory
+- Cannot write library file
+- Cannot set file permissions (Unix only)
+- Target is WASM (filesystem access not available)
+
+# Platform-Specific Library Names
+
+- Linux: `libpdfium.so`
+- macOS: `libpdfium.dylib`
+- Windows: `pdfium.dll`
+
+**Signature:**
+
+```java
+public static String extractBundledPdfium() throws Error
+```
+
+**Returns:** `String`
+
+**Errors:** Throws `ErrorException`.
+
+
+---
+
+#### extractEmbeddedFiles()
+
+Extract embedded file descriptors from a PDF document loaded via lopdf.
+
+Walks the `/Names` → `/EmbeddedFiles` name tree in the catalog.
+Returns an empty `Vec` if the document has no embedded files.
+
+**Signature:**
+
+```java
+public static List<EmbeddedFile> extractEmbeddedFiles(Document document)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `document` | `Document` | Yes | The document |
+
+**Returns:** `List<EmbeddedFile>`
+
+
+---
+
+#### extractAndProcessEmbeddedFiles()
+
+Extract embedded files from PDF bytes and recursively process them.
+
+Returns `(children, warnings)`. The children are `ArchiveEntry` values
+suitable for attaching to `InternalDocument.children`.
+
+**Signature:**
+
+```java
+public static VecArchiveEntryVecProcessingWarning extractAndProcessEmbeddedFiles(byte[] pdfBytes, ExtractionConfig config)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `pdfBytes` | `byte[]` | Yes | The pdf bytes |
+| `config` | `ExtractionConfig` | Yes | The configuration options |
+
+**Returns:** `VecArchiveEntryVecProcessingWarning`
+
+
+---
+
+#### initializeFontCache()
+
+Initialize the global font cache.
+
+On first call, discovers and loads all system fonts. Subsequent calls are no-ops.
+Caching is thread-safe via RwLock; concurrent reads during PDF processing are efficient.
+
+**Returns:**
+
+Ok if initialization succeeds or cache is already initialized, or PdfError if font discovery fails.
+
+# Performance
+
+- First call: 50-100ms (system font discovery + loading)
+- Subsequent calls: < 1μs (no-op, just checks initialized flag)
+
+**Signature:**
+
+```java
+public static void initializeFontCache() throws PdfError
+```
+
+**Returns:** `void`
+
+**Errors:** Throws `PdfErrorException`.
+
+
+---
+
+#### getFontDescriptors()
+
+Get cached font descriptors for Pdfium configuration.
+
+Ensures the font cache is initialized, then returns font descriptors
+derived from the cached fonts. This call is fast after the first invocation.
+
+**Returns:**
+
+A Vec of FontDescriptor objects suitable for `PdfiumConfig.set_font_provider()`.
+
+# Performance
+
+- First call: ~50-100ms (includes font discovery)
+- Subsequent calls: < 1ms (reads from cache)
+
+**Signature:**
+
+```java
+public static List<FontDescriptor> getFontDescriptors() throws PdfError
+```
+
+**Returns:** `List<FontDescriptor>`
+
+**Errors:** Throws `PdfErrorException`.
+
+
+---
+
+#### cachedFontCount()
+
+Get the number of cached fonts.
+
+Useful for diagnostics and testing.
+
+**Returns:**
+
+Number of fonts in the cache, or 0 if not initialized.
+
+**Signature:**
+
+```java
+public static long cachedFontCount()
+```
+
+**Returns:** `long`
+
+
+---
+
+#### clusterFontSizes()
+
+Cluster text blocks by font size using k-means algorithm.
+
+Uses k-means clustering to group text blocks by their font size, which helps
+identify document hierarchy levels (H1, H2, Body, etc.). The algorithm:
+1. Extracts font sizes from text blocks
+2. Applies k-means clustering to group similar font sizes
+3. Sorts clusters by centroid size in descending order (largest = H1)
+4. Returns clusters with their member blocks
+
+**Returns:**
+
+Result with vector of FontSizeCluster ordered by size (descending),
+or an error if clustering fails
+
+**Signature:**
+
+```java
+public static List<FontSizeCluster> clusterFontSizes(List<TextBlock> blocks, long k) throws Error
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `blocks` | `List<TextBlock>` | Yes | Slice of TextBlock objects to cluster |
+| `k` | `long` | Yes | Number of clusters to create |
+
+**Returns:** `List<FontSizeCluster>`
+
+**Errors:** Throws `ErrorException`.
+
+
+---
+
+#### assignHeadingLevelsSmart()
+
+Assign heading levels using the "most frequent cluster = Body" rule.
+
+Instead of naively mapping the largest font size to H1, this function
+identifies the cluster with the most members as body text. Only clusters
+with fewer members AND sufficiently larger font size than body become headings.
+
+**Returns:**
+
+Vector of tuples `(centroid, heading_level)` where `null` means body text
+and `Some(1..=6)` means H1-H6. Sorted by centroid descending.
+
+**Signature:**
+
+```java
+public static List<F32OptionU8> assignHeadingLevelsSmart(List<FontSizeCluster> clusters, float minHeadingRatio, float minHeadingGap)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `clusters` | `List<FontSizeCluster>` | Yes | Slice of FontSizeCluster objects (sorted by centroid descending) |
+| `minHeadingRatio` | `float` | Yes | Minimum ratio of heading centroid to body centroid (e.g. 1.15) |
+| `minHeadingGap` | `float` | Yes | Minimum absolute font-size difference in points (e.g. 1.5) |
+
+**Returns:** `List<F32OptionU8>`
+
+
+---
+
+#### assignHierarchyLevels()
+
+Assign hierarchy levels to text blocks based on KMeans clustering results.
+
+Maps cluster indices to HTML heading levels (H1-H6) and body text:
+- Cluster 0 → H1 (top-level heading)
+- Cluster 1 → H2 (secondary heading)
+- Cluster 2 → H3 (tertiary heading)
+- Cluster 3 → H4 (quaternary heading)
+- Cluster 4 → H5 (quinary heading)
+- Cluster 5 → H6 (senary heading)
+- Cluster 6+ → Body (body text)
+
+**Returns:**
+
+Vector of tuples containing (original block info, hierarchy level)
+
+**Signature:**
+
+```java
+public static List<HierarchyBlock> assignHierarchyLevels(List<TextBlock> blocks, KMeansResult kmeansResult)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `blocks` | `List<TextBlock>` | Yes | Slice of TextBlock objects to assign hierarchy levels to |
+| `kmeansResult` | `KMeansResult` | Yes | KMeansResult containing cluster labels for each block |
+
+**Returns:** `List<HierarchyBlock>`
+
+
+---
+
+#### assignHierarchyLevelsFromClusters()
+
+Assign hierarchy levels to text blocks based on font size clusters.
+
+Maps font size clusters to heading levels (H1-H6) and body text.
+Larger font sizes are assigned higher hierarchy levels.
+
+**Returns:**
+
+Vector of tuples containing (TextBlock, HierarchyLevel).
+If blocks is empty or clusters is empty, returns empty vector.
+All blocks get Body level if only one cluster exists.
+
+**Signature:**
+
+```java
+public static List<TextBlockHierarchyLevel> assignHierarchyLevelsFromClusters(List<TextBlock> blocks, List<FontSizeCluster> clusters)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `blocks` | `List<TextBlock>` | Yes | Vector of TextBlock objects to assign levels to |
+| `clusters` | `List<FontSizeCluster>` | Yes | Vector of FontSizeCluster objects from clustering |
+
+**Returns:** `List<TextBlockHierarchyLevel>`
+
+
+---
+
+#### extractCharsWithFonts()
+
+Extract characters with fonts from a PDF page.
+
+Iterates through all characters on a page, extracting text, position,
+and font size information. Characters are returned in page order.
+
+**Returns:**
+
+Vector of CharData objects containing text and positioning information.
+
+**Signature:**
+
+```java
+public static List<CharData> extractCharsWithFonts(PdfPage page) throws Error
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `page` | `PdfPage` | Yes | PDF page to extract characters from |
+
+**Returns:** `List<CharData>`
+
+**Errors:** Throws `ErrorException`.
+
+
+---
+
+#### extractSegmentsFromPage()
+
+Extract text segments from a PDF page using pdfium's segment merging.
+
+Instead of extracting individual characters and reconstructing words from gap heuristics,
+this function uses pdfium's `PdfPageTextSegments` which automatically merge characters
+sharing the same baseline and font settings into contiguous text runs.
+
+Font metadata (bold, italic, font size) is sampled from the first character of each segment.
+
+# Performance
+
+Typically 10-50x fewer items than character-level extraction, with far fewer FFI calls
+per item (one segment.text() + one segment.chars() sample vs N chars with 4+ FFI calls each).
+
+**Signature:**
+
+```java
+public static List<SegmentData> extractSegmentsFromPage(PdfPage page) throws Error
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `page` | `PdfPage` | Yes | The pdf page |
+
+**Returns:** `List<SegmentData>`
+
+**Errors:** Throws `ErrorException`.
+
+
+---
+
+#### mergeCharsIntoBlocks()
+
+Merge characters into text blocks using a greedy clustering algorithm.
+
+Groups characters based on spatial proximity using weighted distance and
+intersection ratio metrics. Characters are merged greedily based on their
+proximity and overlap.
+
+**Returns:**
+
+Vector of TextBlock objects containing merged characters
+
+# Algorithm
+
+The function uses a greedy approach:
+1. Create bounding boxes for each character
+2. Use weighted_distance (5.0 * dx + 1.0 * dy) with maximum threshold of ~2.5x font size
+3. Use intersection_ratio to detect overlapping or very close characters
+4. Merge characters into blocks based on proximity thresholds
+5. Return sorted blocks by position (top to bottom, left to right)
+
+**Signature:**
+
+```java
+public static List<TextBlock> mergeCharsIntoBlocks(List<CharData> chars)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `chars` | `List<CharData>` | Yes | Vector of CharData to merge into blocks |
+
+**Returns:** `List<TextBlock>`
+
+
+---
+
+#### shouldTriggerOcr()
+
+Determine whether OCR should be triggered based on text block coverage.
+
+Analyzes the coverage of text blocks on a PDF page and decides if OCR
+should be run. OCR is triggered when the text blocks cover less than a
+certain percentage (default 50%) of the page area.
+
+**Returns:**
+
+`true` if OCR should be triggered (coverage below threshold), `false` otherwise.
+
+**Signature:**
+
+```java
+public static boolean shouldTriggerOcr(PdfPage page, List<TextBlock> blocks, ExtractionConfig config)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `page` | `PdfPage` | Yes | The PDF page to analyze |
+| `blocks` | `List<TextBlock>` | Yes | Slice of TextBlock objects present on the page |
+| `config` | `ExtractionConfig` | Yes | Extraction configuration containing OCR and PDF settings |
+
+**Returns:** `boolean`
+
+
+---
+
+#### extractImagesFromPdf()
+
+**Signature:**
+
+```java
+public static List<PdfImage> extractImagesFromPdf(byte[] pdfBytes) throws Error
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `pdfBytes` | `byte[]` | Yes | The pdf bytes |
+
+**Returns:** `List<PdfImage>`
+
+**Errors:** Throws `ErrorException`.
+
+
+---
+
+#### extractImagesFromPdfWithPassword()
+
+**Signature:**
+
+```java
+public static List<PdfImage> extractImagesFromPdfWithPassword(byte[] pdfBytes, String password) throws Error
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `pdfBytes` | `byte[]` | Yes | The pdf bytes |
+| `password` | `String` | Yes | The password |
+
+**Returns:** `List<PdfImage>`
+
+**Errors:** Throws `ErrorException`.
+
+
+---
+
+#### detectLayoutForDocument()
+
+Run layout detection on all pages of a PDF document.
+
+Under the hood, this uses batched layout detection to prevent holding too many
+full-resolution page images in memory simultaneously before detection.
+
+**Signature:**
+
+```java
+public static DynamicImage detectLayoutForDocument(byte[] pdfBytes, LayoutEngine engine) throws Error
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `pdfBytes` | `byte[]` | Yes | The pdf bytes |
+| `engine` | `LayoutEngine` | Yes | The layout engine |
+
+**Returns:** `DynamicImage`
+
+**Errors:** Throws `ErrorException`.
+
+
+---
+
+#### detectLayoutForImages()
+
+Run layout detection on pre-rendered images.
+
+Returns pixel-space `DetectionResult`s — no PDF coordinate conversion.
+Use this when images are already available (e.g., from the OCR rendering
+path) to avoid redundant PDF re-rendering.
+
+**Signature:**
+
+```java
+public static List<DetectionResult> detectLayoutForImages(List<DynamicImage> images, LayoutEngine engine) throws Error
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `images` | `List<DynamicImage>` | Yes | The images |
+| `engine` | `LayoutEngine` | Yes | The layout engine |
+
+**Returns:** `List<DetectionResult>`
+
+**Errors:** Throws `ErrorException`.
+
+
+---
+
+#### extractMetadata()
+
+Extract PDF-specific metadata from raw bytes.
+
+Returns only PDF-specific metadata (version, producer, encryption status, dimensions).
+
+**Signature:**
+
+```java
+public static PdfMetadata extractMetadata(byte[] pdfBytes) throws Error
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `pdfBytes` | `byte[]` | Yes | The pdf bytes |
+
+**Returns:** `PdfMetadata`
+
+**Errors:** Throws `ErrorException`.
+
+
+---
+
+#### extractMetadataWithPassword()
+
+Extract PDF-specific metadata from raw bytes with optional password.
+
+Returns only PDF-specific metadata (version, producer, encryption status, dimensions).
+
+**Signature:**
+
+```java
+public static PdfMetadata extractMetadataWithPassword(byte[] pdfBytes, String password) throws Error
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `pdfBytes` | `byte[]` | Yes | The pdf bytes |
+| `password` | `Optional<String>` | No | The password |
+
+**Returns:** `PdfMetadata`
+
+**Errors:** Throws `ErrorException`.
+
+
+---
+
+#### extractMetadataWithPasswords()
+
+**Signature:**
+
+```java
+public static PdfMetadata extractMetadataWithPasswords(byte[] pdfBytes, List<String> passwords) throws Error
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `pdfBytes` | `byte[]` | Yes | The pdf bytes |
+| `passwords` | `List<String>` | Yes | The passwords |
+
+**Returns:** `PdfMetadata`
+
+**Errors:** Throws `ErrorException`.
+
+
+---
+
+#### extractMetadataFromDocument()
+
+Extract complete PDF metadata from a document.
+
+Extracts common fields (title, subject, authors, keywords, dates, creator),
+PDF-specific metadata, and optionally builds a PageStructure with boundaries.
+
+  If provided, a PageStructure will be built with these boundaries.
+* `content` - Optional extracted text content, used for blank page detection.
+  If provided, `PageInfo.is_blank` will be populated based on text content analysis.
+  If `null`, `is_blank` will be `null` for all pages.
+
+**Returns:**
+
+Returns a `PdfExtractionMetadata` struct containing all extracted metadata,
+including page structure if boundaries were provided.
+
+**Signature:**
+
+```java
+public static PdfExtractionMetadata extractMetadataFromDocument(PdfDocument document, List<PageBoundary> pageBoundaries, String content) throws Error
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `document` | `PdfDocument` | Yes | The PDF document to extract metadata from |
+| `pageBoundaries` | `Optional<List<PageBoundary>>` | No | Optional vector of PageBoundary entries for building PageStructure. |
+| `content` | `Optional<String>` | No | Optional extracted text content, used for blank page detection. |
+
+**Returns:** `PdfExtractionMetadata`
+
+**Errors:** Throws `ErrorException`.
+
+
+---
+
+#### extractCommonMetadataFromDocument()
+
+Extract common metadata from a PDF document.
+
+Returns common fields (title, authors, keywords, dates) that are now stored
+in the base `Metadata` struct instead of format-specific metadata.
+
+This function uses batch fetching with caching to optimize metadata extraction
+by reducing repeated dictionary lookups. All metadata tags are fetched once and
+cached in a single pass.
+
+**Signature:**
+
+```java
+public static CommonPdfMetadata extractCommonMetadataFromDocument(PdfDocument document) throws Error
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `document` | `PdfDocument` | Yes | The pdf document |
+
+**Returns:** `CommonPdfMetadata`
+
+**Errors:** Throws `ErrorException`.
+
+
+---
+
+#### renderPageToImage()
+
+**Signature:**
+
+```java
+public static DynamicImage renderPageToImage(byte[] pdfBytes, long pageIndex, PageRenderOptions options) throws Error
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `pdfBytes` | `byte[]` | Yes | The pdf bytes |
+| `pageIndex` | `long` | Yes | The page index |
+| `options` | `PageRenderOptions` | Yes | The options to use |
+
+**Returns:** `DynamicImage`
+
+**Errors:** Throws `ErrorException`.
+
+
+---
+
+#### renderPdfPageToPng()
+
+Render a single PDF page to a PNG-encoded byte buffer.
+
+**Errors:**
+
+Returns an error if the PDF is invalid, the page index is out of bounds,
+or if the page fails to render.
+
+**Signature:**
+
+```java
+public static byte[] renderPdfPageToPng(byte[] pdfBytes, long pageIndex, int dpi, String password) throws Error
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `pdfBytes` | `byte[]` | Yes | The pdf bytes |
+| `pageIndex` | `long` | Yes | The page index |
+| `dpi` | `Optional<int>` | No | The dpi |
+| `password` | `Optional<String>` | No | The password |
+
+**Returns:** `byte[]`
+
+**Errors:** Throws `ErrorException`.
+
+
+---
+
+#### extractWordsFromPage()
+
+Extract words with positions from PDF page for table detection.
+
+Groups adjacent characters into words based on spacing heuristics,
+then converts to HocrWord format for table reconstruction.
+
+**Returns:**
+
+Vector of HocrWord objects with text and bounding box information.
+
+**Note:**
+This function requires the "ocr" feature to be enabled. Without it, returns an error.
+
+**Signature:**
+
+```java
+public static List<HocrWord> extractWordsFromPage(PdfPage page, double minConfidence) throws Error
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `page` | `PdfPage` | Yes | PDF page to extract words from |
+| `minConfidence` | `double` | Yes | Minimum confidence threshold (0.0-100.0). PDF text has high confidence (95.0). |
+
+**Returns:** `List<HocrWord>`
+
+**Errors:** Throws `ErrorException`.
+
+
+---
+
+#### segmentToHocrWord()
+
+Convert a PDF `SegmentData` to an `HocrWord` for table reconstruction.
+
+`SegmentData` uses PDF coordinates (y=0 at bottom, increases upward).
+`HocrWord` uses image coordinates (y=0 at top, increases downward).
+
+**Signature:**
+
+```java
+public static HocrWord segmentToHocrWord(SegmentData seg, float pageHeight)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `seg` | `SegmentData` | Yes | The segment data |
+| `pageHeight` | `float` | Yes | The page height |
+
+**Returns:** `HocrWord`
+
+
+---
+
+#### splitSegmentToWords()
+
+Split a `SegmentData` into word-level `HocrWord`s for table reconstruction.
+
+Pdfium segments can contain multiple whitespace-separated words (merged by
+shared baseline + font). For table cell matching, each word needs its own
+bounding box so it can be assigned to the correct column/cell.
+
+Single-word segments use `segment_to_hocr_word` directly (fast path).
+Multi-word segments get proportional bbox estimation per word based on
+byte offset within the segment text.
+
+**Signature:**
+
+```java
+public static List<HocrWord> splitSegmentToWords(SegmentData seg, float pageHeight)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `seg` | `SegmentData` | Yes | The segment data |
+| `pageHeight` | `float` | Yes | The page height |
+
+**Returns:** `List<HocrWord>`
+
+
+---
+
+#### segmentsToWords()
+
+Convert a page's segments to word-level `HocrWord`s for table extraction.
+
+Splits multi-word segments into individual words with proportional bounding
+boxes, ensuring each word can be independently matched to table cells.
+
+**Signature:**
+
+```java
+public static List<HocrWord> segmentsToWords(List<SegmentData> segments, float pageHeight)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `segments` | `List<SegmentData>` | Yes | The segments |
+| `pageHeight` | `float` | Yes | The page height |
+
+**Returns:** `List<HocrWord>`
+
+
+---
+
+#### postProcessTable()
+
+Post-process a raw table grid to validate structure and clean up.
+
+Returns `null` if the table fails structural validation.
+
+When `layout_guided` is true, the layout model already confirmed this is
+a table, so validation thresholds are relaxed:
+- Minimum columns: 3 → 2
+- Column sparsity: 75% → 95%
+- Overall density: 40% → 15%
+- Prose detection: reject if >70% cells >100 chars (vs >50% >60 chars)
+- Prose detection: reject if avg cell >80 chars (vs >50 chars)
+- Single-word cell: reject if >85% single-word (vs >70%)
+- Content asymmetry: reject if one col >92% of text (vs >85%)
+- Column-text-flow: applied equally (reject if >60% rows flow through)
+
+**Signature:**
+
+```java
+public static Optional<List<List<String>>> postProcessTable(List<List<String>> table, boolean layoutGuided, boolean allowSingleColumn)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `table` | `List<List<String>>` | Yes | The table |
+| `layoutGuided` | `boolean` | Yes | The layout guided |
+| `allowSingleColumn` | `boolean` | Yes | The allow single column |
+
+**Returns:** `Optional<List<List<String>>>`
+
+
+---
+
+#### isWellFormedTable()
+
+Validate whether a reconstructed table grid represents a well-formed table
+rather than multi-column prose or a repeated page element.
+
+Returns `true` if the grid looks like a real table, `false` if it should be
+rejected and its content emitted as paragraph text instead.
+
+The checks catch cases the layout model misidentifies as tables:
+- Multi-column prose split into a grid (detected via row coherence and column uniformity)
+- Repeated page elements (headers/footers detected as tables on every page)
+- Low-vocabulary repetitive content (same few words in every row)
+
+**Signature:**
+
+```java
+public static boolean isWellFormedTable(List<List<String>> grid)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `grid` | `List<List<String>>` | Yes | The grid |
+
+**Returns:** `boolean`
+
+
+---
+
+#### extractTextFromPdf()
+
+**Signature:**
+
+```java
+public static String extractTextFromPdf(byte[] pdfBytes) throws Error
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `pdfBytes` | `byte[]` | Yes | The pdf bytes |
+
+**Returns:** `String`
+
+**Errors:** Throws `ErrorException`.
+
+
+---
+
+#### extractTextFromPdfWithPassword()
+
+**Signature:**
+
+```java
+public static String extractTextFromPdfWithPassword(byte[] pdfBytes, String password) throws Error
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `pdfBytes` | `byte[]` | Yes | The pdf bytes |
+| `password` | `String` | Yes | The password |
+
+**Returns:** `String`
+
+**Errors:** Throws `ErrorException`.
+
+
+---
+
+#### extractTextFromPdfWithPasswords()
+
+**Signature:**
+
+```java
+public static String extractTextFromPdfWithPasswords(byte[] pdfBytes, List<String> passwords) throws Error
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `pdfBytes` | `byte[]` | Yes | The pdf bytes |
+| `passwords` | `List<String>` | Yes | The passwords |
+
+**Returns:** `String`
+
+**Errors:** Throws `ErrorException`.
+
+
+---
+
+#### extractTextAndMetadataFromPdfDocument()
+
+Extract text and metadata from PDF document in a single pass.
+
+This is an optimized function that extracts both text and metadata in one pass
+through the document, avoiding redundant document parsing. It combines the
+functionality of `extract_text_from_pdf_document` and
+`extract_metadata_from_document` into a single unified operation.
+
+**Returns:**
+
+A tuple containing:
+- The extracted text content (String)
+- Optional page boundaries when page tracking is enabled (Vec<PageBoundary>)
+- Optional per-page content when extract_pages is enabled (Vec<PageContent>)
+- Complete extraction metadata (PdfExtractionMetadata)
+
+# Performance
+
+This function is optimized for single-pass extraction. It performs all document
+scanning in one iteration, avoiding redundant pdfium operations compared to
+calling text and metadata extraction separately.
+
+**Signature:**
+
+```java
+public static PdfUnifiedExtractionResult extractTextAndMetadataFromPdfDocument(PdfDocument document, ExtractionConfig extractionConfig) throws Error
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `document` | `PdfDocument` | Yes | The PDF document to extract from |
+| `extractionConfig` | `Optional<ExtractionConfig>` | No | Optional extraction configuration for hierarchy and page tracking |
+
+**Returns:** `PdfUnifiedExtractionResult`
+
+**Errors:** Throws `ErrorException`.
+
+
+---
+
+#### extractTextFromPdfDocument()
+
+Extract text from PDF document with optional page boundary tracking.
+
+**Returns:**
+
+A tuple containing:
+- The extracted text content (String)
+- Optional page boundaries when page tracking is enabled (Vec<PageBoundary>)
+- Optional per-page content when extract_pages is enabled (Vec<PageContent>)
+
+# Implementation Details
+
+Uses lazy page-by-page iteration to reduce memory footprint. Pages are processed
+one at a time and released after extraction, rather than accumulating all pages
+in memory. This approach saves 40-50MB for large documents while improving
+performance by 15-25% through reduced upfront work.
+
+When page_config is None, uses fast path with minimal overhead.
+When page_config is Some, tracks byte offsets using .len() for O(1) performance (UTF-8 valid boundaries).
+
+**Signature:**
+
+```java
+public static PdfTextExtractionResult extractTextFromPdfDocument(PdfDocument document, PageConfig pageConfig, ExtractionConfig extractionConfig) throws Error
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `document` | `PdfDocument` | Yes | The PDF document to extract text from |
+| `pageConfig` | `Optional<PageConfig>` | No | Optional page configuration for boundary tracking and page markers |
+| `extractionConfig` | `Optional<ExtractionConfig>` | No | Optional extraction configuration for hierarchy detection |
+
+**Returns:** `PdfTextExtractionResult`
+
+**Errors:** Throws `ErrorException`.
+
+
+---
+
+#### serializeToToon()
+
+Serialize an `ExtractionResult` to TOON (Token-Oriented Object Notation).
+
+TOON is a token-efficient alternative to JSON for LLM prompts.
+Losslessly convertible to/from JSON but uses fewer tokens.
+
+**Signature:**
+
+```java
+public static String serializeToToon(ExtractionResult result) throws Error
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `result` | `ExtractionResult` | Yes | The extraction result |
+
+**Returns:** `String`
+
+**Errors:** Throws `ErrorException`.
+
+
+---
+
+#### serializeToJson()
+
+Serialize an `ExtractionResult` to pretty-printed JSON.
+
+**Signature:**
+
+```java
+public static String serializeToJson(ExtractionResult result) throws Error
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `result` | `ExtractionResult` | Yes | The extraction result |
+
+**Returns:** `String`
+
+**Errors:** Throws `ErrorException`.
+
+
+---
+
+### Types
+
+#### AccelerationConfig
+
+Hardware acceleration configuration for ONNX Runtime models.
+
+Controls which execution provider (CPU, CoreML, CUDA, TensorRT) is used
+for inference in layout detection and embedding generation.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `provider` | `ExecutionProviderType` | `ExecutionProviderType.AUTO` | Execution provider to use for ONNX inference. |
+| `deviceId` | `int` | — | GPU device ID (for CUDA/TensorRT). Ignored for CPU/CoreML/Auto. |
+
+
+---
+
+#### AnchorProperties
+
+Properties for anchored drawings.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `behindDoc` | `boolean` | — | Behind doc |
+| `layoutInCell` | `boolean` | — | Layout in cell |
+| `relativeHeight` | `Optional<long>` | `null` | Relative height |
+| `positionH` | `Optional<Position>` | `null` | Position h (position) |
+| `positionV` | `Optional<Position>` | `null` | Position v (position) |
+| `wrapType` | `WrapType` | `WrapType.NONE` | Wrap type (wrap type) |
+
+
+---
+
+#### ApiDoc
+
+OpenAPI documentation structure.
+
+Defines all endpoints, request/response schemas, and examples
+for the Kreuzberg document extraction API.
+
+
+---
+
+#### ApiError
+
+API-specific error wrapper.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `status` | `StatusCode` | — | HTTP status code |
+| `body` | `ErrorResponse` | — | Error response body |
+
+##### Methods
+
+###### validation()
+
+Create a validation error (400).
+
+**Signature:**
+
+```java
+public static ApiError validation(KreuzbergError error)
+```
+
+###### unprocessable()
+
+Create an unprocessable entity error (422).
+
+**Signature:**
+
+```java
+public static ApiError unprocessable(KreuzbergError error)
+```
+
+###### internal()
+
+Create an internal server error (500).
+
+**Signature:**
+
+```java
+public static ApiError internal(KreuzbergError error)
+```
+
+###### badGateway()
+
+Create a bad gateway error (502).
+
+Use when an upstream service (e.g., model download from HuggingFace) fails.
+
+**Signature:**
+
+```java
+public static ApiError badGateway(KreuzbergError error)
+```
+
+###### intoResponse()
+
+**Signature:**
+
+```java
+public Response intoResponse()
+```
+
+###### from()
+
+**Signature:**
+
+```java
+public static ApiError from(KreuzbergError error)
+```
+
+
+---
+
+#### ApiSizeLimits
+
+API server size limit configuration.
+
+Controls maximum sizes for request bodies and multipart uploads.
+Default limits are set to 100 MB to accommodate typical document processing workloads.
+
+# Default Values
+
+- `max_request_body_bytes`: 100 MB (104,857,600 bytes)
+- `max_multipart_field_bytes`: 100 MB (104,857,600 bytes)
+
+# Configuration via Environment Variables
+
+You can override the defaults using these environment variables:
+
+```bash
+# Modern approach (in bytes):
+export KREUZBERG_MAX_REQUEST_BODY_BYTES=104857600     # 100 MB
+export KREUZBERG_MAX_MULTIPART_FIELD_BYTES=104857600  # 100 MB
+```
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `maxRequestBodyBytes` | `long` | — | Maximum size of the entire request body in bytes. This applies to the total size of all uploaded files and form data in a single request. Default: 100 MB (104,857,600 bytes). |
+| `maxMultipartFieldBytes` | `long` | — | Maximum size of a single multipart field in bytes. This applies to individual files in a multipart upload. Default: 100 MB (104,857,600 bytes). |
+
+##### Methods
+
+###### defaultOptions()
+
+**Signature:**
+
+```java
+public static ApiSizeLimits defaultOptions()
+```
+
+###### fromMb()
+
+Create size limits from MB values (convenience method).
+
+**Signature:**
+
+```java
+public static ApiSizeLimits fromMb(long maxRequestBodyMb, long maxMultipartFieldMb)
+```
+
+
+---
+
+#### ApiState
+
+API server state.
+
+Holds the default extraction configuration loaded from config file
+(via discovery or explicit path). Per-request configs override these defaults.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `defaultConfig` | `ExtractionConfig` | — | Default extraction configuration |
+| `extractionService` | `Mutex` | — | Tower service for extraction requests. Wrapped in `Arc<Mutex>` because `BoxCloneService` is `Send` but not `Sync`, while `ApiState` must be `Clone + Sync` for Axum's state requirement. The lock is held only long enough to clone the service. |
+
+
+---
+
+#### ArchiveEntry
+
+A single file extracted from an archive.
+
+When archives (ZIP, TAR, 7Z, GZIP) are extracted with recursive extraction
+enabled, each processable file produces its own full `ExtractionResult`.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `path` | `String` | — | Archive-relative file path (e.g. "folder/document.pdf"). |
+| `mimeType` | `String` | — | Detected MIME type of the file. |
+| `result` | `ExtractionResult` | — | Full extraction result for this file. |
+
+
+---
+
+#### ArchiveMetadata
+
+Archive (ZIP/TAR/7Z) metadata.
+
+Extracted from compressed archive files containing file lists and size information.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `format` | `Str` | — | Archive format ("ZIP", "TAR", "7Z", etc.) |
+| `fileCount` | `long` | — | Total number of files in the archive |
+| `fileList` | `List<String>` | `Collections.emptyList()` | List of file paths within the archive |
+| `totalSize` | `long` | — | Total uncompressed size in bytes |
+| `compressedSize` | `Optional<long>` | `null` | Compressed size in bytes (if available) |
+
+
+---
+
+#### Attributes
+
+Element attributes in Djot.
+
+Represents the attributes attached to elements using {.class #id key="value"} syntax.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `id` | `Optional<String>` | `null` | Element ID (#identifier) |
+| `classes` | `List<String>` | `Collections.emptyList()` | CSS classes (.class1 .class2) |
+| `keyValues` | `List<StringString>` | `Collections.emptyList()` | Key-value pairs (key="value") |
+
+
+---
+
+#### BBox
+
+Bounding box in original image coordinates (x1, y1) top-left, (x2, y2) bottom-right.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `x1` | `float` | — | X1 |
+| `y1` | `float` | — | Y1 |
+| `x2` | `float` | — | X2 |
+| `y2` | `float` | — | Y2 |
+
+##### Methods
+
+###### width()
+
+**Signature:**
+
+```java
+public float width()
+```
+
+###### height()
+
+**Signature:**
+
+```java
+public float height()
+```
+
+###### area()
+
+**Signature:**
+
+```java
+public float area()
+```
+
+###### center()
+
+**Signature:**
+
+```java
+public F32F32 center()
+```
+
+###### intersectionArea()
+
+Area of intersection with another bounding box.
+
+**Signature:**
+
+```java
+public float intersectionArea(BBox other)
+```
+
+###### iou()
+
+Intersection over Union with another bounding box.
+
+**Signature:**
+
+```java
+public float iou(BBox other)
+```
+
+###### containmentOf()
+
+Fraction of `other` that is contained within `self`.
+Returns 0.0..=1.0 where 1.0 means `other` is fully inside `self`.
+
+**Signature:**
+
+```java
+public float containmentOf(BBox other)
+```
+
+###### pageCoverage()
+
+Fraction of page area this bbox covers.
+
+**Signature:**
+
+```java
+public float pageCoverage(float pageWidth, float pageHeight)
+```
+
+###### fmt()
+
+**Signature:**
+
+```java
+public Unknown fmt(Formatter f)
+```
+
+
+---
+
+#### BatchExtractFilesParams
+
+Request parameters for batch file extraction.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `paths` | `List<String>` | — | Paths to files to extract |
+| `config` | `Optional<Object>` | `null` | Extraction configuration (JSON object) |
+| `pdfPassword` | `Optional<String>` | `null` | Password for encrypted PDFs |
+| `fileConfigs` | `Optional<List<Optional<Object>>>` | `null` | Per-file extraction configuration overrides (parallel array to paths). Each entry is either null (use default) or a FileExtractionConfig JSON object. |
+| `responseFormat` | `Optional<String>` | `null` | Wire format for the response: "json" (default) or "toon" |
+
+
+---
+
+#### BatchItemResult
+
+Batch item result for processing multiple files
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `filePath` | `String` | — | File path |
+| `success` | `boolean` | — | Success |
+| `result` | `Optional<OcrExtractionResult>` | `null` | Result (ocr extraction result) |
+| `error` | `Optional<String>` | `null` | Error |
+
+
+---
+
+#### BatchProcessor
+
+Batch processor that manages object pools for optimized extraction.
+
+This struct manages the lifecycle of reusable object pools used during
+batch extraction. Pools are created lazily on first use and reused across
+all documents processed by this batch processor.
+
+# Lazy Initialization
+
+Pools are initialized on demand to reduce memory usage for applications
+that may not use batch processing immediately or at all.
+
+##### Methods
+
+###### withConfig()
+
+Create a new batch processor with custom pool configuration.
+
+Pools are not created immediately but lazily on first access.
+
+**Returns:**
+
+A new `BatchProcessor` configured with the provided settings.
+
+**Signature:**
+
+```java
+public static BatchProcessor withConfig(BatchProcessorConfig config)
+```
+
+###### withPoolHint()
+
+Create a batch processor with pool sizes optimized for a specific document.
+
+This method uses a `PoolSizeHint` (derived from file size and MIME type)
+to create a batch processor with appropriately sized pools. This reduces
+memory waste by tailoring pool allocation to actual document complexity.
+
+**Returns:**
+
+A new `BatchProcessor` configured with the hint-based pool sizes
+
+**Signature:**
+
+```java
+public static BatchProcessor withPoolHint(PoolSizeHint hint)
+```
+
+###### stringPool()
+
+Get a reference to the string buffer pool.
+
+Creates the pool lazily on first access.
+Useful for custom pooling implementations that need direct pool access.
+
+**Signature:**
+
+```java
+public StringBufferPool stringPool()
+```
+
+###### bytePool()
+
+Get a reference to the byte buffer pool.
+
+Creates the pool lazily on first access.
+Useful for custom pooling implementations that need direct pool access.
+
+**Signature:**
+
+```java
+public ByteBufferPool bytePool()
+```
+
+###### config()
+
+Get the current configuration.
+
+**Signature:**
+
+```java
+public BatchProcessorConfig config()
+```
+
+###### stringPoolSize()
+
+Get the number of pooled string buffers currently available.
+
+**Signature:**
+
+```java
+public long stringPoolSize()
+```
+
+###### bytePoolSize()
+
+Get the number of pooled byte buffers currently available.
+
+**Signature:**
+
+```java
+public long bytePoolSize()
+```
+
+###### clearPools()
+
+Clear all pooled objects, forcing new allocations on next acquire.
+
+Useful for memory-constrained environments or to reclaim memory
+after processing large batches.
+
+**Signature:**
+
+```java
+public void clearPools() throws Error
+```
+
+###### defaultOptions()
+
+**Signature:**
+
+```java
+public static BatchProcessor defaultOptions()
+```
+
+
+---
+
+#### BatchProcessorConfig
+
+Configuration for batch processing with pooling optimizations.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `stringPoolSize` | `long` | `10` | Maximum number of string buffers to maintain in the pool |
+| `stringBufferCapacity` | `long` | `8192` | Initial capacity for pooled string buffers in bytes |
+| `bytePoolSize` | `long` | `10` | Maximum number of byte buffers to maintain in the pool |
+| `byteBufferCapacity` | `long` | `65536` | Initial capacity for pooled byte buffers in bytes |
+| `maxConcurrent` | `Optional<long>` | `null` | Maximum concurrent extractions (for concurrency control) |
+
+##### Methods
+
+###### defaultOptions()
+
+**Signature:**
+
+```java
+public static BatchProcessorConfig defaultOptions()
+```
+
+
+---
+
+#### BibtexExtractor
+
+BibTeX bibliography extractor.
+
+Parses BibTeX files and extracts structured bibliography data including
+entries, authors, publication years, and entry type distribution.
+
+##### Methods
+
+###### defaultOptions()
+
+**Signature:**
+
+```java
+public static BibtexExtractor defaultOptions()
+```
+
+###### name()
+
+**Signature:**
+
+```java
+public String name()
+```
+
+###### version()
+
+**Signature:**
+
+```java
+public String version()
+```
+
+###### initialize()
+
+**Signature:**
+
+```java
+public void initialize() throws Error
+```
+
+###### shutdown()
+
+**Signature:**
+
+```java
+public void shutdown() throws Error
+```
+
+###### description()
+
+**Signature:**
+
+```java
+public String description()
+```
+
+###### author()
+
+**Signature:**
+
+```java
+public String author()
+```
+
+###### extractBytes()
+
+**Signature:**
+
+```java
+public InternalDocument extractBytes(byte[] content, String mimeType, ExtractionConfig config) throws Error
+```
+
+###### supportedMimeTypes()
+
+**Signature:**
+
+```java
+public List<String> supportedMimeTypes()
+```
+
+###### priority()
+
+**Signature:**
+
+```java
+public int priority()
+```
+
+
+---
+
+#### BibtexMetadata
+
+BibTeX bibliography metadata.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `entryCount` | `long` | — | Number of entry |
+| `citationKeys` | `List<String>` | `Collections.emptyList()` | Citation keys |
+| `authors` | `List<String>` | `Collections.emptyList()` | Authors |
+| `yearRange` | `Optional<YearRange>` | `null` | Year range (year range) |
+| `entryTypes` | `Optional<Map<String, Long>>` | `Collections.emptyMap()` | Entry types |
+
+
+---
+
+#### BorderStyle
+
+A single border specification.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `style` | `String` | — | Style |
+| `size` | `Optional<int>` | `null` | Size in bytes |
+| `color` | `Optional<String>` | `null` | Color |
+| `space` | `Optional<int>` | `null` | Space |
+
+
+---
+
+#### BoundingBox
+
+Bounding box coordinates for element positioning.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `x0` | `double` | — | Left x-coordinate |
+| `y0` | `double` | — | Bottom y-coordinate |
+| `x1` | `double` | — | Right x-coordinate |
+| `y1` | `double` | — | Top y-coordinate |
+
+
+---
+
+#### ByteBufferPool
+
+Convenience type alias for a pooled Vec<u8>.
+
+
+---
+
+#### CacheClearResponse
+
+Cache clear response.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `directory` | `String` | — | Cache directory path |
+| `removedFiles` | `long` | — | Number of files removed |
+| `freedMb` | `double` | — | Space freed in MB |
+
+
+---
+
+#### CacheStats
+
+Cache statistics.
+
+Provides information about the extraction result cache,
+including size, file count, and age distribution.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `totalFiles` | `long` | — | Total number of cached files |
+| `totalSizeMb` | `double` | — | Total cache size in megabytes |
+| `availableSpaceMb` | `double` | — | Available disk space in megabytes |
+| `oldestFileAgeDays` | `double` | — | Age of the oldest cached file in days |
+| `newestFileAgeDays` | `double` | — | Age of the newest cached file in days |
+
+
+---
+
+#### CacheStatsResponse
+
+Cache statistics response.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `directory` | `String` | — | Cache directory path |
+| `totalFiles` | `long` | — | Total number of cache files |
+| `totalSizeMb` | `double` | — | Total cache size in MB |
+| `availableSpaceMb` | `double` | — | Available disk space in MB |
+| `oldestFileAgeDays` | `double` | — | Age of oldest file in days |
+| `newestFileAgeDays` | `double` | — | Age of newest file in days |
+
+
+---
+
+#### CacheWarmParams
+
+Request parameters for cache warm (model download).
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `allEmbeddings` | `boolean` | — | Download all embedding model presets |
+| `embeddingModel` | `Optional<String>` | `null` | Specific embedding preset name to download (e.g. "balanced", "speed", "quality") |
+
+
+---
+
+#### CancellationToken
+
+A lightweight, cloneable cancellation token.
+
+Create one with `CancellationToken.new`, pass clones to the extraction
+call (via `ExtractionConfig.cancel_token`) and to the caller. Call
+`CancellationToken.cancel` from the caller side when the operation
+should be aborted. The extraction code polls
+`CancellationToken.is_cancelled` at safe checkpoints and returns
+`KreuzbergError.Cancelled` if set.
+
+Cloning is cheap (increments the `Arc` reference count only).
+
+##### Methods
+
+###### cancel()
+
+Signal cancellation.
+
+All clones of this token will observe `is_cancelled` returning `true`
+on their next check. This operation is idempotent.
+
+**Signature:**
+
+```java
+public void cancel()
+```
+
+###### isCancelled()
+
+Returns `true` if `cancel` has been called on any clone of this token.
+
+**Signature:**
+
+```java
+public boolean isCancelled()
+```
+
+
+---
+
+#### CellBBox
+
+A cell bounding box within the reconstructed table grid.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `x1` | `float` | — | X1 |
+| `y1` | `float` | — | Y1 |
+| `x2` | `float` | — | X2 |
+| `y2` | `float` | — | Y2 |
+
+
+---
+
+#### CellBorders
+
+Per-cell borders (4 sides).
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `top` | `Optional<BorderStyle>` | `null` | Top (border style) |
+| `bottom` | `Optional<BorderStyle>` | `null` | Bottom (border style) |
+| `left` | `Optional<BorderStyle>` | `null` | Left (border style) |
+| `right` | `Optional<BorderStyle>` | `null` | Right (border style) |
+
+
+---
+
+#### CellMargins
+
+Cell margins (used for both table-level defaults and per-cell overrides).
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `top` | `Optional<int>` | `null` | Top |
+| `bottom` | `Optional<int>` | `null` | Bottom |
+| `left` | `Optional<int>` | `null` | Left |
+| `right` | `Optional<int>` | `null` | Right |
+
+
+---
+
+#### CellProperties
+
+Cell-level properties from `<w:tcPr>`.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `width` | `Optional<TableWidth>` | `null` | Width (table width) |
+| `gridSpan` | `Optional<int>` | `null` | Grid span |
+| `vMerge` | `Optional<VerticalMerge>` | `null` | V merge (vertical merge) |
+| `borders` | `Optional<CellBorders>` | `null` | Borders (cell borders) |
+| `shading` | `Optional<CellShading>` | `null` | Shading (cell shading) |
+| `margins` | `Optional<CellMargins>` | `null` | Margins (cell margins) |
+| `verticalAlign` | `Optional<String>` | `null` | Vertical align |
+| `textDirection` | `Optional<String>` | `null` | Text direction |
+| `noWrap` | `boolean` | — | No wrap |
+
+
+---
+
+#### CellShading
+
+Cell shading/background.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `fill` | `Optional<String>` | `null` | Fill |
+| `color` | `Optional<String>` | `null` | Color |
+| `val` | `Optional<String>` | `null` | Val |
+
+
+---
+
+#### CfbReader
+
+##### Methods
+
+###### fromBytes()
+
+Open a CFB compound file from raw bytes.
+
+**Signature:**
+
+```java
+public static CfbReader fromBytes(byte[] bytes) throws Error
+```
+
+
+---
+
+#### CharData
+
+Character information extracted from PDF with font metrics.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `text` | `String` | — | The character text content |
+| `x` | `float` | — | X position in PDF units |
+| `y` | `float` | — | Y position in PDF units |
+| `fontSize` | `float` | — | Font size in points |
+| `width` | `float` | — | Character width in PDF units |
+| `height` | `float` | — | Character height in PDF units |
+| `isBold` | `boolean` | — | Whether the font is bold (from pdfium force-bold flag) |
+| `isItalic` | `boolean` | — | Whether the font is italic |
+| `baselineY` | `float` | — | Baseline Y position (from character origin, falls back to bounds bottom) |
+
+
+---
+
+#### Chunk
+
+A text chunk with optional embedding and metadata.
+
+Chunks are created when chunking is enabled in `ExtractionConfig`. Each chunk
+contains the text content, optional embedding vector (if embedding generation
+is configured), and metadata about its position in the document.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `content` | `String` | — | The text content of this chunk. |
+| `chunkType` | `ChunkType` | — | Semantic structural classification of this chunk. Assigned by the heuristic classifier based on content patterns and heading context. Defaults to `ChunkType.Unknown` when no rule matches. |
+| `embedding` | `Optional<List<Float>>` | `null` | Optional embedding vector for this chunk. Only populated when `EmbeddingConfig` is provided in chunking configuration. The dimensionality depends on the chosen embedding model. |
+| `metadata` | `ChunkMetadata` | — | Metadata about this chunk's position and properties. |
+
+
+---
+
+#### ChunkMetadata
+
+Metadata about a chunk's position in the original document.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `byteStart` | `long` | — | Byte offset where this chunk starts in the original text (UTF-8 valid boundary). |
+| `byteEnd` | `long` | — | Byte offset where this chunk ends in the original text (UTF-8 valid boundary). |
+| `tokenCount` | `Optional<long>` | `null` | Number of tokens in this chunk (if available). This is calculated by the embedding model's tokenizer if embeddings are enabled. |
+| `chunkIndex` | `long` | — | Zero-based index of this chunk in the document. |
+| `totalChunks` | `long` | — | Total number of chunks in the document. |
+| `firstPage` | `Optional<long>` | `null` | First page number this chunk spans (1-indexed). Only populated when page tracking is enabled in extraction configuration. |
+| `lastPage` | `Optional<long>` | `null` | Last page number this chunk spans (1-indexed, equal to first_page for single-page chunks). Only populated when page tracking is enabled in extraction configuration. |
+| `headingContext` | `Optional<HeadingContext>` | `null` | Heading context when using Markdown chunker. Contains the heading hierarchy this chunk falls under. Only populated when `ChunkerType.Markdown` is used. |
+
+
+---
+
+#### ChunkRequest
+
+Chunk request with text and configuration.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `text` | `String` | — | Text to chunk (must not be empty) |
+| `config` | `Optional<ChunkingConfigRequest>` | `null` | Optional chunking configuration |
+| `chunkerType` | `String` | — | Chunker type (text, markdown, yaml, or semantic) |
+
+
+---
+
+#### ChunkResponse
+
+Chunk response with chunks and metadata.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `chunks` | `List<ChunkItem>` | — | List of chunks |
+| `chunkCount` | `long` | — | Total number of chunks |
+| `config` | `ChunkingConfigResponse` | — | Configuration used for chunking |
+| `inputSizeBytes` | `long` | — | Input text size in bytes |
+| `chunkerType` | `String` | — | Chunker type used for chunking |
+
+
+---
+
+#### ChunkTextParams
+
+Request parameters for text chunking.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `text` | `String` | — | Text content to split into chunks |
+| `maxCharacters` | `Optional<long>` | `null` | Maximum characters per chunk (default: 2000) |
+| `overlap` | `Optional<long>` | `null` | Number of overlapping characters between chunks (default: 100) |
+| `chunkerType` | `Optional<String>` | `null` | Chunker type: "text", "markdown", "yaml", or "semantic" (default: "text") |
+| `topicThreshold` | `Optional<float>` | `null` | Topic threshold for semantic chunking (0.0-1.0, default: 0.75) |
+
+
+---
+
+#### ChunkingConfig
+
+Chunking configuration.
+
+Configures text chunking for document content, including chunk size,
+overlap, trimming behavior, and optional embeddings.
+
+Use `..the default constructor` when constructing to allow for future field additions:
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `maxCharacters` | `long` | `1000` | Maximum size per chunk (in units determined by `sizing`). When `sizing` is `Characters` (default), this is the max character count. When using token-based sizing, this is the max token count. Default: 1000 |
+| `overlap` | `long` | `200` | Overlap between chunks (in units determined by `sizing`). Default: 200 |
+| `trim` | `boolean` | `true` | Whether to trim whitespace from chunk boundaries. Default: true |
+| `chunkerType` | `ChunkerType` | `ChunkerType.TEXT` | Type of chunker to use (Text or Markdown). Default: Text |
+| `embedding` | `Optional<EmbeddingConfig>` | `null` | Optional embedding configuration for chunk embeddings. |
+| `preset` | `Optional<String>` | `null` | Use a preset configuration (overrides individual settings if provided). |
+| `sizing` | `ChunkSizing` | `ChunkSizing.CHARACTERS` | How to measure chunk size. Default: `Characters` (Unicode character count). Enable `chunking-tiktoken` or `chunking-tokenizers` features for token-based sizing. |
+| `prependHeadingContext` | `boolean` | `false` | When `True` and `chunker_type` is `Markdown`, prepend the heading hierarchy path (e.g. `"# Title > ## Section\n\n"`) to each chunk's content string. This is useful for RAG pipelines where each chunk needs self-contained context about its position in the document structure. Default: `False` |
+| `topicThreshold` | `Optional<float>` | `null` | Optional cosine similarity threshold for semantic topic boundary detection. Only used when `chunker_type` is `Semantic` and an `EmbeddingConfig` is provided. You almost never need to set this. When omitted, defaults to `0.75` which works well for most documents. Lower values detect more topic boundaries (more, smaller chunks); higher values detect fewer. Range: `0.0..=1.0`. |
+
+##### Methods
+
+###### withChunkerType()
+
+Set the chunker type.
+
+**Signature:**
+
+```java
+public ChunkingConfig withChunkerType(ChunkerType chunkerType)
+```
+
+###### withSizing()
+
+Set the sizing strategy.
+
+**Signature:**
+
+```java
+public ChunkingConfig withSizing(ChunkSizing sizing)
+```
+
+###### withPrependHeadingContext()
+
+Enable or disable prepending heading context to chunk content.
+
+**Signature:**
+
+```java
+public ChunkingConfig withPrependHeadingContext(boolean prepend)
+```
+
+###### withTopicThreshold()
+
+Set the cosine similarity threshold for semantic topic boundary detection.
+
+**Panics:**
+
+Panics if `threshold` is outside `[0.0, 1.0]`.
+
+**Signature:**
+
+```java
+public ChunkingConfig withTopicThreshold(float threshold)
+```
+
+###### defaultOptions()
+
+**Signature:**
+
+```java
+public static ChunkingConfig defaultOptions()
+```
+
+
+---
+
+#### ChunkingProcessor
+
+Post-processor that chunks text in document content.
+
+This processor:
+- Runs in the Middle processing stage
+- Only processes when `config.chunking` is configured
+- Stores chunks in `result.chunks`
+- Uses configurable chunk size and overlap
+
+##### Methods
+
+###### name()
+
+**Signature:**
+
+```java
+public String name()
+```
+
+###### version()
+
+**Signature:**
+
+```java
+public String version()
+```
+
+###### initialize()
+
+**Signature:**
+
+```java
+public void initialize() throws Error
+```
+
+###### shutdown()
+
+**Signature:**
+
+```java
+public void shutdown() throws Error
+```
+
+###### process()
+
+**Signature:**
+
+```java
+public void process(ExtractionResult result, ExtractionConfig config) throws Error
+```
+
+###### processingStage()
+
+**Signature:**
+
+```java
+public ProcessingStage processingStage()
+```
+
+###### shouldProcess()
+
+**Signature:**
+
+```java
+public boolean shouldProcess(ExtractionResult result, ExtractionConfig config)
+```
+
+###### estimatedDurationMs()
+
+**Signature:**
+
+```java
+public long estimatedDurationMs(ExtractionResult result)
+```
+
+
+---
+
+#### ChunkingResult
+
+Result of a text chunking operation.
+
+Contains the generated chunks and metadata about the chunking.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `chunks` | `List<Chunk>` | — | List of text chunks |
+| `chunkCount` | `long` | — | Total number of chunks generated |
+
+
+---
+
+#### CitationExtractor
+
+Citation format extractor for RIS, PubMed/MEDLINE, and EndNote XML formats.
+
+Parses citation files and extracts structured bibliography data including
+entries, authors, publication years, and format-specific metadata.
+
+##### Methods
+
+###### defaultOptions()
+
+**Signature:**
+
+```java
+public static CitationExtractor defaultOptions()
+```
+
+###### name()
+
+**Signature:**
+
+```java
+public String name()
+```
+
+###### version()
+
+**Signature:**
+
+```java
+public String version()
+```
+
+###### initialize()
+
+**Signature:**
+
+```java
+public void initialize() throws Error
+```
+
+###### shutdown()
+
+**Signature:**
+
+```java
+public void shutdown() throws Error
+```
+
+###### description()
+
+**Signature:**
+
+```java
+public String description()
+```
+
+###### author()
+
+**Signature:**
+
+```java
+public String author()
+```
+
+###### extractBytes()
+
+**Signature:**
+
+```java
+public InternalDocument extractBytes(byte[] content, String mimeType, ExtractionConfig config) throws Error
+```
+
+###### supportedMimeTypes()
+
+**Signature:**
+
+```java
+public List<String> supportedMimeTypes()
+```
+
+###### priority()
+
+**Signature:**
+
+```java
+public int priority()
+```
+
+
+---
+
+#### CitationMetadata
+
+Citation file metadata (RIS, PubMed, EndNote).
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `citationCount` | `long` | — | Number of citation |
+| `format` | `Optional<String>` | `null` | Format |
+| `authors` | `List<String>` | `Collections.emptyList()` | Authors |
+| `yearRange` | `Optional<YearRange>` | `null` | Year range (year range) |
+| `dois` | `List<String>` | `Collections.emptyList()` | Dois |
+| `keywords` | `List<String>` | `Collections.emptyList()` | Keywords |
+
+
+---
+
+#### CodeExtractor
+
+Source code extractor using tree-sitter language pack.
+
+Detects the programming language from the file extension or shebang line,
+then uses tree-sitter to parse and extract structural information.
+
+##### Methods
+
+###### defaultOptions()
+
+**Signature:**
+
+```java
+public static CodeExtractor defaultOptions()
+```
+
+###### name()
+
+**Signature:**
+
+```java
+public String name()
+```
+
+###### version()
+
+**Signature:**
+
+```java
+public String version()
+```
+
+###### initialize()
+
+**Signature:**
+
+```java
+public void initialize() throws Error
+```
+
+###### shutdown()
+
+**Signature:**
+
+```java
+public void shutdown() throws Error
+```
+
+###### description()
+
+**Signature:**
+
+```java
+public String description()
+```
+
+###### author()
+
+**Signature:**
+
+```java
+public String author()
+```
+
+###### extractBytes()
+
+**Signature:**
+
+```java
+public InternalDocument extractBytes(byte[] content, String mimeType, ExtractionConfig config) throws Error
+```
+
+###### extractFile()
+
+**Signature:**
+
+```java
+public InternalDocument extractFile(String path, String mimeType, ExtractionConfig config) throws Error
+```
+
+###### supportedMimeTypes()
+
+**Signature:**
+
+```java
+public List<String> supportedMimeTypes()
+```
+
+###### priority()
+
+**Signature:**
+
+```java
+public int priority()
+```
+
+###### asSyncExtractor()
+
+**Signature:**
+
+```java
+public Optional<SyncExtractor> asSyncExtractor()
+```
+
+###### extractSync()
+
+**Signature:**
+
+```java
+public InternalDocument extractSync(byte[] content, String mimeType, ExtractionConfig config) throws Error
+```
+
+
+---
+
+#### ColorScheme
+
+Color scheme containing all 12 standard Office theme colors.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `name` | `String` | — | Color scheme name. |
+| `dk1` | `Optional<ThemeColor>` | `null` | Dark 1 (dark background) color. |
+| `lt1` | `Optional<ThemeColor>` | `null` | Light 1 (light background) color. |
+| `dk2` | `Optional<ThemeColor>` | `null` | Dark 2 color. |
+| `lt2` | `Optional<ThemeColor>` | `null` | Light 2 color. |
+| `accent1` | `Optional<ThemeColor>` | `null` | Accent color 1. |
+| `accent2` | `Optional<ThemeColor>` | `null` | Accent color 2. |
+| `accent3` | `Optional<ThemeColor>` | `null` | Accent color 3. |
+| `accent4` | `Optional<ThemeColor>` | `null` | Accent color 4. |
+| `accent5` | `Optional<ThemeColor>` | `null` | Accent color 5. |
+| `accent6` | `Optional<ThemeColor>` | `null` | Accent color 6. |
+| `hlink` | `Optional<ThemeColor>` | `null` | Hyperlink color. |
+| `folHlink` | `Optional<ThemeColor>` | `null` | Followed hyperlink color. |
+
+
+---
+
+#### ColumnLayout
+
+Column layout configuration.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `count` | `Optional<int>` | `null` | Number of columns. |
+| `spaceTwips` | `Optional<int>` | `null` | Space between columns in twips. |
+| `equalWidth` | `Optional<boolean>` | `null` | Whether columns have equal width. |
+
+
+---
+
+#### CommonPdfMetadata
+
+Common metadata fields extracted from a PDF.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `title` | `Optional<String>` | `null` | Title |
+| `subject` | `Optional<String>` | `null` | Subject |
+| `authors` | `Optional<List<String>>` | `null` | Authors |
+| `keywords` | `Optional<List<String>>` | `null` | Keywords |
+| `createdAt` | `Optional<String>` | `null` | Created at |
+| `modifiedAt` | `Optional<String>` | `null` | Modified at |
+| `createdBy` | `Optional<String>` | `null` | Created by |
+
+
+---
+
+#### ConcurrencyConfig
+
+Controls thread usage for constrained environments.
+
+Set `max_threads` to cap all internal thread pools (Rayon, ONNX Runtime
+intra-op) and batch concurrency to a single limit.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `maxThreads` | `Optional<long>` | `null` | Maximum number of threads for all internal thread pools. Caps Rayon global pool size, ONNX Runtime intra-op threads, and (when `max_concurrent_extractions` is unset) the batch concurrency semaphore. When `None`, system defaults are used. |
+
+
+---
+
+#### ContentFilterConfig
+
+Cross-extractor content filtering configuration.
+
+Controls whether "furniture" content (headers, footers, page numbers,
+watermarks, repeating text) is included in or stripped from extraction
+results. Applies across all extractors (PDF, DOCX, RTF, ODT, HTML, etc.)
+with format-specific implementation.
+
+When `null` on `ExtractionConfig`, each extractor uses its current
+default behavior unchanged.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `includeHeaders` | `boolean` | `false` | Include running headers in extraction output. - PDF: Disables top-margin furniture stripping and prevents the layout model from treating `PageHeader`-classified regions as furniture. - DOCX: Includes document headers in text output. - RTF/ODT: Headers already included; this is a no-op when true. - HTML/EPUB: Keeps `<header>` element content. Default: `False` (headers are stripped or excluded). |
+| `includeFooters` | `boolean` | `false` | Include running footers in extraction output. - PDF: Disables bottom-margin furniture stripping and prevents the layout model from treating `PageFooter`-classified regions as furniture. - DOCX: Includes document footers in text output. - RTF/ODT: Footers already included; this is a no-op when true. - HTML/EPUB: Keeps `<footer>` element content. Default: `False` (footers are stripped or excluded). |
+| `stripRepeatingText` | `boolean` | `true` | Enable the heuristic cross-page repeating text detector. When `True` (default), text that repeats verbatim across a supermajority of pages is classified as furniture and stripped.  Disable this if brand names or repeated headings are being incorrectly removed by the heuristic. Note: when a layout-detection model is active, the model may independently classify page-header / page-footer regions as furniture on a per-page basis. To preserve those regions, set `include_headers = true` and/or `include_footers = true` in addition to disabling this flag. Primarily affects PDF extraction. Default: `True`. |
+| `includeWatermarks` | `boolean` | `false` | Include watermark text in extraction output. - PDF: Keeps watermark artifacts and arXiv identifiers. - Other formats: No effect currently. Default: `False` (watermarks are stripped). |
+
+##### Methods
+
+###### defaultOptions()
+
+**Signature:**
+
+```java
+public static ContentFilterConfig defaultOptions()
+```
+
+
+---
+
+#### ContributorRole
+
+JATS contributor with role.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `name` | `String` | — | The name |
+| `role` | `Optional<String>` | `null` | Role |
+
+
+---
+
+#### CoreProperties
+
+Dublin Core metadata from docProps/core.xml
+
+Contains standard metadata fields defined by the Dublin Core standard
+and Office-specific extensions.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `title` | `Optional<String>` | `null` | Document title |
+| `subject` | `Optional<String>` | `null` | Document subject/topic |
+| `creator` | `Optional<String>` | `null` | Document creator/author |
+| `keywords` | `Optional<String>` | `null` | Keywords or tags |
+| `description` | `Optional<String>` | `null` | Document description/abstract |
+| `lastModifiedBy` | `Optional<String>` | `null` | User who last modified the document |
+| `revision` | `Optional<String>` | `null` | Revision number |
+| `created` | `Optional<String>` | `null` | Creation timestamp (ISO 8601) |
+| `modified` | `Optional<String>` | `null` | Last modification timestamp (ISO 8601) |
+| `category` | `Optional<String>` | `null` | Document category |
+| `contentStatus` | `Optional<String>` | `null` | Content status (Draft, Final, etc.) |
+| `language` | `Optional<String>` | `null` | Document language |
+| `identifier` | `Optional<String>` | `null` | Unique identifier |
+| `version` | `Optional<String>` | `null` | Document version |
+| `lastPrinted` | `Optional<String>` | `null` | Last print timestamp (ISO 8601) |
+
+
+---
+
+#### CsvExtractor
+
+CSV/TSV extractor with proper field parsing.
+
+Replaces raw text passthrough with structured CSV parsing,
+producing space-separated text output and populated `tables` field.
+
+##### Methods
+
+###### defaultOptions()
+
+**Signature:**
+
+```java
+public static CsvExtractor defaultOptions()
+```
+
+###### name()
+
+**Signature:**
+
+```java
+public String name()
+```
+
+###### version()
+
+**Signature:**
+
+```java
+public String version()
+```
+
+###### initialize()
+
+**Signature:**
+
+```java
+public void initialize() throws Error
+```
+
+###### shutdown()
+
+**Signature:**
+
+```java
+public void shutdown() throws Error
+```
+
+###### description()
+
+**Signature:**
+
+```java
+public String description()
+```
+
+###### author()
+
+**Signature:**
+
+```java
+public String author()
+```
+
+###### extractBytes()
+
+**Signature:**
+
+```java
+public InternalDocument extractBytes(byte[] content, String mimeType, ExtractionConfig config) throws Error
+```
+
+###### supportedMimeTypes()
+
+**Signature:**
+
+```java
+public List<String> supportedMimeTypes()
+```
+
+###### priority()
+
+**Signature:**
+
+```java
+public int priority()
+```
+
+
+---
+
+#### CsvMetadata
+
+CSV/TSV file metadata.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `rowCount` | `long` | — | Number of row |
+| `columnCount` | `long` | — | Number of column |
+| `delimiter` | `Optional<String>` | `null` | Delimiter |
+| `hasHeader` | `boolean` | — | Whether header |
+| `columnTypes` | `Optional<List<String>>` | `Collections.emptyList()` | Column types |
+
+
+---
+
+#### CustomProperties
+
+Custom properties from docProps/custom.xml
+
+Maps property names to their values. Values are converted to JSON types
+based on the VT (Variant Type) specified in the XML.
+
+
+---
+
+#### DbfExtractor
+
+Extractor for dBASE (.dbf) files.
+
+Reads all records and formats them as a markdown table with
+column headers derived from field names.
+
+##### Methods
+
+###### defaultOptions()
+
+**Signature:**
+
+```java
+public static DbfExtractor defaultOptions()
+```
+
+###### name()
+
+**Signature:**
+
+```java
+public String name()
+```
+
+###### version()
+
+**Signature:**
+
+```java
+public String version()
+```
+
+###### initialize()
+
+**Signature:**
+
+```java
+public void initialize() throws Error
+```
+
+###### shutdown()
+
+**Signature:**
+
+```java
+public void shutdown() throws Error
+```
+
+###### description()
+
+**Signature:**
+
+```java
+public String description()
+```
+
+###### author()
+
+**Signature:**
+
+```java
+public String author()
+```
+
+###### extractBytes()
+
+**Signature:**
+
+```java
+public InternalDocument extractBytes(byte[] content, String mimeType, ExtractionConfig config) throws Error
+```
+
+###### supportedMimeTypes()
+
+**Signature:**
+
+```java
+public List<String> supportedMimeTypes()
+```
+
+###### priority()
+
+**Signature:**
+
+```java
+public int priority()
+```
+
+
+---
+
+#### DbfFieldInfo
+
+dBASE field information.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `name` | `String` | — | The name |
+| `fieldType` | `String` | — | Field type |
+
+
+---
+
+#### DbfMetadata
+
+dBASE (DBF) file metadata.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `recordCount` | `long` | — | Number of record |
+| `fieldCount` | `long` | — | Number of field |
+| `fields` | `List<DbfFieldInfo>` | `Collections.emptyList()` | Fields |
+
+
+---
+
+#### DepthValidator
+
+Helper struct for validating nesting depth.
+
+##### Methods
+
+###### push()
+
+Push a level (increase depth).
+
+**Returns:**
+* `Ok(())` if depth is within limits
+* `Err(SecurityError)` if depth exceeds limit
+
+**Signature:**
+
+```java
+public void push() throws SecurityError
+```
+
+###### pop()
+
+Pop a level (decrease depth).
+
+**Signature:**
+
+```java
+public void pop()
+```
+
+###### currentDepth()
+
+Get current depth.
+
+**Signature:**
+
+```java
+public long currentDepth()
+```
+
+
+---
+
+#### DetectMimeTypeParams
+
+Request parameters for MIME type detection.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `path` | `String` | — | Path to the file |
+| `useContent` | `boolean` | — | Use content-based detection (default: true) |
+
+
+---
+
+#### DetectResponse
+
+MIME type detection response.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `mimeType` | `String` | — | Detected MIME type |
+| `filename` | `Optional<String>` | `null` | Original filename (if provided) |
+
+
+---
+
+#### DetectTimings
+
+Granular timing breakdown for a single `detect()` call.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `preprocessMs` | `double` | — | Time spent in image preprocessing (resize, letterbox, normalize, tensor allocation). |
+| `onnxMs` | `double` | — | Time for the ONNX `session.run()` call (actual neural network computation). |
+| `modelTotalMs` | `double` | — | Total time from start of model call to end of raw output decoding. |
+| `postprocessMs` | `double` | — | Time spent in postprocessing heuristics (confidence filtering, overlap resolution). |
+
+
+---
+
+#### DetectedBoundary
+
+A detected structural boundary in the text.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `byteOffset` | `long` | — | Byte offset of the start of the line in the original text. |
+| `isHeader` | `boolean` | — | Whether this boundary looks like a header/section title. |
+
+
+---
+
+#### DetectionResult
+
+Page-level detection result containing all detections and page metadata.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `pageWidth` | `int` | — | Page width |
+| `pageHeight` | `int` | — | Page height |
+| `detections` | `List<LayoutDetection>` | — | Detections |
+
+
+---
+
+#### DjotContent
+
+Comprehensive Djot document structure with semantic preservation.
+
+This type captures the full richness of Djot markup, including:
+- Block-level structures (headings, lists, blockquotes, code blocks, etc.)
+- Inline formatting (emphasis, strong, highlight, subscript, superscript, etc.)
+- Attributes (classes, IDs, key-value pairs)
+- Links, images, footnotes
+- Math expressions (inline and display)
+- Tables with full structure
+
+Available when the `djot` feature is enabled.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `plainText` | `String` | — | Plain text representation for backwards compatibility |
+| `blocks` | `List<FormattedBlock>` | — | Structured block-level content |
+| `metadata` | `Metadata` | — | Metadata from YAML frontmatter |
+| `tables` | `List<Table>` | — | Extracted tables as structured data |
+| `images` | `List<DjotImage>` | — | Extracted images with metadata |
+| `links` | `List<DjotLink>` | — | Extracted links with URLs |
+| `footnotes` | `List<Footnote>` | — | Footnote definitions |
+| `attributes` | `List<StringAttributes>` | — | Attributes mapped by element identifier (if present) |
+
+
+---
+
+#### DjotExtractor
+
+Djot markup extractor with metadata and table support.
+
+Parses Djot documents with YAML frontmatter, extracting:
+- Metadata from YAML frontmatter
+- Plain text content
+- Tables as structured data
+- Document structure (headings, links, code blocks)
+
+##### Methods
+
+###### buildInternalDocument()
+
+Build an `InternalDocument` from jotdown events.
+
+**Signature:**
+
+```java
+public static InternalDocument buildInternalDocument(List<Event> events)
+```
+
+###### defaultOptions()
+
+**Signature:**
+
+```java
+public static DjotExtractor defaultOptions()
+```
+
+###### name()
+
+**Signature:**
+
+```java
+public String name()
+```
+
+###### version()
+
+**Signature:**
+
+```java
+public String version()
+```
+
+###### initialize()
+
+**Signature:**
+
+```java
+public void initialize() throws Error
+```
+
+###### shutdown()
+
+**Signature:**
+
+```java
+public void shutdown() throws Error
+```
+
+###### description()
+
+**Signature:**
+
+```java
+public String description()
+```
+
+###### author()
+
+**Signature:**
+
+```java
+public String author()
+```
+
+###### extractBytes()
+
+**Signature:**
+
+```java
+public InternalDocument extractBytes(byte[] content, String mimeType, ExtractionConfig config) throws Error
+```
+
+###### extractFile()
+
+**Signature:**
+
+```java
+public InternalDocument extractFile(String path, String mimeType, ExtractionConfig config) throws Error
+```
+
+###### supportedMimeTypes()
+
+**Signature:**
+
+```java
+public List<String> supportedMimeTypes()
+```
+
+###### priority()
+
+**Signature:**
+
+```java
+public int priority()
+```
+
+
+---
+
+#### DjotImage
+
+Image element in Djot.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `src` | `String` | — | Image source URL or path |
+| `alt` | `String` | — | Alternative text |
+| `title` | `Optional<String>` | `null` | Optional title |
+| `attributes` | `Optional<Attributes>` | `null` | Element attributes |
+
+
+---
+
+#### DjotLink
+
+Link element in Djot.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `url` | `String` | — | Link URL |
+| `text` | `String` | — | Link text content |
+| `title` | `Optional<String>` | `null` | Optional title |
+| `attributes` | `Optional<Attributes>` | `null` | Element attributes |
+
+
+---
+
+#### DocExtractionResult
+
+Result of DOC text extraction.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `text` | `String` | — | Extracted text content. |
+| `metadata` | `DocMetadata` | — | Document metadata. |
+
+
+---
+
+#### DocExtractor
+
+Native DOC extractor using OLE/CFB parsing.
+
+This extractor handles Word 97-2003 binary (.doc) files without
+requiring LibreOffice, providing ~50x faster extraction.
+
+##### Methods
+
+###### defaultOptions()
+
+**Signature:**
+
+```java
+public static DocExtractor defaultOptions()
+```
+
+###### name()
+
+**Signature:**
+
+```java
+public String name()
+```
+
+###### version()
+
+**Signature:**
+
+```java
+public String version()
+```
+
+###### initialize()
+
+**Signature:**
+
+```java
+public void initialize() throws Error
+```
+
+###### shutdown()
+
+**Signature:**
+
+```java
+public void shutdown() throws Error
+```
+
+###### description()
+
+**Signature:**
+
+```java
+public String description()
+```
+
+###### author()
+
+**Signature:**
+
+```java
+public String author()
+```
+
+###### extractBytes()
+
+**Signature:**
+
+```java
+public InternalDocument extractBytes(byte[] content, String mimeType, ExtractionConfig config) throws Error
+```
+
+###### supportedMimeTypes()
+
+**Signature:**
+
+```java
+public List<String> supportedMimeTypes()
+```
+
+###### priority()
+
+**Signature:**
+
+```java
+public int priority()
+```
+
+
+---
+
+#### DocMetadata
+
+Metadata extracted from DOC files.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `title` | `Optional<String>` | `null` | Title |
+| `subject` | `Optional<String>` | `null` | Subject |
+| `author` | `Optional<String>` | `null` | Author |
+| `lastAuthor` | `Optional<String>` | `null` | Last author |
+| `created` | `Optional<String>` | `null` | Created |
+| `modified` | `Optional<String>` | `null` | Modified |
+| `revisionNumber` | `Optional<String>` | `null` | Revision number |
+
+
+---
+
+#### DocOrientationDetector
+
+Detects document page orientation using the PP-LCNet model.
+
+Thread-safe: uses unsafe pointer cast for ONNX session (same pattern as embedding engine).
+The model is downloaded from HuggingFace on first use and cached locally.
+
+##### Methods
+
+###### withAcceleration()
+
+Creates a new detector with the given cache directory and acceleration config.
+
+**Signature:**
+
+```java
+public static DocOrientationDetector withAcceleration(String cacheDir, AccelerationConfig accel)
+```
+
+###### detect()
+
+Detect document page orientation.
+
+Returns the detected orientation (0°, 90°, 180°, 270°) and confidence.
+Thread-safe: can be called concurrently from multiple pages.
+
+**Signature:**
+
+```java
+public OrientationResult detect(RgbImage image) throws Error
+```
+
+
+---
+
+#### DocProperties
+
+Document properties from `<wp:docPr>`.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `id` | `Optional<String>` | `null` | Unique identifier |
+| `name` | `Optional<String>` | `null` | The name |
+| `description` | `Optional<String>` | `null` | Human-readable description |
+
+
+---
+
+#### DocbookExtractor
+
+DocBook document extractor.
+
+Supports both DocBook 4.x (no namespace) and 5.x (with namespace) formats.
+
+##### Methods
+
+###### defaultOptions()
+
+**Signature:**
+
+```java
+public static DocbookExtractor defaultOptions()
+```
+
+###### name()
+
+**Signature:**
+
+```java
+public String name()
+```
+
+###### version()
+
+**Signature:**
+
+```java
+public String version()
+```
+
+###### initialize()
+
+**Signature:**
+
+```java
+public void initialize() throws Error
+```
+
+###### shutdown()
+
+**Signature:**
+
+```java
+public void shutdown() throws Error
+```
+
+###### extractBytes()
+
+**Signature:**
+
+```java
+public InternalDocument extractBytes(byte[] content, String mimeType, ExtractionConfig config) throws Error
+```
+
+###### supportedMimeTypes()
+
+**Signature:**
+
+```java
+public List<String> supportedMimeTypes()
+```
+
+###### priority()
+
+**Signature:**
+
+```java
+public int priority()
+```
+
+
+---
+
+#### DoclingCompatDocument
+
+Document content in the docling-serve response format.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `mdContent` | `String` | — | Markdown content of the converted document |
+
+
+---
+
+#### DoclingCompatResponse
+
+OpenWebUI "Docling" engine response format.
+
+Returned by `POST /v1/convert/file` for docling-serve compatibility.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `document` | `DoclingCompatDocument` | — | Converted document content |
+| `status` | `String` | — | Processing status |
+
+
+---
+
+#### Document
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `paragraphs` | `List<Paragraph>` | `Collections.emptyList()` | Paragraphs |
+| `tables` | `List<Table>` | `Collections.emptyList()` | Tables extracted from the document |
+| `headers` | `List<HeaderFooter>` | `Collections.emptyList()` | Headers |
+| `footers` | `List<HeaderFooter>` | `Collections.emptyList()` | Footers |
+| `footnotes` | `List<Note>` | `Collections.emptyList()` | Footnotes |
+| `endnotes` | `List<Note>` | `Collections.emptyList()` | Endnotes |
+| `numberingDefs` | `AHashMap` | — | Numbering defs (a hash map) |
+| `elements` | `List<DocumentElement>` | `Collections.emptyList()` | Document elements in their original order. |
+| `styleCatalog` | `Optional<StyleCatalog>` | `null` | Parsed style catalog from `word/styles.xml`, if available. |
+| `theme` | `Optional<Theme>` | `null` | Parsed theme from `word/theme/theme1.xml`, if available. |
+| `sections` | `List<SectionProperties>` | `Collections.emptyList()` | Section properties parsed from `w:sectPr` elements. |
+| `drawings` | `List<Drawing>` | `Collections.emptyList()` | Drawing objects parsed from `w:drawing` elements. |
+| `imageRelationships` | `AHashMap` | — | Image relationships (rId → target path) for image extraction. |
+
+##### Methods
+
+###### resolveHeadingLevel()
+
+Resolve heading level for a paragraph style using the StyleCatalog.
+
+Walks the style inheritance chain to find `outline_level`.
+Falls back to string-matching on style name/ID if no StyleCatalog is available.
+Returns 1-6 (markdown heading levels).
+
+**Signature:**
+
+```java
+public Optional<Byte> resolveHeadingLevel(String styleId)
+```
+
+###### extractText()
+
+**Signature:**
+
+```java
+public String extractText()
+```
+
+###### toMarkdown()
+
+Render the document as markdown.
+
+When `inject_placeholders` is `true`, drawings that reference an image
+emit `![alt](image)` placeholders. When `false` they are silently
+skipped, which is useful when the caller only wants text.
+
+**Signature:**
+
+```java
+public String toMarkdown(boolean injectPlaceholders)
+```
+
+###### toPlainText()
+
+Render the document as plain text (no markdown formatting).
+
+**Signature:**
+
+```java
+public String toPlainText()
+```
+
+
+---
+
+#### DocumentExtractorRegistry
+
+Registry for document extractor plugins.
+
+Manages extractors with MIME type and priority-based selection.
+
+# Thread Safety
+
+The registry is thread-safe and can be accessed concurrently from multiple threads.
+
+##### Methods
+
+###### register()
+
+Register a document extractor.
+
+The extractor is registered for all MIME types it supports.
+
+**Returns:**
+
+- `Ok(())` if registration succeeded
+- `Err(...)` if initialization failed
+
+**Signature:**
+
+```java
+public void register(DocumentExtractor extractor) throws Error
+```
+
+###### get()
+
+Get the highest priority extractor for a MIME type.
+
+**Returns:**
+
+The highest priority extractor, or an error if none found.
+
+**Signature:**
+
+```java
+public DocumentExtractor get(String mimeType) throws Error
+```
+
+###### list()
+
+List all registered extractors.
+
+**Signature:**
+
+```java
+public List<String> list()
+```
+
+###### remove()
+
+Remove an extractor from the registry.
+
+**Signature:**
+
+```java
+public void remove(String name) throws Error
+```
+
+###### shutdownAll()
+
+Shutdown all extractors and clear the registry.
+
+**Signature:**
+
+```java
+public void shutdownAll() throws Error
+```
+
+###### defaultOptions()
+
+**Signature:**
+
+```java
+public static DocumentExtractorRegistry defaultOptions()
+```
+
+
+---
+
+#### DocumentNode
+
+A single node in the document tree.
+
+Each node has deterministic `id`, typed `content`, optional `parent`/`children`
+for tree structure, and metadata like page number, bounding box, and content layer.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `id` | `NodeId` | — | Deterministic identifier (hash of content + position). |
+| `content` | `NodeContent` | — | Node content — tagged enum, type-specific data only. |
+| `parent` | `Optional<int>` | `null` | Parent node index (`None` = root-level node). |
+| `children` | `List<Integer>` | — | Child node indices in reading order. |
+| `contentLayer` | `ContentLayer` | — | Content layer classification. |
+| `page` | `Optional<int>` | `null` | Page number where this node starts (1-indexed). |
+| `pageEnd` | `Optional<int>` | `null` | Page number where this node ends (for multi-page tables/sections). |
+| `bbox` | `Optional<BoundingBox>` | `null` | Bounding box in document coordinates. |
+| `annotations` | `List<TextAnnotation>` | — | Inline annotations (formatting, links) on this node's text content. Only meaningful for text-carrying nodes; empty for containers. |
+| `attributes` | `Optional<Map<String, String>>` | `null` | Format-specific key-value attributes. Extensible bag for data that doesn't warrant a typed field: CSS classes, LaTeX environment names, Excel cell formulas, slide layout names, etc. |
+
+
+---
+
+#### DocumentRelationship
+
+A resolved relationship between two nodes in the document tree.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `source` | `int` | — | Source node index (the referencing node). |
+| `target` | `int` | — | Target node index (the referenced node). |
+| `kind` | `RelationshipKind` | — | Semantic kind of the relationship. |
+
+
+---
+
+#### DocumentStructure
+
+Top-level structured document representation.
+
+A flat array of nodes with index-based parent/child references forming a tree.
+Root-level nodes have `parent: None`. Use `body_roots()` and `furniture_roots()`
+to iterate over top-level content by layer.
+
+# Validation
+
+Call `validate()` after construction to verify all node indices are in bounds
+and parent-child relationships are bidirectionally consistent.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `nodes` | `List<DocumentNode>` | `Collections.emptyList()` | All nodes in document/reading order. |
+| `sourceFormat` | `Optional<String>` | `null` | Origin format identifier (e.g. "docx", "pptx", "html", "pdf"). Allows renderers to apply format-aware heuristics when converting the document tree to output formats. |
+| `relationships` | `List<DocumentRelationship>` | `Collections.emptyList()` | Resolved relationships between nodes (footnote refs, citations, anchor links, etc.). Populated during derivation from the internal document representation. Empty when no relationships are detected. |
+
+##### Methods
+
+###### withCapacity()
+
+Create a `DocumentStructure` with pre-allocated capacity.
+
+**Signature:**
+
+```java
+public static DocumentStructure withCapacity(long capacity)
+```
+
+###### pushNode()
+
+Push a node and return its `NodeIndex`.
+
+**Signature:**
+
+```java
+public int pushNode(DocumentNode node)
+```
+
+###### addChild()
+
+Add a child to an existing parent node.
+
+Updates both the parent's `children` list and the child's `parent` field.
+
+**Panics:**
+
+Panics if either index is out of bounds.
+
+**Signature:**
+
+```java
+public void addChild(int parent, int child)
+```
+
+###### validate()
+
+Validate all node indices are in bounds and parent-child relationships
+are bidirectionally consistent.
+
+**Errors:**
+
+Returns a descriptive error string if validation fails.
+
+**Signature:**
+
+```java
+public void validate() throws String
+```
+
+###### bodyRoots()
+
+Iterate over root-level body nodes (content_layer == Body, parent == None).
+
+**Signature:**
+
+```java
+public Iterator bodyRoots()
+```
+
+###### furnitureRoots()
+
+Iterate over root-level furniture nodes (non-Body content_layer, parent == None).
+
+**Signature:**
+
+```java
+public Iterator furnitureRoots()
+```
+
+###### get()
+
+Get a node by index.
+
+**Signature:**
+
+```java
+public Optional<DocumentNode> get(int index)
+```
+
+###### len()
+
+Get the total number of nodes.
+
+**Signature:**
+
+```java
+public long len()
+```
+
+###### isEmpty()
+
+Check if the document structure is empty.
+
+**Signature:**
+
+```java
+public boolean isEmpty()
+```
+
+###### defaultOptions()
+
+**Signature:**
+
+```java
+public static DocumentStructure defaultOptions()
+```
+
+
+---
+
+#### DocumentStructureBuilder
+
+Builder for constructing `DocumentStructure` trees with automatic
+heading-driven section nesting.
+
+The builder maintains an internal section stack: when you push a heading,
+it automatically creates a `Group` container and nests subsequent content
+under it. Higher-level headings pop deeper sections off the stack.
+
+##### Methods
+
+###### withCapacity()
+
+Create a builder with pre-allocated node capacity.
+
+**Signature:**
+
+```java
+public static DocumentStructureBuilder withCapacity(long capacity)
+```
+
+###### sourceFormat()
+
+Set the source format identifier (e.g. "docx", "html", "pptx").
+
+**Signature:**
+
+```java
+public DocumentStructureBuilder sourceFormat(String format)
+```
+
+###### build()
+
+Consume the builder and return the constructed `DocumentStructure`.
+
+**Signature:**
+
+```java
+public DocumentStructure build()
+```
+
+###### pushHeading()
+
+Push a heading, creating a `Group` container with automatic section nesting.
+
+Headings at the same or deeper level pop existing sections. Content
+pushed after this heading will be nested under its `Group` node.
+
+Returns the `NodeIndex` of the `Group` node (not the heading child).
+
+**Signature:**
+
+```java
+public int pushHeading(byte level, String text, int page, BoundingBox bbox)
+```
+
+###### pushParagraph()
+
+Push a paragraph node. Nested under current section if one exists.
+
+**Signature:**
+
+```java
+public int pushParagraph(String text, List<TextAnnotation> annotations, int page, BoundingBox bbox)
+```
+
+###### pushList()
+
+Push a list container. Returns the `NodeIndex` to use with `push_list_item`.
+
+**Signature:**
+
+```java
+public int pushList(boolean ordered, int page)
+```
+
+###### pushListItem()
+
+Push a list item as a child of the given list node.
+
+**Signature:**
+
+```java
+public int pushListItem(int list, String text, int page)
+```
+
+###### pushTable()
+
+Push a table node with a structured grid.
+
+**Signature:**
+
+```java
+public int pushTable(TableGrid grid, int page, BoundingBox bbox)
+```
+
+###### pushTableFromCells()
+
+Push a table from a simple cell grid (`Vec<Vec<String>>`).
+
+Assumes the first row is the header row.
+
+**Signature:**
+
+```java
+public int pushTableFromCells(List<List<String>> cells, int page)
+```
+
+###### pushCode()
+
+Push a code block.
+
+**Signature:**
+
+```java
+public int pushCode(String text, String language, int page)
+```
+
+###### pushFormula()
+
+Push a math formula node.
+
+**Signature:**
+
+```java
+public int pushFormula(String text, int page)
+```
+
+###### pushImage()
+
+Push an image reference node.
+
+**Signature:**
+
+```java
+public int pushImage(String description, int imageIndex, int page, BoundingBox bbox)
+```
+
+###### pushImageWithSrc()
+
+Push an image node with source URL.
+
+**Signature:**
+
+```java
+public int pushImageWithSrc(String description, String src, int imageIndex, int page, BoundingBox bbox)
+```
+
+###### pushQuote()
+
+Push a block quote container and enter it.
+
+Subsequent body nodes will be parented under this quote until
+`exit_container` is called.
+
+**Signature:**
+
+```java
+public int pushQuote(int page)
+```
+
+###### pushFootnote()
+
+Push a footnote node.
+
+**Signature:**
+
+```java
+public int pushFootnote(String text, int page)
+```
+
+###### pushPageBreak()
+
+Push a page break marker (always root-level, never nested under sections).
+
+**Signature:**
+
+```java
+public int pushPageBreak(int page)
+```
+
+###### pushSlide()
+
+Push a slide container (PPTX) and enter it.
+
+Clears the section stack and container stack so the slide starts
+fresh. Subsequent body nodes will be parented under this slide
+until `exit_container` is called or a new
+slide is pushed.
+
+**Signature:**
+
+```java
+public int pushSlide(int number, String title)
+```
+
+###### pushDefinitionList()
+
+Push a definition list container. Use `push_definition_item` for entries.
+
+**Signature:**
+
+```java
+public int pushDefinitionList(int page)
+```
+
+###### pushDefinitionItem()
+
+Push a definition item as a child of the given definition list.
+
+**Signature:**
+
+```java
+public int pushDefinitionItem(int list, String term, String definition, int page)
+```
+
+###### pushCitation()
+
+Push a citation / bibliographic reference.
+
+**Signature:**
+
+```java
+public int pushCitation(String key, String text, int page)
+```
+
+###### pushAdmonition()
+
+Push an admonition container (note, warning, tip, etc.) and enter it.
+
+Subsequent body nodes will be parented under this admonition until
+`exit_container` is called.
+
+**Signature:**
+
+```java
+public int pushAdmonition(String kind, String title, int page)
+```
+
+###### pushRawBlock()
+
+Push a raw block preserved verbatim from the source format.
+
+**Signature:**
+
+```java
+public int pushRawBlock(String format, String content, int page)
+```
+
+###### pushMetadataBlock()
+
+Push a metadata block (email headers, frontmatter key-value pairs).
+
+**Signature:**
+
+```java
+public int pushMetadataBlock(List<StringString> entries, int page)
+```
+
+###### pushHeader()
+
+Push a header paragraph (running page header).
+
+**Signature:**
+
+```java
+public int pushHeader(String text, int page)
+```
+
+###### pushFooter()
+
+Push a footer paragraph (running page footer).
+
+**Signature:**
+
+```java
+public int pushFooter(String text, int page)
+```
+
+###### setAttributes()
+
+Set format-specific attributes on an existing node.
+
+**Signature:**
+
+```java
+public void setAttributes(int index, AHashMap attrs)
+```
+
+###### addChild()
+
+Add a child node to an existing parent (for container nodes like Quote, Slide, Admonition).
+
+**Signature:**
+
+```java
+public void addChild(int parent, int child)
+```
+
+###### pushRaw()
+
+Push a raw `NodeContent` with full control over content layer and annotations.
+Nests under current section unless the content type is a root-level type.
+
+**Signature:**
+
+```java
+public int pushRaw(NodeContent content, int page, BoundingBox bbox, ContentLayer layer, List<TextAnnotation> annotations)
+```
+
+###### clearSections()
+
+Reset the section stack (e.g. when starting a new page).
+
+**Signature:**
+
+```java
+public void clearSections()
+```
+
+###### enterContainer()
+
+Manually push a node onto the container stack.
+
+Subsequent body nodes will be parented under this container
+until `exit_container` is called.
+
+**Signature:**
+
+```java
+public void enterContainer(int container)
+```
+
+###### exitContainer()
+
+Pop the most recent container from the container stack.
+
+Body nodes will resume parenting under the next container on the
+stack, or under the section stack if the container stack is empty.
+
+**Signature:**
+
+```java
+public void exitContainer()
+```
+
+###### defaultOptions()
+
+**Signature:**
+
+```java
+public static DocumentStructureBuilder defaultOptions()
+```
+
+
+---
+
+#### DocxAppProperties
+
+Application properties from docProps/app.xml for DOCX
+
+Contains Word-specific document statistics and metadata.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `application` | `Optional<String>` | `null` | Application name (e.g., "Microsoft Office Word") |
+| `appVersion` | `Optional<String>` | `null` | Application version |
+| `template` | `Optional<String>` | `null` | Template filename |
+| `totalTime` | `Optional<int>` | `null` | Total editing time in minutes |
+| `pages` | `Optional<int>` | `null` | Number of pages |
+| `words` | `Optional<int>` | `null` | Number of words |
+| `characters` | `Optional<int>` | `null` | Number of characters (excluding spaces) |
+| `charactersWithSpaces` | `Optional<int>` | `null` | Number of characters (including spaces) |
+| `lines` | `Optional<int>` | `null` | Number of lines |
+| `paragraphs` | `Optional<int>` | `null` | Number of paragraphs |
+| `company` | `Optional<String>` | `null` | Company name |
+| `docSecurity` | `Optional<int>` | `null` | Document security level |
+| `scaleCrop` | `Optional<boolean>` | `null` | Scale crop flag |
+| `linksUpToDate` | `Optional<boolean>` | `null` | Links up to date flag |
+| `sharedDoc` | `Optional<boolean>` | `null` | Shared document flag |
+| `hyperlinksChanged` | `Optional<boolean>` | `null` | Hyperlinks changed flag |
+
+
+---
+
+#### DocxExtractor
+
+High-performance DOCX extractor.
+
+This extractor provides:
+- Fast text extraction via streaming XML parsing
+- Comprehensive metadata extraction (core.xml, app.xml, custom.xml)
+
+##### Methods
+
+###### defaultOptions()
+
+**Signature:**
+
+```java
+public static DocxExtractor defaultOptions()
+```
+
+###### name()
+
+**Signature:**
+
+```java
+public String name()
+```
+
+###### version()
+
+**Signature:**
+
+```java
+public String version()
+```
+
+###### initialize()
+
+**Signature:**
+
+```java
+public void initialize() throws Error
+```
+
+###### shutdown()
+
+**Signature:**
+
+```java
+public void shutdown() throws Error
+```
+
+###### description()
+
+**Signature:**
+
+```java
+public String description()
+```
+
+###### author()
+
+**Signature:**
+
+```java
+public String author()
+```
+
+###### extractBytes()
+
+**Signature:**
+
+```java
+public InternalDocument extractBytes(byte[] content, String mimeType, ExtractionConfig config) throws Error
+```
+
+###### supportedMimeTypes()
+
+**Signature:**
+
+```java
+public List<String> supportedMimeTypes()
+```
+
+###### priority()
+
+**Signature:**
+
+```java
+public int priority()
+```
+
+
+---
+
+#### DocxMetadata
+
+Word document metadata.
+
+Extracted from DOCX files using shared Office Open XML metadata extraction.
+Integrates with `office_metadata` module for core/app/custom properties.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `coreProperties` | `Optional<CoreProperties>` | `null` | Core properties from docProps/core.xml (Dublin Core metadata) Contains title, creator, subject, keywords, dates, etc. Shared format across DOCX/PPTX/XLSX documents. |
+| `appProperties` | `Optional<DocxAppProperties>` | `null` | Application properties from docProps/app.xml (Word-specific statistics) Contains word count, page count, paragraph count, editing time, etc. DOCX-specific variant of Office application properties. |
+| `customProperties` | `Optional<Map<String, Object>>` | `Collections.emptyMap()` | Custom properties from docProps/custom.xml (user-defined properties) Contains key-value pairs defined by users or applications. Values can be strings, numbers, booleans, or dates. |
+
+
+---
+
+#### Drawing
+
+A drawing object extracted from `<w:drawing>`.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `drawingType` | `DrawingType` | `DrawingType.INLINE` | Drawing type (drawing type) |
+| `extent` | `Optional<Extent>` | `null` | Extent (extent) |
+| `docProperties` | `Optional<DocProperties>` | `null` | Doc properties (doc properties) |
+| `imageRef` | `Optional<String>` | `null` | Image ref |
+
+
+---
+
+#### Element
+
+Semantic element extracted from document.
+
+Represents a logical unit of content with semantic classification,
+unique identifier, and metadata for tracking origin and position.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `elementId` | `ElementId` | — | Unique element identifier |
+| `elementType` | `ElementType` | — | Semantic type of this element |
+| `text` | `String` | — | Text content of the element |
+| `metadata` | `ElementMetadata` | — | Metadata about the element |
+
+
+---
+
+#### ElementId
+
+Unique identifier for semantic elements.
+
+Wraps a string identifier that is deterministically generated
+from element type, content, and page number.
+
+##### Methods
+
+###### new()
+
+Create a new ElementId from a string.
+
+**Errors:**
+
+Returns error if the string is not valid.
+
+**Signature:**
+
+```java
+public static ElementId new(String hexStr) throws String
+```
+
+###### asRef()
+
+**Signature:**
+
+```java
+public String asRef()
+```
+
+###### fmt()
+
+**Signature:**
+
+```java
+public Unknown fmt(Formatter f)
+```
+
+
+---
+
+#### ElementMetadata
+
+Metadata for a semantic element.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `pageNumber` | `Optional<long>` | `null` | Page number (1-indexed) |
+| `filename` | `Optional<String>` | `null` | Source filename or document name |
+| `coordinates` | `Optional<BoundingBox>` | `null` | Bounding box coordinates if available |
+| `elementIndex` | `Optional<long>` | `null` | Position index in the element sequence |
+| `additional` | `Map<String, String>` | — | Additional custom metadata |
+
+
+---
+
+#### EmailAttachment
+
+Email attachment representation.
+
+Contains metadata and optionally the content of an email attachment.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `name` | `Optional<String>` | `null` | Attachment name (from Content-Disposition header) |
+| `filename` | `Optional<String>` | `null` | Filename of the attachment |
+| `mimeType` | `Optional<String>` | `null` | MIME type of the attachment |
+| `size` | `Optional<long>` | `null` | Size in bytes |
+| `isImage` | `boolean` | — | Whether this attachment is an image |
+| `data` | `Optional<byte[]>` | `null` | Attachment data (if extracted). Uses `bytes.Bytes` for cheap cloning of large buffers. |
+
+
+---
+
+#### EmailConfig
+
+Configuration for email extraction.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `msgFallbackCodepage` | `Optional<int>` | `null` | Windows codepage number to use when an MSG file contains no codepage property. Defaults to `None`, which falls back to windows-1252. If an unrecognized or invalid codepage number is supplied (including 0), the behavior silently falls back to windows-1252 — the same as when the MSG file itself contains an unrecognized codepage. No error or warning is emitted. Users should verify output when supplying unusual values. Common values: - 1250: Central European (Polish, Czech, Hungarian, etc.) - 1251: Cyrillic (Russian, Ukrainian, Bulgarian, etc.) - 1252: Western European (default) - 1253: Greek - 1254: Turkish - 1255: Hebrew - 1256: Arabic - 932:  Japanese (Shift-JIS) - 936:  Simplified Chinese (GBK) |
+
+
+---
+
+#### EmailExtractionResult
+
+Email extraction result.
+
+Complete representation of an extracted email message (.eml or .msg)
+including headers, body content, and attachments.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `subject` | `Optional<String>` | `null` | Email subject line |
+| `fromEmail` | `Optional<String>` | `null` | Sender email address |
+| `toEmails` | `List<String>` | — | Primary recipient email addresses |
+| `ccEmails` | `List<String>` | — | CC recipient email addresses |
+| `bccEmails` | `List<String>` | — | BCC recipient email addresses |
+| `date` | `Optional<String>` | `null` | Email date/timestamp |
+| `messageId` | `Optional<String>` | `null` | Message-ID header value |
+| `plainText` | `Optional<String>` | `null` | Plain text version of the email body |
+| `htmlContent` | `Optional<String>` | `null` | HTML version of the email body |
+| `cleanedText` | `String` | — | Cleaned/processed text content |
+| `attachments` | `List<EmailAttachment>` | — | List of email attachments |
+| `metadata` | `Map<String, String>` | — | Additional email headers and metadata |
+
+
+---
+
+#### EmailExtractor
+
+Email message extractor.
+
+Supports: .eml, .msg
+
+##### Methods
+
+###### defaultOptions()
+
+**Signature:**
+
+```java
+public static EmailExtractor defaultOptions()
+```
+
+###### name()
+
+**Signature:**
+
+```java
+public String name()
+```
+
+###### version()
+
+**Signature:**
+
+```java
+public String version()
+```
+
+###### initialize()
+
+**Signature:**
+
+```java
+public void initialize() throws Error
+```
+
+###### shutdown()
+
+**Signature:**
+
+```java
+public void shutdown() throws Error
+```
+
+###### extractSync()
+
+**Signature:**
+
+```java
+public InternalDocument extractSync(byte[] content, String mimeType, ExtractionConfig config) throws Error
+```
+
+###### extractBytes()
+
+**Signature:**
+
+```java
+public InternalDocument extractBytes(byte[] content, String mimeType, ExtractionConfig config) throws Error
+```
+
+###### supportedMimeTypes()
+
+**Signature:**
+
+```java
+public List<String> supportedMimeTypes()
+```
+
+###### priority()
+
+**Signature:**
+
+```java
+public int priority()
+```
+
+###### asSyncExtractor()
+
+**Signature:**
+
+```java
+public Optional<SyncExtractor> asSyncExtractor()
+```
+
+
+---
+
+#### EmailMetadata
+
+Email metadata extracted from .eml and .msg files.
+
+Includes sender/recipient information, message ID, and attachment list.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `fromEmail` | `Optional<String>` | `null` | Sender's email address |
+| `fromName` | `Optional<String>` | `null` | Sender's display name |
+| `toEmails` | `List<String>` | `Collections.emptyList()` | Primary recipients |
+| `ccEmails` | `List<String>` | `Collections.emptyList()` | CC recipients |
+| `bccEmails` | `List<String>` | `Collections.emptyList()` | BCC recipients |
+| `messageId` | `Optional<String>` | `null` | Message-ID header value |
+| `attachments` | `List<String>` | `Collections.emptyList()` | List of attachment filenames |
+
+
+---
+
+#### EmbedRequest
+
+Embedding request for generating embeddings from text.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `texts` | `List<String>` | — | Text strings to generate embeddings for (at least one non-empty string required) |
+| `config` | `Optional<EmbeddingConfig>` | `null` | Optional embedding configuration (model, batch size, etc.) |
+
+
+---
+
+#### EmbedResponse
+
+Embedding response containing generated embeddings.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `embeddings` | `List<List<Float>>` | — | Generated embeddings (one per input text) |
+| `model` | `String` | — | Model used for embedding generation |
+| `dimensions` | `long` | — | Dimensionality of the embeddings |
+| `count` | `long` | — | Number of embeddings generated |
+
+
+---
+
+#### EmbedTextParams
+
+Request parameters for embedding generation.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `texts` | `List<String>` | — | List of text strings to generate embeddings for |
+| `preset` | `Optional<String>` | `null` | Embedding preset name (default: "balanced"). Available: "speed", "balanced", "quality" |
+| `model` | `Optional<String>` | `null` | LLM model for provider-hosted embeddings (e.g., "openai/text-embedding-3-small"). When set, overrides preset and uses liter-llm for embedding generation. |
+| `apiKey` | `Optional<String>` | `null` | API key for the LLM provider (optional, falls back to env). |
+
+
+---
+
+#### EmbeddedFile
+
+Embedded file descriptor extracted from the PDF name tree.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `name` | `String` | — | The filename as stored in the PDF name tree. |
+| `data` | `byte[]` | — | Raw file bytes from the embedded stream. |
+| `mimeType` | `Optional<String>` | `null` | MIME type if specified in the filespec, otherwise `None`. |
+
+
+---
+
+#### EmbeddingConfig
+
+Embedding configuration for text chunks.
+
+Configures embedding generation using ONNX models via the vendored embedding engine.
+Requires the `embeddings` feature to be enabled.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `model` | `EmbeddingModelType` | `EmbeddingModelType.PRESET` | The embedding model to use (defaults to "balanced" preset if not specified) |
+| `normalize` | `boolean` | `true` | Whether to normalize embedding vectors (recommended for cosine similarity) |
+| `batchSize` | `long` | `32` | Batch size for embedding generation |
+| `showDownloadProgress` | `boolean` | `false` | Show model download progress |
+| `cacheDir` | `Optional<String>` | `null` | Custom cache directory for model files Defaults to `~/.cache/kreuzberg/embeddings/` if not specified. Allows full customization of model download location. |
+| `acceleration` | `Optional<AccelerationConfig>` | `null` | Hardware acceleration for the embedding ONNX model. When set, controls which execution provider (CPU, CUDA, CoreML, TensorRT) is used for inference. Defaults to `None` (auto-select per platform). |
+
+##### Methods
+
+###### defaultOptions()
+
+**Signature:**
+
+```java
+public static EmbeddingConfig defaultOptions()
+```
+
+
+---
+
+#### EmbeddingEngine
+
+Text embedding model with thread-safe inference.
+
+The `embed()` method takes `&self` instead of `&mut self`, allowing it to
+be shared across threads via `Arc<EmbeddingEngine>` without mutex contention.
+
+
+---
+
+#### EmbeddingPreset
+
+Preset configurations for common RAG use cases.
+
+Each preset combines chunk size, overlap, and embedding model
+to provide an optimized configuration for specific scenarios.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `name` | `String` | — | The name |
+| `chunkSize` | `long` | — | Chunk size |
+| `overlap` | `long` | — | Overlap |
+| `modelRepo` | `String` | — | HuggingFace repository name for the model. |
+| `pooling` | `String` | — | Pooling strategy: "cls" or "mean". |
+| `modelFile` | `String` | — | Path to the ONNX model file within the repo. |
+| `dimensions` | `long` | — | Dimensions |
+| `description` | `String` | — | Human-readable description |
+
+
+---
+
+#### EntityValidator
+
+Helper struct for validating entity/string length.
+
+##### Methods
+
+###### validate()
+
+Validate entity length.
+
+**Returns:**
+* `Ok(())` if length is within limits
+* `Err(SecurityError)` if length exceeds limit
+
+**Signature:**
+
+```java
+public void validate(String content) throws SecurityError
+```
+
+
+---
+
+#### EpubExtractor
+
+EPUB format extractor using permissive-licensed dependencies.
+
+Extracts content and metadata from EPUB files (both EPUB2 and EPUB3)
+using native Rust parsing without GPL-licensed dependencies.
+
+##### Methods
+
+###### defaultOptions()
+
+**Signature:**
+
+```java
+public static EpubExtractor defaultOptions()
+```
+
+###### name()
+
+**Signature:**
+
+```java
+public String name()
+```
+
+###### version()
+
+**Signature:**
+
+```java
+public String version()
+```
+
+###### initialize()
+
+**Signature:**
+
+```java
+public void initialize() throws Error
+```
+
+###### shutdown()
+
+**Signature:**
+
+```java
+public void shutdown() throws Error
+```
+
+###### description()
+
+**Signature:**
+
+```java
+public String description()
+```
+
+###### author()
+
+**Signature:**
+
+```java
+public String author()
+```
+
+###### extractBytes()
+
+**Signature:**
+
+```java
+public InternalDocument extractBytes(byte[] content, String mimeType, ExtractionConfig config) throws Error
+```
+
+###### supportedMimeTypes()
+
+**Signature:**
+
+```java
+public List<String> supportedMimeTypes()
+```
+
+###### priority()
+
+**Signature:**
+
+```java
+public int priority()
+```
+
+
+---
+
+#### EpubMetadata
+
+EPUB metadata (Dublin Core extensions).
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `coverage` | `Optional<String>` | `null` | Coverage |
+| `dcFormat` | `Optional<String>` | `null` | Dc format |
+| `relation` | `Optional<String>` | `null` | Relation |
+| `source` | `Optional<String>` | `null` | Source |
+| `dcType` | `Optional<String>` | `null` | Dc type |
+| `coverImage` | `Optional<String>` | `null` | Cover image |
+
+
+---
+
+#### ErrorMetadata
+
+Error metadata (for batch operations).
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `errorType` | `String` | — | Error type |
+| `message` | `String` | — | Message |
+
+
+---
+
+#### ErrorResponse
+
+Error response.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `errorType` | `String` | — | Error type name |
+| `message` | `String` | — | Error message |
+| `traceback` | `Optional<String>` | `null` | Stack trace (if available) |
+| `statusCode` | `short` | — | HTTP status code |
+
+
+---
+
+#### ExcelExtractor
+
+Excel spreadsheet extractor using calamine.
+
+Supports: .xlsx, .xlsm, .xlam, .xltm, .xls, .xla, .xlsb, .ods
+
+# Limitations
+
+- **Hyperlinks**: calamine (v0.34) does not expose cell hyperlink data in its
+  public API. Excel files may contain hyperlinks via the `HYPERLINK()` formula
+  or via the relationships XML, but neither is accessible through the crate.
+  This would require either a calamine upstream change or manual OOXML parsing.
+
+##### Methods
+
+###### defaultOptions()
+
+**Signature:**
+
+```java
+public static ExcelExtractor defaultOptions()
+```
+
+###### name()
+
+**Signature:**
+
+```java
+public String name()
+```
+
+###### version()
+
+**Signature:**
+
+```java
+public String version()
+```
+
+###### initialize()
+
+**Signature:**
+
+```java
+public void initialize() throws Error
+```
+
+###### shutdown()
+
+**Signature:**
+
+```java
+public void shutdown() throws Error
+```
+
+###### extractSync()
+
+**Signature:**
+
+```java
+public InternalDocument extractSync(byte[] content, String mimeType, ExtractionConfig config) throws Error
+```
+
+###### extractBytes()
+
+**Signature:**
+
+```java
+public InternalDocument extractBytes(byte[] content, String mimeType, ExtractionConfig config) throws Error
+```
+
+###### extractFile()
+
+**Signature:**
+
+```java
+public InternalDocument extractFile(String path, String mimeType, ExtractionConfig config) throws Error
+```
+
+###### supportedMimeTypes()
+
+**Signature:**
+
+```java
+public List<String> supportedMimeTypes()
+```
+
+###### priority()
+
+**Signature:**
+
+```java
+public int priority()
+```
+
+###### asSyncExtractor()
+
+**Signature:**
+
+```java
+public Optional<SyncExtractor> asSyncExtractor()
+```
+
+
+---
+
+#### ExcelMetadata
+
+Excel/spreadsheet metadata.
+
+Contains information about sheets in Excel, OpenDocument Calc, and other
+spreadsheet formats (.xlsx, .xls, .ods, etc.).
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `sheetCount` | `long` | — | Total number of sheets in the workbook |
+| `sheetNames` | `List<String>` | `Collections.emptyList()` | Names of all sheets in order |
+
+
+---
+
+#### ExcelSheet
+
+Single Excel worksheet.
+
+Represents one sheet from an Excel workbook with its content
+converted to Markdown format and dimensional statistics.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `name` | `String` | — | Sheet name as it appears in Excel |
+| `markdown` | `String` | — | Sheet content converted to Markdown tables |
+| `rowCount` | `long` | — | Number of rows |
+| `colCount` | `long` | — | Number of columns |
+| `cellCount` | `long` | — | Total number of non-empty cells |
+| `tableCells` | `Optional<List<List<String>>>` | `null` | Pre-extracted table cells (2D vector of cell values) Populated during markdown generation to avoid re-parsing markdown. None for empty sheets. |
+
+
+---
+
+#### ExcelWorkbook
+
+Excel workbook representation.
+
+Contains all sheets from an Excel file (.xlsx, .xls, etc.) with
+extracted content and metadata.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `sheets` | `List<ExcelSheet>` | — | All sheets in the workbook |
+| `metadata` | `Map<String, String>` | — | Workbook-level metadata (author, creation date, etc.) |
+
+
+---
+
+#### Extent
+
+Size in EMUs (English Metric Units, 1 inch = 914400 EMU).
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `cx` | `long` | — | Cx |
+| `cy` | `long` | — | Cy |
+
+##### Methods
+
+###### widthInches()
+
+Convert width to inches.
+
+**Signature:**
+
+```java
+public double widthInches()
+```
+
+###### heightInches()
+
+Convert height to inches.
+
+**Signature:**
+
+```java
+public double heightInches()
+```
+
+
+---
+
+#### ExtractBytesParams
+
+Request parameters for bytes extraction.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `data` | `String` | — | Base64-encoded file content |
+| `mimeType` | `Optional<String>` | `null` | Optional MIME type hint (auto-detected if not provided) |
+| `config` | `Optional<Object>` | `null` | Extraction configuration (JSON object) |
+| `pdfPassword` | `Optional<String>` | `null` | Password for encrypted PDFs |
+| `responseFormat` | `Optional<String>` | `null` | Wire format for the response: "json" (default) or "toon" |
+
+
+---
+
+#### ExtractFileParams
+
+Request parameters for file extraction.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `path` | `String` | — | Path to the file to extract |
+| `mimeType` | `Optional<String>` | `null` | Optional MIME type hint (auto-detected if not provided) |
+| `config` | `Optional<Object>` | `null` | Extraction configuration (JSON object) |
+| `pdfPassword` | `Optional<String>` | `null` | Password for encrypted PDFs |
+| `responseFormat` | `Optional<String>` | `null` | Wire format for the response: "json" (default) or "toon" |
+
+
+---
+
+#### ExtractResponse
+
+Extraction response (list of results).
+
+
+---
+
+#### ExtractStructuredParams
+
+Request parameters for LLM-based structured extraction.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `path` | `String` | — | File path to extract from |
+| `schema` | `Object` | — | JSON schema for structured output |
+| `model` | `String` | — | LLM model (e.g., "openai/gpt-4o") |
+| `schemaName` | `String` | — | Schema name (default: "extraction") |
+| `schemaDescription` | `Optional<String>` | `null` | Schema description for the LLM |
+| `prompt` | `Optional<String>` | `null` | Custom Jinja2 prompt template |
+| `apiKey` | `Optional<String>` | `null` | API key (optional, falls back to env) |
+| `strict` | `boolean` | — | Enable strict mode |
+
+
+---
+
+#### ExtractedImage
+
+Extracted image from a document.
+
+Contains raw image data, metadata, and optional nested OCR results.
+Raw bytes allow cross-language compatibility - users can convert to
+PIL.Image (Python), Sharp (Node.js), or other formats as needed.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `data` | `byte[]` | — | Raw image data (PNG, JPEG, WebP, etc. bytes). Uses `bytes.Bytes` for cheap cloning of large buffers. |
+| `format` | `Str` | — | Image format (e.g., "jpeg", "png", "webp") Uses Cow<'static, str> to avoid allocation for static literals. |
+| `imageIndex` | `long` | — | Zero-indexed position of this image in the document/page |
+| `pageNumber` | `Optional<long>` | `null` | Page/slide number where image was found (1-indexed) |
+| `width` | `Optional<int>` | `null` | Image width in pixels |
+| `height` | `Optional<int>` | `null` | Image height in pixels |
+| `colorspace` | `Optional<String>` | `null` | Colorspace information (e.g., "RGB", "CMYK", "Gray") |
+| `bitsPerComponent` | `Optional<int>` | `null` | Bits per color component (e.g., 8, 16) |
+| `isMask` | `boolean` | — | Whether this image is a mask image |
+| `description` | `Optional<String>` | `null` | Optional description of the image |
+| `ocrResult` | `Optional<ExtractionResult>` | `null` | Nested OCR extraction result (if image was OCRed) When OCR is performed on this image, the result is embedded here rather than in a separate collection, making the relationship explicit. |
+| `boundingBox` | `Optional<BoundingBox>` | `null` | Bounding box of the image on the page (PDF coordinates: x0=left, y0=bottom, x1=right, y1=top). Only populated for PDF-extracted images when position data is available from pdfium. |
+| `sourcePath` | `Optional<String>` | `null` | Original source path of the image within the document archive (e.g., "media/image1.png" in DOCX). Used for rendering image references when the binary data is not extracted. |
+
+
+---
+
+#### ExtractedInlineImage
+
+Extracted inline image with metadata.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `data` | `byte[]` | — | Uses `bytes.Bytes` for cheap cloning of large buffers. |
+| `format` | `String` | — | Format |
+| `filename` | `Optional<String>` | `null` | Filename |
+| `description` | `Optional<String>` | `null` | Human-readable description |
+| `dimensions` | `Optional<U32U32>` | `null` | Dimensions ((u32, u32)) |
+| `attributes` | `List<StringString>` | — | Attributes |
+
+
+---
+
+#### ExtractionConfig
+
+Main extraction configuration.
+
+This struct contains all configuration options for the extraction process.
+It can be loaded from TOML, YAML, or JSON files, or created programmatically.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `useCache` | `boolean` | `true` | Enable caching of extraction results |
+| `enableQualityProcessing` | `boolean` | `true` | Enable quality post-processing |
+| `ocr` | `Optional<OcrConfig>` | `null` | OCR configuration (None = OCR disabled) |
+| `forceOcr` | `boolean` | `false` | Force OCR even for searchable PDFs |
+| `forceOcrPages` | `Optional<List<Long>>` | `null` | Force OCR on specific pages only (1-indexed page numbers, must be >= 1). When set, only the listed pages are OCR'd regardless of text layer quality. Unlisted pages use native text extraction. Ignored when `force_ocr` is `True`. Only applies to PDF documents. Duplicates are automatically deduplicated. An `ocr` config is recommended for backend/language selection; defaults are used if absent. |
+| `disableOcr` | `boolean` | `false` | Disable OCR entirely, even for images. When `True`, OCR is skipped for all document types. Images return metadata only (dimensions, format, EXIF) without text extraction. PDFs use only native text extraction without OCR fallback. Cannot be `True` simultaneously with `force_ocr`. *Added in v4.7.0.* |
+| `chunking` | `Optional<ChunkingConfig>` | `null` | Text chunking configuration (None = chunking disabled) |
+| `contentFilter` | `Optional<ContentFilterConfig>` | `null` | Content filtering configuration (None = use extractor defaults). Controls whether document "furniture" (headers, footers, watermarks, repeating text) is included in or stripped from extraction results. See `ContentFilterConfig` for per-field documentation. |
+| `images` | `Optional<ImageExtractionConfig>` | `null` | Image extraction configuration (None = no image extraction) |
+| `pdfOptions` | `Optional<PdfConfig>` | `null` | PDF-specific options (None = use defaults) |
+| `tokenReduction` | `Optional<TokenReductionOptions>` | `null` | Token reduction configuration (None = no token reduction) |
+| `languageDetection` | `Optional<LanguageDetectionConfig>` | `null` | Language detection configuration (None = no language detection) |
+| `pages` | `Optional<PageConfig>` | `null` | Page extraction configuration (None = no page tracking) |
+| `postprocessor` | `Optional<PostProcessorConfig>` | `null` | Post-processor configuration (None = use defaults) |
+| `htmlOptions` | `Optional<ConversionOptions>` | `null` | HTML to Markdown conversion options (None = use defaults) Configure how HTML documents are converted to Markdown, including heading styles, list formatting, code block styles, and preprocessing options. |
+| `htmlOutput` | `Optional<HtmlOutputConfig>` | `null` | Styled HTML output configuration. When set alongside `output_format = OutputFormat.Html`, the extraction pipeline uses `StyledHtmlRenderer` which emits stable `kb-*` CSS class hooks on every structural element and optionally embeds theme CSS or user-supplied CSS in a `<style>` block. When `None`, the existing plain comrak-based HTML renderer is used. |
+| `extractionTimeoutSecs` | `Optional<long>` | `null` | Default per-file timeout in seconds for batch extraction. When set, each file in a batch will be canceled after this duration unless overridden by `FileExtractionConfig.timeout_secs`. `None` means no timeout (unbounded extraction time). |
+| `maxConcurrentExtractions` | `Optional<long>` | `null` | Maximum concurrent extractions in batch operations (None = (num_cpus × 1.5).ceil()). Limits parallelism to prevent resource exhaustion when processing large batches. Defaults to (num_cpus × 1.5).ceil() when not set. |
+| `resultFormat` | `OutputFormat` | `OutputFormat.PLAIN` | Result structure format Controls whether results are returned in unified format (default) with all content in the `content` field, or element-based format with semantic elements (for Unstructured-compatible output). |
+| `securityLimits` | `Optional<SecurityLimits>` | `null` | Security limits for archive extraction. Controls maximum archive size, compression ratio, file count, and other security thresholds to prevent decompression bomb attacks. When `None`, default limits are used (500MB archive, 100:1 ratio, 10K files). |
+| `outputFormat` | `OutputFormat` | `OutputFormat.PLAIN` | Content text format (default: Plain). Controls the format of the extracted content: - `Plain`: Raw extracted text (default) - `Markdown`: Markdown formatted output - `Djot`: Djot markup format (requires djot feature) - `Html`: HTML formatted output When set to a structured format, extraction results will include formatted output. The `formatted_content` field may be populated when format conversion is applied. |
+| `layout` | `Optional<LayoutDetectionConfig>` | `null` | Layout detection configuration (None = layout detection disabled). When set, PDF pages and images are analyzed for document structure (headings, code, formulas, tables, figures, etc.) using RT-DETR models via ONNX Runtime. For PDFs, layout hints override paragraph classification in the markdown pipeline. For images, per-region OCR is performed with markdown formatting based on detected layout classes. Requires the `layout-detection` feature. |
+| `includeDocumentStructure` | `boolean` | `false` | Enable structured document tree output. When true, populates the `document` field on `ExtractionResult` with a hierarchical `DocumentStructure` containing heading-driven section nesting, table grids, content layer classification, and inline annotations. Independent of `result_format` — can be combined with Unified or ElementBased. |
+| `acceleration` | `Optional<AccelerationConfig>` | `null` | Hardware acceleration configuration for ONNX Runtime models. Controls execution provider selection for layout detection and embedding models. When `None`, uses platform defaults (CoreML on macOS, CUDA on Linux, CPU on Windows). |
+| `cacheNamespace` | `Optional<String>` | `null` | Cache namespace for tenant isolation. When set, cache entries are stored under `{cache_dir}/{namespace}/`. Must be alphanumeric, hyphens, or underscores only (max 64 chars). Different namespaces have isolated cache spaces on the same filesystem. |
+| `cacheTtlSecs` | `Optional<long>` | `null` | Per-request cache TTL in seconds. Overrides the global `max_age_days` for this specific extraction. When `0`, caching is completely skipped (no read or write). When `None`, the global TTL applies. |
+| `email` | `Optional<EmailConfig>` | `null` | Email extraction configuration (None = use defaults). Currently supports configuring the fallback codepage for MSG files that do not specify one. See `crate.core.config.EmailConfig` for details. |
+| `concurrency` | `Optional<ConcurrencyConfig>` | `null` | Concurrency limits for constrained environments (None = use defaults). Controls Rayon thread pool size, ONNX Runtime intra-op threads, and (when `max_concurrent_extractions` is unset) the batch concurrency semaphore. See `crate.core.config.ConcurrencyConfig` for details. |
+| `maxArchiveDepth` | `long` | — | Maximum recursion depth for archive extraction (default: 3). Set to 0 to disable recursive extraction (legacy behavior). |
+| `treeSitter` | `Optional<TreeSitterConfig>` | `null` | Tree-sitter language pack configuration (None = tree-sitter disabled). When set, enables code file extraction using tree-sitter parsers. Controls grammar download behavior and code analysis options. |
+| `structuredExtraction` | `Optional<StructuredExtractionConfig>` | `null` | Structured extraction via LLM (None = disabled). When set, the extracted document content is sent to an LLM with the provided JSON schema. The structured response is stored in `ExtractionResult.structured_output`. |
+| `cancelToken` | `Optional<CancellationToken>` | `null` | Cancellation token for this extraction (None = no external cancellation). Pass a `CancellationToken` clone here and call `CancellationToken.cancel` from another thread / task to abort the extraction in progress. The extractor checks the token at safe checkpoints (before lock acquisition, between pages, between batch items) and returns `KreuzbergError.Cancelled` when set. The field is excluded from serialization because `CancellationToken` is a runtime handle, not a configuration value. |
+
+##### Methods
+
+###### defaultOptions()
+
+**Signature:**
+
+```java
+public static ExtractionConfig defaultOptions()
+```
+
+###### withFileOverrides()
+
+Create a new `ExtractionConfig` by applying per-file overrides from a
+`FileExtractionConfig`. Fields that are `Some` in the override replace the
+corresponding field in `self`; `null` fields keep the original value.
+
+Batch-level fields (`max_concurrent_extractions`, `use_cache`, `acceleration`,
+`security_limits`) are never affected by overrides.
+
+**Signature:**
+
+```java
+public ExtractionConfig withFileOverrides(FileExtractionConfig overrides)
+```
+
+###### normalized()
+
+Normalize configuration for implicit requirements.
+
+Currently handles:
+- Auto-enabling `extract_pages` when `result_format` is `ElementBased`, because
+  the element transformation requires per-page data to assign correct page numbers.
+  Without this, all elements would incorrectly get `page_number=1`.
+- Auto-enabling `extract_pages` when chunking is configured, because the chunker
+  needs page boundaries to assign correct page numbers to chunks.
+
+**Signature:**
+
+```java
+public ExtractionConfig normalized()
+```
+
+###### validate()
+
+Validate the configuration, returning an error if any settings are invalid.
+
+Checks:
+- OCR backend name is supported (catches typos early)
+- VLM backend config is present when backend is "vlm"
+- Pipeline stage backends and VLM configs are valid
+- Structured extraction schema and LLM model are non-empty
+
+**Signature:**
+
+```java
+public void validate() throws KreuzbergError
+```
+
+###### effectiveDisableOcr()
+
+Returns the effective disable-OCR value, accounting for both the top-level
+`disable_ocr` flag and the `ocr.enabled` shorthand on `OcrConfig`.
+
+Setting `ocr.enabled = false` in configuration is treated as equivalent to
+`disable_ocr = true`. This method is the single source of truth for whether
+OCR should be skipped.
+
+**Signature:**
+
+```java
+public boolean effectiveDisableOcr()
+```
+
+###### needsImageProcessing()
+
+Check if image processing is needed by examining OCR and image extraction settings.
+
+Returns `true` if either OCR is enabled or image extraction is configured,
+indicating that image decompression and processing should occur.
+Returns `false` if both are disabled, allowing optimization to skip unnecessary
+image decompression for text-only extraction workflows.
+
+# Optimization Impact
+For text-only extractions (no OCR, no image extraction), skipping image
+decompression can improve CPU utilization by 5-10% by avoiding wasteful
+image I/O and processing when results won't be used.
+
+**Signature:**
+
+```java
+public boolean needsImageProcessing()
+```
+
+
+---
+
+#### ExtractionMetrics
+
+Collection of all kreuzberg metric instruments.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `extractionTotal` | `Counter` | — | Total extractions (attributes: mime_type, extractor, status). |
+| `cacheHits` | `Counter` | — | Cache hits. |
+| `cacheMisses` | `Counter` | — | Cache misses. |
+| `batchTotal` | `Counter` | — | Total batch requests (attributes: status). |
+| `extractionDurationMs` | `Histogram` | — | Extraction wall-clock duration in milliseconds (attributes: mime_type, extractor). |
+| `extractionInputBytes` | `Histogram` | — | Input document size in bytes (attributes: mime_type). |
+| `extractionOutputBytes` | `Histogram` | — | Output content size in bytes (attributes: mime_type). |
+| `pipelineDurationMs` | `Histogram` | — | Pipeline stage duration in milliseconds (attributes: stage). |
+| `ocrDurationMs` | `Histogram` | — | OCR duration in milliseconds (attributes: backend, language). |
+| `batchDurationMs` | `Histogram` | — | Batch total duration in milliseconds. |
+| `concurrentExtractions` | `UpDownCounter` | — | Currently in-flight extractions. |
+
+
+---
+
+#### ExtractionRequest
+
+A request to extract content from a single document.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `source` | `ExtractionSource` | — | Where to read the document from. |
+| `config` | `ExtractionConfig` | — | Base extraction configuration. |
+| `fileOverrides` | `Optional<FileExtractionConfig>` | `null` | Optional per-file overrides (merged on top of `config`). |
+
+##### Methods
+
+###### file()
+
+Create a file-based extraction request.
+
+**Signature:**
+
+```java
+public static ExtractionRequest file(String path, ExtractionConfig config)
+```
+
+###### fileWithMime()
+
+Create a file-based extraction request with a MIME type hint.
+
+**Signature:**
+
+```java
+public static ExtractionRequest fileWithMime(String path, String mimeHint, ExtractionConfig config)
+```
+
+###### bytes()
+
+Create a bytes-based extraction request.
+
+**Signature:**
+
+```java
+public static ExtractionRequest bytes(byte[] data, String mimeType, ExtractionConfig config)
+```
+
+###### withOverrides()
+
+Set per-file overrides on this request.
+
+**Signature:**
+
+```java
+public ExtractionRequest withOverrides(FileExtractionConfig overrides)
+```
+
+
+---
+
+#### ExtractionResult
+
+General extraction result used by the core extraction API.
+
+This is the main result type returned by all extraction functions.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `content` | `String` | — | The extracted text content |
+| `mimeType` | `Str` | — | The detected MIME type |
+| `metadata` | `Metadata` | — | Document metadata |
+| `tables` | `List<Table>` | `Collections.emptyList()` | Tables extracted from the document |
+| `detectedLanguages` | `Optional<List<String>>` | `Collections.emptyList()` | Detected languages |
+| `chunks` | `Optional<List<Chunk>>` | `Collections.emptyList()` | Text chunks when chunking is enabled. When chunking configuration is provided, the content is split into overlapping chunks for efficient processing. Each chunk contains the text, optional embeddings (if enabled), and metadata about its position. |
+| `images` | `Optional<List<ExtractedImage>>` | `Collections.emptyList()` | Extracted images from the document. When image extraction is enabled via `ImageExtractionConfig`, this field contains all images found in the document with their raw data and metadata. Each image may optionally contain a nested `ocr_result` if OCR was performed. |
+| `pages` | `Optional<List<PageContent>>` | `Collections.emptyList()` | Per-page content when page extraction is enabled. When page extraction is configured, the document is split into per-page content with tables and images mapped to their respective pages. |
+| `elements` | `Optional<List<Element>>` | `Collections.emptyList()` | Semantic elements when element-based result format is enabled. When result_format is set to ElementBased, this field contains semantic elements with type classification, unique identifiers, and metadata for Unstructured-compatible element-based processing. |
+| `djotContent` | `Optional<DjotContent>` | `null` | Rich Djot content structure (when extracting Djot documents). When extracting Djot documents with structured extraction enabled, this field contains the full semantic structure including: - Block-level elements with nesting - Inline formatting with attributes - Links, images, footnotes - Math expressions - Complete attribute information The `content` field still contains plain text for backward compatibility. Always `None` for non-Djot documents. |
+| `ocrElements` | `Optional<List<OcrElement>>` | `Collections.emptyList()` | OCR elements with full spatial and confidence metadata. When OCR is performed with element extraction enabled, this field contains the structured representation of detected text including: - Bounding geometry (rectangles or quadrilaterals) - Confidence scores (detection and recognition) - Rotation information - Hierarchical relationships (Tesseract only) This field preserves all metadata that would otherwise be lost when converting to plain text or markdown output formats. Only populated when `OcrElementConfig.include_elements` is true. |
+| `document` | `Optional<DocumentStructure>` | `null` | Structured document tree (when document structure extraction is enabled). When `include_document_structure` is true in `ExtractionConfig`, this field contains the full hierarchical representation of the document including: - Heading-driven section nesting - Table grids with cell-level metadata - Content layer classification (body, header, footer, footnote) - Inline text annotations (formatting, links) - Bounding boxes and page numbers Independent of `result_format` — can be combined with Unified or ElementBased. |
+| `qualityScore` | `Optional<double>` | `null` | Document quality score from quality analysis. A value between 0.0 and 1.0 indicating the overall text quality. Previously stored in `metadata.additional["quality_score"]`. |
+| `processingWarnings` | `List<ProcessingWarning>` | `Collections.emptyList()` | Non-fatal warnings collected during processing pipeline stages. Captures errors from optional pipeline features (embedding, chunking, language detection, output formatting) that don't prevent extraction but may indicate degraded results. Previously stored as individual keys in `metadata.additional`. |
+| `annotations` | `Optional<List<PdfAnnotation>>` | `Collections.emptyList()` | PDF annotations extracted from the document. When annotation extraction is enabled via `PdfConfig.extract_annotations`, this field contains text notes, highlights, links, stamps, and other annotations found in PDF documents. |
+| `children` | `Optional<List<ArchiveEntry>>` | `Collections.emptyList()` | Nested extraction results from archive contents. When extracting archives, each processable file inside produces its own full extraction result. Set to `None` for non-archive formats. Use `max_archive_depth` in config to control recursion depth. |
+| `uris` | `Optional<List<Uri>>` | `Collections.emptyList()` | URIs/links discovered during document extraction. Contains hyperlinks, image references, citations, email addresses, and other URI-like references found in the document. Always extracted when present in the source document. |
+| `structuredOutput` | `Optional<Object>` | `null` | Structured extraction output from LLM-based JSON schema extraction. When `structured_extraction` is configured in `ExtractionConfig`, the extracted document content is sent to a VLM with the provided JSON schema. The response is parsed and stored here as a JSON value matching the schema. |
+| `codeIntelligence` | `Optional<ProcessResult>` | `null` | Code intelligence results from tree-sitter analysis. Populated when extracting source code files with the `tree-sitter` feature. Contains metrics, structural analysis, imports/exports, comments, docstrings, symbols, diagnostics, and optionally chunked code segments. |
+| `llmUsage` | `Optional<List<LlmUsage>>` | `Collections.emptyList()` | LLM token usage and cost data for all LLM calls made during this extraction. Contains one entry per LLM call. Multiple entries are produced when VLM OCR, structured extraction, and/or LLM embeddings all run during the same extraction. `None` when no LLM was used. |
+| `formattedContent` | `Optional<String>` | `null` | Pre-rendered content in the requested output format. Populated during `derive_extraction_result` before tree derivation consumes element data. `apply_output_format` swaps this into `content` at the end of the pipeline, after post-processors have operated on plain text. |
+| `ocrInternalDocument` | `Optional<InternalDocument>` | `null` | Structured hOCR document for the OCR+layout pipeline. When tesseract produces hOCR output, the parsed `InternalDocument` carries paragraph structure with bounding boxes and confidence scores. The layout classification step enriches these elements before final rendering. |
+
+
+---
+
+#### ExtractionService
+
+A `tower.Service` that dispatches extraction requests to the kreuzberg
+core library.
+
+This service is cheap to clone and can be shared across handlers.
+Concurrency and timeouts are managed by composing Tower layers on top
+(see `super.ExtractionServiceBuilder`).
+
+##### Methods
+
+###### defaultOptions()
+
+**Signature:**
+
+```java
+public static ExtractionService defaultOptions()
+```
+
+###### pollReady()
+
+**Signature:**
+
+```java
+public Poll pollReady(Context cx)
+```
+
+###### call()
+
+**Signature:**
+
+```java
+public Future call(ExtractionRequest req)
+```
+
+
+---
+
+#### ExtractionServiceBuilder
+
+Builder for composing an extraction service with Tower middleware layers.
+
+Layers are applied in the order: Tracing → Metrics → Timeout → ConcurrencyLimit → Service.
+
+##### Methods
+
+###### defaultOptions()
+
+**Signature:**
+
+```java
+public static ExtractionServiceBuilder defaultOptions()
+```
+
+###### withTimeout()
+
+Add a per-request timeout.
+
+**Signature:**
+
+```java
+public ExtractionServiceBuilder withTimeout(Duration duration)
+```
+
+###### withConcurrencyLimit()
+
+Limit concurrent in-flight extractions.
+
+**Signature:**
+
+```java
+public ExtractionServiceBuilder withConcurrencyLimit(long max)
+```
+
+###### withTracing()
+
+Add a tracing span to each extraction request.
+
+**Signature:**
+
+```java
+public ExtractionServiceBuilder withTracing()
+```
+
+###### withMetrics()
+
+Add metrics recording to each extraction request.
+
+Requires the `otel` feature. This is a no-op when `otel` is not enabled.
+
+**Signature:**
+
+```java
+public ExtractionServiceBuilder withMetrics()
+```
+
+###### build()
+
+Build the service stack, returning a type-erased cloneable service.
+
+Layer order (outermost to innermost):
+`Tracing → Metrics → Timeout → ConcurrencyLimit → ExtractionService`
+
+**Signature:**
+
+```java
+public BoxCloneService build()
+```
+
+
+---
+
+#### FictionBookExtractor
+
+FictionBook document extractor.
+
+Supports FictionBook 2.0 format with proper section hierarchy and inline formatting.
+
+##### Methods
+
+###### defaultOptions()
+
+**Signature:**
+
+```java
+public static FictionBookExtractor defaultOptions()
+```
+
+###### name()
+
+**Signature:**
+
+```java
+public String name()
+```
+
+###### version()
+
+**Signature:**
+
+```java
+public String version()
+```
+
+###### initialize()
+
+**Signature:**
+
+```java
+public void initialize() throws Error
+```
+
+###### shutdown()
+
+**Signature:**
+
+```java
+public void shutdown() throws Error
+```
+
+###### description()
+
+**Signature:**
+
+```java
+public String description()
+```
+
+###### author()
+
+**Signature:**
+
+```java
+public String author()
+```
+
+###### extractBytes()
+
+**Signature:**
+
+```java
+public InternalDocument extractBytes(byte[] content, String mimeType, ExtractionConfig config) throws Error
+```
+
+###### supportedMimeTypes()
+
+**Signature:**
+
+```java
+public List<String> supportedMimeTypes()
+```
+
+###### priority()
+
+**Signature:**
+
+```java
+public int priority()
+```
+
+
+---
+
+#### FictionBookMetadata
+
+FictionBook (FB2) metadata.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `genres` | `List<String>` | `Collections.emptyList()` | Genres |
+| `sequences` | `List<String>` | `Collections.emptyList()` | Sequences |
+| `annotation` | `Optional<String>` | `null` | Annotation |
+
+
+---
+
+#### FileBytes
+
+An owned buffer of file bytes.
+
+On non-WASM platforms this may be backed by a memory-mapped file (zero heap
+allocation for the file contents) or by a `Vec<u8>` for small files.
+On WASM it is always a `Vec<u8>`.
+
+Implements `Deref<Target = [u8]>` so callers can pass `&FileBytes` as `&[u8]`
+without any additional copy.
+
+##### Methods
+
+###### deref()
+
+**Signature:**
+
+```java
+public byte[] deref()
+```
+
+###### asRef()
+
+**Signature:**
+
+```java
+public byte[] asRef()
+```
+
+
+---
+
+#### FileExtractionConfig
+
+Per-file extraction configuration overrides for batch processing.
+
+All fields are `Option<T>` — `null` means "use the batch-level default."
+This type is used with `crate.batch_extract_file` and
+`crate.batch_extract_bytes` to allow heterogeneous
+extraction settings within a single batch.
+
+# Excluded Fields
+
+The following `super.ExtractionConfig` fields are batch-level only and
+cannot be overridden per file:
+- `max_concurrent_extractions` — controls batch parallelism
+- `use_cache` — global caching policy
+- `acceleration` — shared ONNX execution provider
+- `security_limits` — global archive security policy
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `enableQualityProcessing` | `Optional<boolean>` | `null` | Override quality post-processing for this file. |
+| `ocr` | `Optional<OcrConfig>` | `null` | Override OCR configuration for this file (None in the Option = use batch default). |
+| `forceOcr` | `Optional<boolean>` | `null` | Override force OCR for this file. |
+| `forceOcrPages` | `Optional<List<Long>>` | `Collections.emptyList()` | Override force OCR pages for this file (1-indexed page numbers). |
+| `disableOcr` | `Optional<boolean>` | `null` | Override disable OCR for this file. |
+| `chunking` | `Optional<ChunkingConfig>` | `null` | Override chunking configuration for this file. |
+| `contentFilter` | `Optional<ContentFilterConfig>` | `null` | Override content filtering configuration for this file. |
+| `images` | `Optional<ImageExtractionConfig>` | `null` | Override image extraction configuration for this file. |
+| `pdfOptions` | `Optional<PdfConfig>` | `null` | Override PDF options for this file. |
+| `tokenReduction` | `Optional<TokenReductionOptions>` | `null` | Override token reduction for this file. |
+| `languageDetection` | `Optional<LanguageDetectionConfig>` | `null` | Override language detection for this file. |
+| `pages` | `Optional<PageConfig>` | `null` | Override page extraction for this file. |
+| `postprocessor` | `Optional<PostProcessorConfig>` | `null` | Override post-processor for this file. |
+| `htmlOptions` | `Optional<ConversionOptions>` | `null` | Override HTML conversion options for this file. |
+| `resultFormat` | `Optional<OutputFormat>` | `null` | Override result format for this file. |
+| `outputFormat` | `Optional<OutputFormat>` | `null` | Override output content format for this file. |
+| `includeDocumentStructure` | `Optional<boolean>` | `null` | Override document structure output for this file. |
+| `layout` | `Optional<LayoutDetectionConfig>` | `null` | Override layout detection for this file. |
+| `timeoutSecs` | `Optional<long>` | `null` | Override per-file extraction timeout in seconds. When set, the extraction for this file will be canceled after the specified duration. A timed-out file produces an error result without affecting other files in the batch. |
+| `treeSitter` | `Optional<TreeSitterConfig>` | `null` | Override tree-sitter configuration for this file. |
+| `structuredExtraction` | `Optional<StructuredExtractionConfig>` | `null` | Override structured extraction configuration for this file. When set, enables LLM-based structured extraction with a JSON schema for this specific file. The extracted content is sent to a VLM/LLM and the response is parsed according to the provided schema. |
+
+
+---
+
+#### FileHeader
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `flags` | `int` | — | Flags |
+
+##### Methods
+
+###### parse()
+
+**Signature:**
+
+```java
+public static FileHeader parse(byte[] data) throws Error
+```
+
+###### isCompressed()
+
+Whether section streams are zlib/deflate-compressed.
+
+**Signature:**
+
+```java
+public boolean isCompressed()
+```
+
+###### isEncrypted()
+
+Whether the document is password-encrypted.
+
+**Signature:**
+
+```java
+public boolean isEncrypted()
+```
+
+###### isDistribute()
+
+Whether the document is a distribution document (text in ViewText/).
+
+**Signature:**
+
+```java
+public boolean isDistribute()
+```
+
+
+---
+
+#### FontScheme
+
+Font scheme containing major (heading) and minor (body) fonts.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `name` | `String` | — | Font scheme name. |
+| `majorLatin` | `Optional<String>` | `null` | Major (heading) font - Latin script. |
+| `majorEastAsian` | `Optional<String>` | `null` | Major (heading) font - East Asian script. |
+| `majorComplexScript` | `Optional<String>` | `null` | Major (heading) font - Complex script. |
+| `minorLatin` | `Optional<String>` | `null` | Minor (body) font - Latin script. |
+| `minorEastAsian` | `Optional<String>` | `null` | Minor (body) font - East Asian script. |
+| `minorComplexScript` | `Optional<String>` | `null` | Minor (body) font - Complex script. |
+
+
+---
+
+#### FontSizeCluster
+
+A cluster of text blocks with the same font size characteristics.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `centroid` | `float` | — | The centroid (mean) font size of this cluster |
+| `members` | `List<TextBlock>` | — | The text blocks that belong to this cluster |
+
+
+---
+
+#### Footnote
+
+Footnote in Djot.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `label` | `String` | — | Footnote label |
+| `content` | `List<FormattedBlock>` | — | Footnote content blocks |
+
+
+---
+
+#### FormattedBlock
+
+Block-level element in a Djot document.
+
+Represents structural elements like headings, paragraphs, lists, code blocks, etc.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `blockType` | `BlockType` | — | Type of block element |
+| `level` | `Optional<long>` | `null` | Heading level (1-6) for headings, or nesting level for lists |
+| `inlineContent` | `List<InlineElement>` | — | Inline content within the block |
+| `attributes` | `Optional<Attributes>` | `null` | Element attributes (classes, IDs, key-value pairs) |
+| `language` | `Optional<String>` | `null` | Language identifier for code blocks |
+| `code` | `Optional<String>` | `null` | Raw code content for code blocks |
+| `children` | `List<FormattedBlock>` | — | Nested blocks for containers (blockquotes, list items, divs) |
+
+
+---
+
+#### GenericCache
+
+##### Methods
+
+###### new()
+
+**Signature:**
+
+```java
+public static GenericCache new(String cacheType, String cacheDir, double maxAgeDays, double maxCacheSizeMb, double minFreeSpaceMb) throws Error
+```
+
+###### get()
+
+**Signature:**
+
+```java
+public Optional<byte[]> get(String cacheKey, String sourceFile, String namespace, long ttlOverrideSecs) throws Error
+```
+
+###### getDefault()
+
+Backward-compatible get without namespace/TTL.
+
+**Signature:**
+
+```java
+public Optional<byte[]> getDefault(String cacheKey, String sourceFile) throws Error
+```
+
+###### set()
+
+**Signature:**
+
+```java
+public void set(String cacheKey, byte[] data, String sourceFile, String namespace, long ttlSecs) throws Error
+```
+
+###### setDefault()
+
+Backward-compatible set without namespace/TTL.
+
+**Signature:**
+
+```java
+public void setDefault(String cacheKey, byte[] data, String sourceFile) throws Error
+```
+
+###### isProcessing()
+
+**Signature:**
+
+```java
+public boolean isProcessing(String cacheKey) throws Error
+```
+
+###### markProcessing()
+
+**Signature:**
+
+```java
+public void markProcessing(String cacheKey) throws Error
+```
+
+###### markComplete()
+
+**Signature:**
+
+```java
+public void markComplete(String cacheKey) throws Error
+```
+
+###### clear()
+
+**Signature:**
+
+```java
+public UsizeF64 clear() throws Error
+```
+
+###### deleteNamespace()
+
+Delete all cache entries under a namespace.
+
+Removes the namespace subdirectory and all its contents.
+Returns (files_removed, mb_freed).
+
+**Signature:**
+
+```java
+public UsizeF64 deleteNamespace(String namespace) throws Error
+```
+
+###### getStats()
+
+**Signature:**
+
+```java
+public CacheStats getStats() throws Error
+```
+
+###### getStatsFiltered()
+
+Get cache stats, optionally filtered to a specific namespace.
+
+**Signature:**
+
+```java
+public CacheStats getStatsFiltered(String namespace) throws Error
+```
+
+###### cacheDir()
+
+**Signature:**
+
+```java
+public String cacheDir()
+```
+
+###### cacheType()
+
+**Signature:**
+
+```java
+public String cacheType()
+```
+
+
+---
+
+#### GridCell
+
+Individual grid cell with position and span metadata.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `content` | `String` | — | Cell text content. |
+| `row` | `int` | — | Zero-indexed row position. |
+| `col` | `int` | — | Zero-indexed column position. |
+| `rowSpan` | `int` | — | Number of rows this cell spans. |
+| `colSpan` | `int` | — | Number of columns this cell spans. |
+| `isHeader` | `boolean` | — | Whether this is a header cell. |
+| `bbox` | `Optional<BoundingBox>` | `null` | Bounding box for this cell (if available). |
+
+
+---
+
+#### GzipExtractor
+
+Gzip archive extractor.
+
+Decompresses gzip files and extracts text content from the compressed data.
+
+##### Methods
+
+###### defaultOptions()
+
+**Signature:**
+
+```java
+public static GzipExtractor defaultOptions()
+```
+
+###### name()
+
+**Signature:**
+
+```java
+public String name()
+```
+
+###### version()
+
+**Signature:**
+
+```java
+public String version()
+```
+
+###### initialize()
+
+**Signature:**
+
+```java
+public void initialize() throws Error
+```
+
+###### shutdown()
+
+**Signature:**
+
+```java
+public void shutdown() throws Error
+```
+
+###### description()
+
+**Signature:**
+
+```java
+public String description()
+```
+
+###### author()
+
+**Signature:**
+
+```java
+public String author()
+```
+
+###### extractBytes()
+
+**Signature:**
+
+```java
+public InternalDocument extractBytes(byte[] content, String mimeType, ExtractionConfig config) throws Error
+```
+
+###### supportedMimeTypes()
+
+**Signature:**
+
+```java
+public List<String> supportedMimeTypes()
+```
+
+###### priority()
+
+**Signature:**
+
+```java
+public int priority()
+```
+
+###### asSyncExtractor()
+
+**Signature:**
+
+```java
+public Optional<SyncExtractor> asSyncExtractor()
+```
+
+###### extractSync()
+
+**Signature:**
+
+```java
+public InternalDocument extractSync(byte[] content, String mimeType, ExtractionConfig config) throws Error
+```
+
+
+---
+
+#### HeaderFooter
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `paragraphs` | `List<Paragraph>` | `Collections.emptyList()` | Paragraphs |
+| `tables` | `List<Table>` | `Collections.emptyList()` | Tables extracted from the document |
+| `headerType` | `HeaderFooterType` | `HeaderFooterType.DEFAULT` | Header type (header footer type) |
+
+
+---
+
+#### HeaderMetadata
+
+Header/heading element metadata.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `level` | `byte` | — | Header level: 1 (h1) through 6 (h6) |
+| `text` | `String` | — | Normalized text content of the header |
+| `id` | `Optional<String>` | `null` | HTML id attribute if present |
+| `depth` | `long` | — | Document tree depth at the header element |
+| `htmlOffset` | `long` | — | Byte offset in original HTML document |
+
+
+---
+
+#### HeadingContext
+
+Heading context for a chunk within a Markdown document.
+
+Contains the heading hierarchy from document root to this chunk's section.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `headings` | `List<HeadingLevel>` | — | The heading hierarchy from document root to this chunk's section. Index 0 is the outermost (h1), last element is the most specific. |
+
+
+---
+
+#### HeadingLevel
+
+A single heading in the hierarchy.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `level` | `byte` | — | Heading depth (1 = h1, 2 = h2, etc.) |
+| `text` | `String` | — | The text content of the heading. |
+
+
+---
+
+#### HealthResponse
+
+Health check response.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `status` | `String` | — | Health status |
+| `version` | `String` | — | API version |
+| `plugins` | `Optional<PluginStatus>` | `null` | Plugin status (optional) |
+
+
+---
+
+#### HierarchicalBlock
+
+A text block with hierarchy level assignment.
+
+Represents a block of text with semantic heading information extracted from
+font size clustering and hierarchical analysis.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `text` | `String` | — | The text content of this block |
+| `fontSize` | `float` | — | The font size of the text in this block |
+| `level` | `String` | — | The hierarchy level of this block (H1-H6 or Body) Levels correspond to HTML heading tags: - "h1": Top-level heading - "h2": Secondary heading - "h3": Tertiary heading - "h4": Quaternary heading - "h5": Quinary heading - "h6": Senary heading - "body": Body text (no heading level) |
+| `bbox` | `Optional<F32F32F32F32>` | `null` | Bounding box information for the block Contains coordinates as (left, top, right, bottom) in PDF units. |
+
+
+---
+
+#### HierarchyBlock
+
+A TextBlock with hierarchy level assignment.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `text` | `String` | — | The text content |
+| `bbox` | `BoundingBox` | — | The bounding box of the block |
+| `fontSize` | `float` | — | The font size of the text in this block |
+| `hierarchyLevel` | `HierarchyLevel` | — | The hierarchy level of this block (H1-H6 or Body) |
+
+
+---
+
+#### HierarchyConfig
+
+Hierarchy extraction configuration for PDF text structure analysis.
+
+Enables extraction of document hierarchy levels (H1-H6) based on font size
+clustering and semantic analysis. When enabled, hierarchical blocks are
+included in page content.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `enabled` | `boolean` | `true` | Enable hierarchy extraction |
+| `kClusters` | `long` | `3` | Number of font size clusters to use for hierarchy levels (1-7) Default: 6, which provides H1-H6 heading levels with body text. Larger values create more fine-grained hierarchy levels. |
+| `includeBbox` | `boolean` | `true` | Include bounding box information in hierarchy blocks |
+| `ocrCoverageThreshold` | `Optional<float>` | `null` | OCR coverage threshold for smart OCR triggering (0.0-1.0) Determines when OCR should be triggered based on text block coverage. OCR is triggered when text blocks cover less than this fraction of the page. Default: 0.5 (trigger OCR if less than 50% of page has text) |
+
+##### Methods
+
+###### defaultOptions()
+
+**Signature:**
+
+```java
+public static HierarchyConfig defaultOptions()
+```
+
+
+---
+
+#### HocrWord
+
+Represents a word extracted from hOCR (or any source) with position and confidence information.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `text` | `String` | — | Text |
+| `left` | `int` | — | Left |
+| `top` | `int` | — | Top |
+| `width` | `int` | — | Width |
+| `height` | `int` | — | Height |
+| `confidence` | `double` | — | Confidence |
+
+##### Methods
+
+###### right()
+
+Get the right edge position.
+
+**Signature:**
+
+```java
+public int right()
+```
+
+###### bottom()
+
+Get the bottom edge position.
+
+**Signature:**
+
+```java
+public int bottom()
+```
+
+###### yCenter()
+
+Get the vertical center position.
+
+**Signature:**
+
+```java
+public double yCenter()
+```
+
+###### xCenter()
+
+Get the horizontal center position.
+
+**Signature:**
+
+```java
+public double xCenter()
+```
+
+
+---
+
+#### HtmlExtractionResult
+
+Result of HTML extraction with optional images and warnings.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `markdown` | `String` | — | Markdown |
+| `images` | `List<ExtractedInlineImage>` | — | Images extracted from the document |
+| `warnings` | `List<String>` | — | Warnings |
+
+
+---
+
+#### HtmlExtractor
+
+HTML document extractor using html-to-markdown.
+
+##### Methods
+
+###### defaultOptions()
+
+**Signature:**
+
+```java
+public static HtmlExtractor defaultOptions()
+```
+
+###### name()
+
+**Signature:**
+
+```java
+public String name()
+```
+
+###### version()
+
+**Signature:**
+
+```java
+public String version()
+```
+
+###### initialize()
+
+**Signature:**
+
+```java
+public void initialize() throws Error
+```
+
+###### shutdown()
+
+**Signature:**
+
+```java
+public void shutdown() throws Error
+```
+
+###### extractSync()
+
+**Signature:**
+
+```java
+public InternalDocument extractSync(byte[] content, String mimeType, ExtractionConfig config) throws Error
+```
+
+###### extractBytes()
+
+**Signature:**
+
+```java
+public InternalDocument extractBytes(byte[] content, String mimeType, ExtractionConfig config) throws Error
+```
+
+###### supportedMimeTypes()
+
+**Signature:**
+
+```java
+public List<String> supportedMimeTypes()
+```
+
+###### priority()
+
+**Signature:**
+
+```java
+public int priority()
+```
+
+###### asSyncExtractor()
+
+**Signature:**
+
+```java
+public Optional<SyncExtractor> asSyncExtractor()
+```
+
+
+---
+
+#### HtmlMetadata
+
+HTML metadata extracted from HTML documents.
+
+Includes document-level metadata, Open Graph data, Twitter Card metadata,
+and extracted structural elements (headers, links, images, structured data).
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `title` | `Optional<String>` | `null` | Document title from `<title>` tag |
+| `description` | `Optional<String>` | `null` | Document description from `<meta name="description">` tag |
+| `keywords` | `List<String>` | `Collections.emptyList()` | Document keywords from `<meta name="keywords">` tag, split on commas |
+| `author` | `Optional<String>` | `null` | Document author from `<meta name="author">` tag |
+| `canonicalUrl` | `Optional<String>` | `null` | Canonical URL from `<link rel="canonical">` tag |
+| `baseHref` | `Optional<String>` | `null` | Base URL from `<base href="">` tag for resolving relative URLs |
+| `language` | `Optional<String>` | `null` | Document language from `lang` attribute |
+| `textDirection` | `Optional<TextDirection>` | `null` | Document text direction from `dir` attribute |
+| `openGraph` | `Map<String, String>` | `Collections.emptyMap()` | Open Graph metadata (og:* properties) for social media Keys like "title", "description", "image", "url", etc. |
+| `twitterCard` | `Map<String, String>` | `Collections.emptyMap()` | Twitter Card metadata (twitter:* properties) Keys like "card", "site", "creator", "title", "description", "image", etc. |
+| `metaTags` | `Map<String, String>` | `Collections.emptyMap()` | Additional meta tags not covered by specific fields Keys are meta name/property attributes, values are content |
+| `headers` | `List<HeaderMetadata>` | `Collections.emptyList()` | Extracted header elements with hierarchy |
+| `links` | `List<LinkMetadata>` | `Collections.emptyList()` | Extracted hyperlinks with type classification |
+| `images` | `List<ImageMetadataType>` | `Collections.emptyList()` | Extracted images with source and dimensions |
+| `structuredData` | `List<StructuredData>` | `Collections.emptyList()` | Extracted structured data blocks |
+
+##### Methods
+
+###### isEmpty()
+
+Check if metadata is empty (no meaningful content extracted).
+
+**Signature:**
+
+```java
+public boolean isEmpty()
+```
+
+###### from()
+
+**Signature:**
+
+```java
+public static HtmlMetadata from(HtmlMetadata metadata)
+```
+
+
+---
+
+#### HtmlOutputConfig
+
+Configuration for styled HTML output.
+
+When set on `ExtractionConfig.html_output` alongside
+`output_format = OutputFormat.Html`, the pipeline builds a
+`StyledHtmlRenderer` instead of
+the plain comrak-based renderer.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `css` | `Optional<String>` | `null` | Inline CSS string injected into the output after the theme stylesheet. Concatenated after `css_file` content when both are set. |
+| `cssFile` | `Optional<String>` | `null` | Path to a CSS file loaded once at renderer construction time. Concatenated before `css` when both are set. |
+| `theme` | `HtmlTheme` | `HtmlTheme.UNSTYLED` | Built-in colour/typography theme. Default: `HtmlTheme.Unstyled`. |
+| `classPrefix` | `String` | — | CSS class prefix applied to every emitted class name. Default: `"kb-"`. Change this if your host application already uses classes that start with `kb-`. |
+| `embedCss` | `boolean` | `true` | When `True` (default), write the resolved CSS into a `<style>` block immediately after the opening `<div class="{prefix}doc">`. Set to `False` to emit only the structural markup and wire up your own stylesheet targeting the `kb-*` class names. |
+
+##### Methods
+
+###### defaultOptions()
+
+**Signature:**
+
+```java
+public static HtmlOutputConfig defaultOptions()
+```
+
+
+---
+
+#### HwpDocument
+
+An extracted HWP document, consisting of one or more body-text sections.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `sections` | `List<Section>` | `Collections.emptyList()` | All sections from all BodyText/SectionN streams. |
+
+##### Methods
+
+###### extractText()
+
+Concatenate the text of every paragraph in every section, separated by
+newlines.
+
+**Signature:**
+
+```java
+public String extractText()
+```
+
+
+---
+
+#### HwpExtractor
+
+Extractor for Hangul Word Processor (.hwp) files.
+
+Supports HWP 5.0 format, the standard document format in South Korea.
+
+##### Methods
+
+###### defaultOptions()
+
+**Signature:**
+
+```java
+public static HwpExtractor defaultOptions()
+```
+
+###### name()
+
+**Signature:**
+
+```java
+public String name()
+```
+
+###### version()
+
+**Signature:**
+
+```java
+public String version()
+```
+
+###### initialize()
+
+**Signature:**
+
+```java
+public void initialize() throws Error
+```
+
+###### shutdown()
+
+**Signature:**
+
+```java
+public void shutdown() throws Error
+```
+
+###### description()
+
+**Signature:**
+
+```java
+public String description()
+```
+
+###### author()
+
+**Signature:**
+
+```java
+public String author()
+```
+
+###### extractBytes()
+
+**Signature:**
+
+```java
+public InternalDocument extractBytes(byte[] content, String mimeType, ExtractionConfig config) throws Error
+```
+
+###### supportedMimeTypes()
+
+**Signature:**
+
+```java
+public List<String> supportedMimeTypes()
+```
+
+###### priority()
+
+**Signature:**
+
+```java
+public int priority()
+```
+
+
+---
+
+#### ImageDpiConfig
+
+Image extraction DPI configuration (internal use).
+
+**Note:** This is an internal type used for image preprocessing.
+For the main extraction configuration, see `crate.core.config.ExtractionConfig`.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `targetDpi` | `int` | `300` | Target DPI for image normalization |
+| `maxImageDimension` | `int` | `4096` | Maximum image dimension (width or height) |
+| `autoAdjustDpi` | `boolean` | `true` | Whether to auto-adjust DPI based on content |
+| `minDpi` | `int` | `72` | Minimum DPI threshold |
+| `maxDpi` | `int` | `600` | Maximum DPI threshold |
+
+##### Methods
+
+###### defaultOptions()
+
+**Signature:**
+
+```java
+public static ImageDpiConfig defaultOptions()
+```
+
+
+---
+
+#### ImageExtractionConfig
+
+Image extraction configuration.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `extractImages` | `boolean` | — | Extract images from documents |
+| `targetDpi` | `int` | — | Target DPI for image normalization |
+| `maxImageDimension` | `int` | — | Maximum dimension for images (width or height) |
+| `injectPlaceholders` | `boolean` | — | Whether to inject image reference placeholders into markdown output. When `True` (default), image references like `![Image 1](embedded:p1_i0)` are appended to the markdown. Set to `False` to extract images as data without polluting the markdown output. |
+| `autoAdjustDpi` | `boolean` | — | Automatically adjust DPI based on image content |
+| `minDpi` | `int` | — | Minimum DPI threshold |
+| `maxDpi` | `int` | — | Maximum DPI threshold |
+
+
+---
+
+#### ImageExtractor
+
+Image extractor for various image formats.
+
+Supports: PNG, JPEG, WebP, BMP, TIFF, GIF.
+Extracts dimensions, format, and EXIF metadata.
+Optionally runs OCR when configured.
+When layout detection is also enabled, uses per-region OCR with
+markdown formatting based on detected layout classes.
+
+##### Methods
+
+###### defaultOptions()
+
+**Signature:**
+
+```java
+public static ImageExtractor defaultOptions()
+```
+
+###### name()
+
+**Signature:**
+
+```java
+public String name()
+```
+
+###### version()
+
+**Signature:**
+
+```java
+public String version()
+```
+
+###### initialize()
+
+**Signature:**
+
+```java
+public void initialize() throws Error
+```
+
+###### shutdown()
+
+**Signature:**
+
+```java
+public void shutdown() throws Error
+```
+
+###### description()
+
+**Signature:**
+
+```java
+public String description()
+```
+
+###### author()
+
+**Signature:**
+
+```java
+public String author()
+```
+
+###### extractBytes()
+
+**Signature:**
+
+```java
+public InternalDocument extractBytes(byte[] content, String mimeType, ExtractionConfig config) throws Error
+```
+
+###### supportedMimeTypes()
+
+**Signature:**
+
+```java
+public List<String> supportedMimeTypes()
+```
+
+###### priority()
+
+**Signature:**
+
+```java
+public int priority()
+```
+
+
+---
+
+#### ImageMetadata
+
+Image metadata extracted from image files.
+
+Includes dimensions, format, and EXIF data.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `width` | `int` | — | Image width in pixels |
+| `height` | `int` | — | Image height in pixels |
+| `format` | `String` | — | Image format (e.g., "PNG", "JPEG", "TIFF") |
+| `exif` | `Map<String, String>` | `Collections.emptyMap()` | EXIF metadata tags |
+
+
+---
+
+#### ImageMetadataType
+
+Image element metadata.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `src` | `String` | — | Image source (URL, data URI, or SVG content) |
+| `alt` | `Optional<String>` | `null` | Alternative text from alt attribute |
+| `title` | `Optional<String>` | `null` | Title attribute |
+| `dimensions` | `Optional<U32U32>` | `null` | Image dimensions as (width, height) if available |
+| `imageType` | `ImageType` | — | Image type classification |
+| `attributes` | `List<StringString>` | — | Additional attributes as key-value pairs |
+
+
+---
+
+#### ImageOcrResult
+
+Result of OCR extraction from an image with optional page tracking.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `content` | `String` | — | Extracted text content |
+| `boundaries` | `Optional<List<PageBoundary>>` | `null` | Character byte boundaries per frame (for multi-frame TIFFs) |
+| `pageContents` | `Optional<List<PageContent>>` | `null` | Per-frame content information |
+
+
+---
+
+#### ImagePreprocessingConfig
+
+Image preprocessing configuration for OCR.
+
+These settings control how images are preprocessed before OCR to improve
+text recognition quality. Different preprocessing strategies work better
+for different document types.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `targetDpi` | `int` | `300` | Target DPI for the image (300 is standard, 600 for small text). |
+| `autoRotate` | `boolean` | `true` | Auto-detect and correct image rotation. |
+| `deskew` | `boolean` | `true` | Correct skew (tilted images). |
+| `denoise` | `boolean` | `false` | Remove noise from the image. |
+| `contrastEnhance` | `boolean` | `false` | Enhance contrast for better text visibility. |
+| `binarizationMethod` | `String` | `"otsu"` | Binarization method: "otsu", "sauvola", "adaptive". |
+| `invertColors` | `boolean` | `false` | Invert colors (white text on black → black on white). |
+
+##### Methods
+
+###### defaultOptions()
+
+**Signature:**
+
+```java
+public static ImagePreprocessingConfig defaultOptions()
+```
+
+
+---
+
+#### ImagePreprocessingMetadata
+
+Image preprocessing metadata.
+
+Tracks the transformations applied to an image during OCR preprocessing,
+including DPI normalization, resizing, and resampling.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `originalDimensions` | `UsizeUsize` | — | Original image dimensions (width, height) in pixels |
+| `originalDpi` | `F64F64` | — | Original image DPI (horizontal, vertical) |
+| `targetDpi` | `int` | — | Target DPI from configuration |
+| `scaleFactor` | `double` | — | Scaling factor applied to the image |
+| `autoAdjusted` | `boolean` | — | Whether DPI was auto-adjusted based on content |
+| `finalDpi` | `int` | — | Final DPI after processing |
+| `newDimensions` | `Optional<UsizeUsize>` | `null` | New dimensions after resizing (if resized) |
+| `resampleMethod` | `String` | — | Resampling algorithm used ("LANCZOS3", "CATMULLROM", etc.) |
+| `dimensionClamped` | `boolean` | — | Whether dimensions were clamped to max_image_dimension |
+| `calculatedDpi` | `Optional<int>` | `null` | Calculated optimal DPI (if auto_adjust_dpi enabled) |
+| `skippedResize` | `boolean` | — | Whether resize was skipped (dimensions already optimal) |
+| `resizeError` | `Optional<String>` | `null` | Error message if resize failed |
+
+
+---
+
+#### InfoResponse
+
+Server information response.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `version` | `String` | — | API version |
+| `rustBackend` | `boolean` | — | Whether using Rust backend |
+
+
+---
+
+#### InlineElement
+
+Inline element within a block.
+
+Represents text with formatting, links, images, etc.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `elementType` | `InlineType` | — | Type of inline element |
+| `content` | `String` | — | Text content |
+| `attributes` | `Optional<Attributes>` | `null` | Element attributes |
+| `metadata` | `Optional<Map<String, String>>` | `null` | Additional metadata (e.g., href for links, src/alt for images) |
+
+
+---
+
+#### Instant
+
+A platform-aware instant for measuring elapsed time.
+
+On native targets this delegates to `std.time.Instant`.
+On `wasm32` targets it is a zero-cost no-op to avoid the `unreachable` trap.
+
+##### Methods
+
+###### now()
+
+Capture the current instant.
+
+**Signature:**
+
+```java
+public static Instant now()
+```
+
+###### elapsedSecsF64()
+
+Seconds elapsed since this instant was captured (as `f64`).
+
+**Signature:**
+
+```java
+public double elapsedSecsF64()
+```
+
+###### elapsedMs()
+
+Milliseconds elapsed since this instant was captured (as `f64`).
+
+**Signature:**
+
+```java
+public double elapsedMs()
+```
+
+###### elapsedMillis()
+
+Milliseconds elapsed as `u128` (mirrors `Duration.as_millis`).
+
+**Signature:**
+
+```java
+public U128 elapsedMillis()
+```
+
+
+---
+
+#### InternalDocument
+
+The internal flat document representation.
+
+All extractors output this structure. It is converted to the public
+`ExtractionResult` and
+`DocumentStructure` in the pipeline.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `elements` | `List<InternalElement>` | — | All elements in reading order. Append-only during extraction. |
+| `relationships` | `List<Relationship>` | — | Relationships between elements (source index → target). Stored separately from elements for cache-friendly iteration. |
+| `sourceFormat` | `Str` | — | Source format identifier (e.g., "pdf", "docx", "html", "markdown"). |
+| `metadata` | `Metadata` | — | Document-level metadata (title, author, dates, etc.). |
+| `images` | `List<ExtractedImage>` | — | Extracted images (binary data). Referenced by index from `ElementKind.Image`. |
+| `tables` | `List<Table>` | — | Extracted tables (structured data). Referenced by index from `ElementKind.Table`. |
+| `uris` | `List<Uri>` | — | URIs/links discovered during extraction (hyperlinks, image refs, citations, etc.). |
+| `children` | `Optional<List<ArchiveEntry>>` | `null` | Archive children: fully-extracted results for files within an archive. Only populated by archive extractors (ZIP, TAR, 7z, GZIP) when recursive extraction is enabled. Each entry contains the full `ExtractionResult` for a child file that was extracted through the public pipeline. |
+| `mimeType` | `Str` | — | MIME type of the source document (e.g., "application/pdf", "text/html"). |
+| `processingWarnings` | `List<ProcessingWarning>` | — | Non-fatal warnings collected during extraction. |
+| `annotations` | `Optional<List<PdfAnnotation>>` | `null` | PDF annotations (links, highlights, notes). |
+| `prebuiltPages` | `Optional<List<PageContent>>` | `null` | Pre-built per-page content (set by extractors that track page boundaries natively). When populated, `derive_extraction_result` uses this directly instead of attempting to reconstruct pages from element-level page numbers. |
+| `preRenderedContent` | `Optional<String>` | `null` | Pre-rendered formatted content produced by the extractor itself. When an extractor has direct access to high-quality formatted output (e.g., html-to-markdown produces GFM markdown), it can store that here to bypass the lossy InternalDocument → renderer round-trip. `derive_extraction_result` will use this directly when the requested output format matches `metadata.output_format`. |
+| `prebuiltOcrElements` | `Optional<List<OcrElement>>` | `null` | Pre-built OCR element list (set by extractors that have direct access to bounding-box element data alongside a separately produced coherent text). When populated, `derive_extraction_result` uses this directly instead of reconstructing `OcrElement`s from `OcrText` `InternalElement`s. This lets the image extractor carry Tesseract/paddle-ocr bounding-box metadata without injecting raw word tokens into the element list (which would otherwise corrupt `render_plain` and page content — issue #706). |
+| `llmUsage` | `Optional<List<LlmUsage>>` | `null` | LLM usage records accumulated during extraction (e.g., VLM OCR per page). Populated by extractors that call LLM-backed backends (VLM OCR). `derive_extraction_result` transfers this to `ExtractionResult.llm_usage`. |
+
+##### Methods
+
+###### pushElement()
+
+Push an element and return its index.
+
+**Signature:**
+
+```java
+public int pushElement(InternalElement element)
+```
+
+###### pushRelationship()
+
+Push a relationship.
+
+**Signature:**
+
+```java
+public void pushRelationship(Relationship relationship)
+```
+
+###### pushTable()
+
+Push a table and return its index (for use in `ElementKind.Table`).
+
+**Signature:**
+
+```java
+public int pushTable(Table table)
+```
+
+###### pushImage()
+
+Push an image and return its index (for use in `ElementKind.Image`).
+
+**Signature:**
+
+```java
+public int pushImage(ExtractedImage image)
+```
+
+###### pushUri()
+
+Push a URI discovered during extraction.
+Silently drops URIs beyond `MAX_URIS` to prevent unbounded memory growth.
+
+**Signature:**
+
+```java
+public void pushUri(Uri uri)
+```
+
+###### content()
+
+Concatenate all element text into a single string, separated by newlines.
+
+**Signature:**
+
+```java
+public String content()
+```
+
+
+---
+
+#### InternalDocumentBuilder
+
+Builder for constructing `InternalDocument` with an ergonomic push-based API.
+
+Tracks nesting depth automatically for list and quote containers,
+and generates deterministic element IDs via blake3 hashing.
+
+##### Methods
+
+###### sourceFormat()
+
+Set the source format identifier (e.g. "docx", "html", "pptx").
+
+**Signature:**
+
+```java
+public void sourceFormat(Str format)
+```
+
+###### setMetadata()
+
+Set document-level metadata.
+
+**Signature:**
+
+```java
+public void setMetadata(Metadata metadata)
+```
+
+###### setMimeType()
+
+Set the MIME type of the source document.
+
+**Signature:**
+
+```java
+public void setMimeType(Str mimeType)
+```
+
+###### addWarning()
+
+Add a non-fatal processing warning.
+
+**Signature:**
+
+```java
+public void addWarning(ProcessingWarning warning)
+```
+
+###### setPdfAnnotations()
+
+Set document-level PDF annotations (links, highlights, notes).
+
+**Signature:**
+
+```java
+public void setPdfAnnotations(List<PdfAnnotation> annotations)
+```
+
+###### pushUri()
+
+Push a URI discovered during extraction.
+
+**Signature:**
+
+```java
+public void pushUri(Uri uri)
+```
+
+###### build()
+
+Consume the builder and return the constructed `InternalDocument`.
+
+**Signature:**
+
+```java
+public InternalDocument build()
+```
+
+###### pushHeading()
+
+Push a heading element.
+
+Auto-sets depth from the heading level and generates an anchor slug
+from the heading text.
+
+**Signature:**
+
+```java
+public int pushHeading(byte level, String text, int page, BoundingBox bbox)
+```
+
+###### pushParagraph()
+
+Push a paragraph element.
+
+**Signature:**
+
+```java
+public int pushParagraph(String text, List<TextAnnotation> annotations, int page, BoundingBox bbox)
+```
+
+###### pushList()
+
+Push a `ListStart` marker and increment depth.
+
+**Signature:**
+
+```java
+public void pushList(boolean ordered)
+```
+
+###### endList()
+
+Push a `ListEnd` marker and decrement depth.
+
+**Signature:**
+
+```java
+public void endList()
+```
+
+###### pushListItem()
+
+Push a list item element at the current depth.
+
+**Signature:**
+
+```java
+public int pushListItem(String text, boolean ordered, List<TextAnnotation> annotations, int page, BoundingBox bbox)
+```
+
+###### pushTable()
+
+Push a table element. The table data is stored separately in
+`InternalDocument.tables` and referenced by index.
+
+**Signature:**
+
+```java
+public int pushTable(Table table, int page, BoundingBox bbox)
+```
+
+###### pushTableFromCells()
+
+Push a table element from a 2D cell grid, building a `Table` struct automatically.
+
+**Signature:**
+
+```java
+public int pushTableFromCells(List<List<String>> cells, int page, BoundingBox bbox)
+```
+
+###### pushImage()
+
+Push an image element. The image data is stored separately in
+`InternalDocument.images` and referenced by index.
+
+**Signature:**
+
+```java
+public int pushImage(String description, ExtractedImage image, int page, BoundingBox bbox)
+```
+
+###### pushCode()
+
+Push a code block element. Language is stored in attributes.
+
+**Signature:**
+
+```java
+public int pushCode(String text, String language, int page, BoundingBox bbox)
+```
+
+###### pushFormula()
+
+Push a math formula element.
+
+**Signature:**
+
+```java
+public int pushFormula(String text, int page, BoundingBox bbox)
+```
+
+###### pushFootnoteRef()
+
+Push a footnote reference marker.
+
+Creates a `FootnoteRef` element with `anchor = key` and also records
+a `Relationship` with `RelationshipTarget.Key(key)` so the derivation
+step can resolve it to the definition.
+
+**Signature:**
+
+```java
+public int pushFootnoteRef(String marker, String key, int page)
+```
+
+###### pushFootnoteDefinition()
+
+Push a footnote definition element with `anchor = key`.
+
+**Signature:**
+
+```java
+public int pushFootnoteDefinition(String text, String key, int page)
+```
+
+###### pushCitation()
+
+Push a citation / bibliographic reference element.
+
+**Signature:**
+
+```java
+public int pushCitation(String text, String key, int page)
+```
+
+###### pushQuoteStart()
+
+Push a `QuoteStart` marker and increment depth.
+
+**Signature:**
+
+```java
+public void pushQuoteStart()
+```
+
+###### pushQuoteEnd()
+
+Push a `QuoteEnd` marker and decrement depth.
+
+**Signature:**
+
+```java
+public void pushQuoteEnd()
+```
+
+###### pushPageBreak()
+
+Push a page break marker at depth 0.
+
+**Signature:**
+
+```java
+public void pushPageBreak()
+```
+
+###### pushSlide()
+
+Push a slide element.
+
+**Signature:**
+
+```java
+public int pushSlide(int number, String title, int page)
+```
+
+###### pushAdmonition()
+
+Push an admonition / callout element (note, warning, tip, etc.).
+Kind and optional title are stored in attributes.
+
+**Signature:**
+
+```java
+public int pushAdmonition(String kind, String title, int page)
+```
+
+###### pushRawBlock()
+
+Push a raw block preserved verbatim. Format is stored in attributes.
+
+**Signature:**
+
+```java
+public int pushRawBlock(String format, String content, int page)
+```
+
+###### pushMetadataBlock()
+
+Push a structured metadata block (frontmatter, email headers).
+Entries are stored in attributes.
+
+**Signature:**
+
+```java
+public int pushMetadataBlock(List<StringString> entries, int page)
+```
+
+###### pushTitle()
+
+Push a title element.
+
+**Signature:**
+
+```java
+public int pushTitle(String text, int page, BoundingBox bbox)
+```
+
+###### pushDefinitionTerm()
+
+Push a definition term element.
+
+**Signature:**
+
+```java
+public int pushDefinitionTerm(String text, int page)
+```
+
+###### pushDefinitionDescription()
+
+Push a definition description element.
+
+**Signature:**
+
+```java
+public int pushDefinitionDescription(String text, int page)
+```
+
+###### pushOcrText()
+
+Push an OCR text element with OCR-specific fields populated.
+
+**Signature:**
+
+```java
+public int pushOcrText(String text, OcrElementLevel level, OcrBoundingGeometry geometry, OcrConfidence confidence, OcrRotation rotation, int page, BoundingBox bbox)
+```
+
+###### pushGroupStart()
+
+Push a `GroupStart` marker and increment depth.
+
+**Signature:**
+
+```java
+public void pushGroupStart(String label, int page)
+```
+
+###### pushGroupEnd()
+
+Push a `GroupEnd` marker and decrement depth.
+
+**Signature:**
+
+```java
+public void pushGroupEnd()
+```
+
+###### pushRelationship()
+
+Push a relationship between two elements.
+
+**Signature:**
+
+```java
+public void pushRelationship(int source, RelationshipTarget target, RelationshipKind kind)
+```
+
+###### setAnchor()
+
+Set the anchor on an already-pushed element.
+
+**Signature:**
+
+```java
+public void setAnchor(int index, String anchor)
+```
+
+###### setLayer()
+
+Set the content layer on an already-pushed element.
+
+**Signature:**
+
+```java
+public void setLayer(int index, ContentLayer layer)
+```
+
+###### setAttributes()
+
+Set attributes on an already-pushed element.
+
+**Signature:**
+
+```java
+public void setAttributes(int index, AHashMap attributes)
+```
+
+###### setAnnotations()
+
+Set annotations on an already-pushed element.
+
+**Signature:**
+
+```java
+public void setAnnotations(int index, List<TextAnnotation> annotations)
+```
+
+###### setText()
+
+Set the text content of an already-pushed element.
+
+**Signature:**
+
+```java
+public void setText(int index, String text)
+```
+
+###### pushElement()
+
+Push a pre-constructed `InternalElement` directly.
+
+Useful when the caller needs to construct an element with fields
+that the builder's convenience methods don't cover (e.g. an image
+element without `ExtractedImage` data).
+
+**Signature:**
+
+```java
+public int pushElement(InternalElement element)
+```
+
+
+---
+
+#### InternalElement
+
+A single element in the internal flat document.
+
+Elements are appended in reading order during extraction. The `depth` field
+and optional container markers enable tree reconstruction in the derivation step.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `id` | `InternalElementId` | — | Deterministic identifier. |
+| `kind` | `ElementKind` | — | What kind of content this element represents. |
+| `text` | `String` | — | Primary text content. Empty for non-text elements (images, page breaks). |
+| `depth` | `short` | — | Nesting depth (0 = root level). Extractors set this based on heading level, list indent, blockquote depth, etc. The tree derivation step uses depth changes to reconstruct parent-child relationships. |
+| `page` | `Optional<int>` | `null` | Page number (1-indexed). `None` for non-paginated formats. |
+| `bbox` | `Optional<BoundingBox>` | `null` | Bounding box in document coordinates. |
+| `layer` | `ContentLayer` | — | Content layer classification (Body, Header, Footer, Footnote). |
+| `annotations` | `List<TextAnnotation>` | — | Inline annotations (formatting, links) on this element's text content. Byte-range based, reuses the existing `TextAnnotation` type. |
+| `attributes` | `Optional<AHashMap>` | `null` | Format-specific key-value attributes. Used for CSS classes, LaTeX env names, slide layout names, etc. |
+| `anchor` | `Optional<String>` | `null` | Optional anchor/key for this element. Used by the relationship resolver to match references to targets. Examples: heading slug `"introduction"`, footnote label `"fn1"`, citation key `"smith2024"`, figure label `"fig:diagram"`. |
+| `ocrGeometry` | `Optional<OcrBoundingGeometry>` | `null` | OCR bounding geometry (rectangle or quadrilateral). |
+| `ocrConfidence` | `Optional<OcrConfidence>` | `null` | OCR confidence scores (detection + recognition). |
+| `ocrRotation` | `Optional<OcrRotation>` | `null` | OCR rotation metadata. |
+
+##### Methods
+
+###### text()
+
+Create a simple text element with minimal fields.
+
+**Signature:**
+
+```java
+public static InternalElement text(ElementKind kind, String text, short depth)
+```
+
+###### withPage()
+
+Set the page number.
+
+**Signature:**
+
+```java
+public InternalElement withPage(int page)
+```
+
+###### withBbox()
+
+Set the bounding box.
+
+**Signature:**
+
+```java
+public InternalElement withBbox(BoundingBox bbox)
+```
+
+###### withLayer()
+
+Set the content layer.
+
+**Signature:**
+
+```java
+public InternalElement withLayer(ContentLayer layer)
+```
+
+###### withAnchor()
+
+Set the anchor key.
+
+**Signature:**
+
+```java
+public InternalElement withAnchor(String anchor)
+```
+
+###### withAnnotations()
+
+Set annotations.
+
+**Signature:**
+
+```java
+public InternalElement withAnnotations(List<TextAnnotation> annotations)
+```
+
+###### withAttributes()
+
+Set attributes.
+
+**Signature:**
+
+```java
+public InternalElement withAttributes(AHashMap attributes)
+```
+
+###### withIndex()
+
+Regenerate the ID with the correct index (call after pushing to the document).
+
+**Signature:**
+
+```java
+public InternalElement withIndex(int index)
+```
+
+
+---
+
+#### InternalElementId
+
+Deterministic element identifier, generated via blake3 hashing.
+
+Format: `"ie-{12 hex chars}"` (48 bits from blake3, ~281 trillion address space).
+Same input always produces the same ID, enabling diffing and caching.
+
+##### Methods
+
+###### generate()
+
+Generate a deterministic ID from element content.
+
+Hashes the element kind discriminant, text content, page number, and
+positional index using blake3. Takes 48 bits (6 bytes) of the hash.
+
+**Signature:**
+
+```java
+public static InternalElementId generate(String kindDiscriminant, String text, int page, int index)
+```
+
+###### asStr()
+
+Get the ID as a string slice.
+
+**Signature:**
+
+```java
+public String asStr()
+```
+
+###### fmt()
+
+**Signature:**
+
+```java
+public Unknown fmt(Formatter f)
+```
+
+###### asRef()
+
+**Signature:**
+
+```java
+public String asRef()
+```
+
+
+---
+
+#### InternedString
+
+A reference to an interned string stored in an Arc.
+
+This wraps an Arc<String> and provides convenient access to the string content.
+Multiple calls with the same string content will share the same Arc, reducing memory usage.
+
+##### Methods
+
+###### asStr()
+
+Get the string content.
+
+**Signature:**
+
+```java
+public String asStr()
+```
+
+###### asRef()
+
+**Signature:**
+
+```java
+public String asRef()
+```
+
+###### fmt()
+
+**Signature:**
+
+```java
+public Unknown fmt(Formatter f)
+```
+
+###### eq()
+
+**Signature:**
+
+```java
+public boolean eq(InternedString other)
+```
+
+###### deref()
+
+**Signature:**
+
+```java
+public Target deref()
+```
+
+
+---
+
+#### IterationValidator
+
+Helper struct for validating iteration counts.
+
+##### Methods
+
+###### checkIteration()
+
+Validate and increment iteration count.
+
+**Returns:**
+* `Ok(())` if count is within limits
+* `Err(SecurityError)` if count exceeds limit
+
+**Signature:**
+
+```java
+public void checkIteration() throws SecurityError
+```
+
+###### currentCount()
+
+Get current iteration count.
+
+**Signature:**
+
+```java
+public long currentCount()
+```
+
+
+---
+
+#### JatsExtractor
+
+JATS document extractor.
+
+Supports JATS (Journal Article Tag Suite) XML documents in various versions,
+handling both the full article structure and minimal JATS subsets.
+
+##### Methods
+
+###### defaultOptions()
+
+**Signature:**
+
+```java
+public static JatsExtractor defaultOptions()
+```
+
+###### name()
+
+**Signature:**
+
+```java
+public String name()
+```
+
+###### version()
+
+**Signature:**
+
+```java
+public String version()
+```
+
+###### initialize()
+
+**Signature:**
+
+```java
+public void initialize() throws Error
+```
+
+###### shutdown()
+
+**Signature:**
+
+```java
+public void shutdown() throws Error
+```
+
+###### extractBytes()
+
+**Signature:**
+
+```java
+public InternalDocument extractBytes(byte[] content, String mimeType, ExtractionConfig config) throws Error
+```
+
+###### supportedMimeTypes()
+
+**Signature:**
+
+```java
+public List<String> supportedMimeTypes()
+```
+
+###### priority()
+
+**Signature:**
+
+```java
+public int priority()
+```
+
+
+---
+
+#### JatsMetadata
+
+JATS (Journal Article Tag Suite) metadata.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `copyright` | `Optional<String>` | `null` | Copyright |
+| `license` | `Optional<String>` | `null` | License |
+| `historyDates` | `Map<String, String>` | `Collections.emptyMap()` | History dates |
+| `contributorRoles` | `List<ContributorRole>` | `Collections.emptyList()` | Contributor roles |
+
+
+---
+
+#### JsonExtractionConfig
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `extractSchema` | `boolean` | `false` | Extract schema |
+| `maxDepth` | `long` | `20` | Maximum depth |
+| `arrayItemLimit` | `long` | `500` | Array item limit |
+| `includeTypeInfo` | `boolean` | `false` | Include type info |
+| `flattenNestedObjects` | `boolean` | `true` | Flatten nested objects |
+| `customTextFieldPatterns` | `List<String>` | `Collections.emptyList()` | Custom text field patterns |
+
+##### Methods
+
+###### defaultOptions()
+
+**Signature:**
+
+```java
+public static JsonExtractionConfig defaultOptions()
+```
+
+
+---
+
+#### JupyterExtractor
+
+Jupyter Notebook extractor.
+
+Extracts content from Jupyter notebook JSON files, including:
+- Notebook metadata (kernel, language, nbformat version)
+- Cell content (code and markdown)
+- Cell outputs (text, HTML, etc.)
+- Cell-level metadata (tags, execution counts)
+
+##### Methods
+
+###### defaultOptions()
+
+**Signature:**
+
+```java
+public static JupyterExtractor defaultOptions()
+```
+
+###### name()
+
+**Signature:**
+
+```java
+public String name()
+```
+
+###### version()
+
+**Signature:**
+
+```java
+public String version()
+```
+
+###### initialize()
+
+**Signature:**
+
+```java
+public void initialize() throws Error
+```
+
+###### shutdown()
+
+**Signature:**
+
+```java
+public void shutdown() throws Error
+```
+
+###### description()
+
+**Signature:**
+
+```java
+public String description()
+```
+
+###### author()
+
+**Signature:**
+
+```java
+public String author()
+```
+
+###### extractBytes()
+
+**Signature:**
+
+```java
+public InternalDocument extractBytes(byte[] content, String mimeType, ExtractionConfig config) throws Error
+```
+
+###### supportedMimeTypes()
+
+**Signature:**
+
+```java
+public List<String> supportedMimeTypes()
+```
+
+###### priority()
+
+**Signature:**
+
+```java
+public int priority()
+```
+
+
+---
+
+#### KMeansResult
+
+Result of KMeans clustering on font sizes.
+
+Contains cluster labels for each block, where cluster index indicates
+the hierarchy level: 0=H1, 1=H2, ..., 5=H6, 6+=Body.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `labels` | `List<Integer>` | — | Cluster label for each block (0-indexed) |
+
+
+---
+
+#### KeynoteExtractor
+
+Apple Keynote presentation extractor.
+
+Supports `.key` files (modern iWork format, 2013+).
+
+Extracts slide text and speaker notes from the IWA container:
+ZIP → Snappy → protobuf text fields.
+
+##### Methods
+
+###### defaultOptions()
+
+**Signature:**
+
+```java
+public static KeynoteExtractor defaultOptions()
+```
+
+###### name()
+
+**Signature:**
+
+```java
+public String name()
+```
+
+###### version()
+
+**Signature:**
+
+```java
+public String version()
+```
+
+###### initialize()
+
+**Signature:**
+
+```java
+public void initialize() throws Error
+```
+
+###### shutdown()
+
+**Signature:**
+
+```java
+public void shutdown() throws Error
+```
+
+###### description()
+
+**Signature:**
+
+```java
+public String description()
+```
+
+###### author()
+
+**Signature:**
+
+```java
+public String author()
+```
+
+###### extractBytes()
+
+**Signature:**
+
+```java
+public InternalDocument extractBytes(byte[] content, String mimeType, ExtractionConfig config) throws Error
+```
+
+###### supportedMimeTypes()
+
+**Signature:**
+
+```java
+public List<String> supportedMimeTypes()
+```
+
+###### priority()
+
+**Signature:**
+
+```java
+public int priority()
+```
+
+
+---
+
+#### Keyword
+
+Extracted keyword with metadata.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `text` | `String` | — | The keyword text. |
+| `score` | `float` | — | Relevance score (higher is better, algorithm-specific range). |
+| `algorithm` | `KeywordAlgorithm` | — | Algorithm that extracted this keyword. |
+| `positions` | `Optional<List<Long>>` | `null` | Optional positions where keyword appears in text (character offsets). |
+
+##### Methods
+
+###### withPositions()
+
+Create a new keyword with positions.
+
+**Signature:**
+
+```java
+public static Keyword withPositions(String text, float score, KeywordAlgorithm algorithm, List<Long> positions)
+```
+
+
+---
+
+#### KeywordConfig
+
+Keyword extraction configuration.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `algorithm` | `KeywordAlgorithm` | `KeywordAlgorithm.YAKE` | Algorithm to use for extraction. |
+| `maxKeywords` | `long` | `10` | Maximum number of keywords to extract (default: 10). |
+| `minScore` | `float` | `0` | Minimum score threshold (0.0-1.0, default: 0.0). Keywords with scores below this threshold are filtered out. Note: Score ranges differ between algorithms. |
+| `ngramRange` | `UsizeUsize` | — | N-gram range for keyword extraction (min, max). (1, 1) = unigrams only (1, 2) = unigrams and bigrams (1, 3) = unigrams, bigrams, and trigrams (default) |
+| `language` | `Optional<String>` | `null` | Language code for stopword filtering (e.g., "en", "de", "fr"). If None, no stopword filtering is applied. |
+| `yakeParams` | `Optional<YakeParams>` | `null` | YAKE-specific tuning parameters. |
+| `rakeParams` | `Optional<RakeParams>` | `null` | RAKE-specific tuning parameters. |
+
+##### Methods
+
+###### defaultOptions()
+
+**Signature:**
+
+```java
+public static KeywordConfig defaultOptions()
+```
+
+###### withMaxKeywords()
+
+Set maximum number of keywords to extract.
+
+**Signature:**
+
+```java
+public KeywordConfig withMaxKeywords(long max)
+```
+
+###### withMinScore()
+
+Set minimum score threshold.
+
+**Signature:**
+
+```java
+public KeywordConfig withMinScore(float score)
+```
+
+###### withNgramRange()
+
+Set n-gram range.
+
+**Signature:**
+
+```java
+public KeywordConfig withNgramRange(long min, long max)
+```
+
+###### withLanguage()
+
+Set language for stopword filtering.
+
+**Signature:**
+
+```java
+public KeywordConfig withLanguage(String lang)
+```
+
+
+---
+
+#### KeywordExtractor
+
+Post-processor that extracts keywords from document content.
+
+This processor:
+- Runs in the Middle processing stage
+- Only processes when `config.keywords` is configured
+- Stores extracted keywords in `metadata.additional["keywords"]`
+- Uses the configured algorithm (YAKE or RAKE)
+
+##### Methods
+
+###### name()
+
+**Signature:**
+
+```java
+public String name()
+```
+
+###### version()
+
+**Signature:**
+
+```java
+public String version()
+```
+
+###### initialize()
+
+**Signature:**
+
+```java
+public void initialize() throws Error
+```
+
+###### shutdown()
+
+**Signature:**
+
+```java
+public void shutdown() throws Error
+```
+
+###### process()
+
+**Signature:**
+
+```java
+public void process(ExtractionResult result, ExtractionConfig config) throws Error
+```
+
+###### processingStage()
+
+**Signature:**
+
+```java
+public ProcessingStage processingStage()
+```
+
+###### shouldProcess()
+
+**Signature:**
+
+```java
+public boolean shouldProcess(ExtractionResult result, ExtractionConfig config)
+```
+
+###### estimatedDurationMs()
+
+**Signature:**
+
+```java
+public long estimatedDurationMs(ExtractionResult result)
+```
+
+
+---
+
+#### KreuzbergMcp
+
+Kreuzberg MCP server.
+
+Provides document extraction capabilities via MCP tools.
+
+The server loads a default extraction configuration from kreuzberg.toml/yaml/json
+via discovery. Per-request OCR settings override the defaults.
+
+##### Methods
+
+###### clone()
+
+**Signature:**
+
+```java
+public KreuzbergMcp clone()
+```
+
+###### new()
+
+Create a new Kreuzberg MCP server instance with default config.
+
+Uses `ExtractionConfig.discover()` to search for kreuzberg.toml/yaml/json
+in current and parent directories. Falls back to default configuration if
+no config file is found.
+
+**Signature:**
+
+```java
+public static KreuzbergMcp new() throws Error
+```
+
+###### withConfig()
+
+Create a new Kreuzberg MCP server instance with explicit config.
+
+**Signature:**
+
+```java
+public static KreuzbergMcp withConfig(ExtractionConfig config)
+```
+
+###### getInfo()
+
+**Signature:**
+
+```java
+public ServerInfo getInfo()
+```
+
+###### defaultOptions()
+
+**Signature:**
+
+```java
+public static KreuzbergMcp defaultOptions()
+```
+
+
+---
+
+#### LanguageDetectionConfig
+
+Language detection configuration.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `enabled` | `boolean` | — | Enable language detection |
+| `minConfidence` | `double` | — | Minimum confidence threshold (0.0-1.0) |
+| `detectMultiple` | `boolean` | — | Detect multiple languages in the document |
+
+
+---
+
+#### LanguageDetector
+
+Post-processor that detects languages in document content.
+
+This processor:
+- Runs in the Early processing stage
+- Only processes when `config.language_detection` is configured
+- Stores detected languages in `result.detected_languages`
+- Uses the whatlang library for detection
+
+##### Methods
+
+###### name()
+
+**Signature:**
+
+```java
+public String name()
+```
+
+###### version()
+
+**Signature:**
+
+```java
+public String version()
+```
+
+###### initialize()
+
+**Signature:**
+
+```java
+public void initialize() throws Error
+```
+
+###### shutdown()
+
+**Signature:**
+
+```java
+public void shutdown() throws Error
+```
+
+###### process()
+
+**Signature:**
+
+```java
+public void process(ExtractionResult result, ExtractionConfig config) throws Error
+```
+
+###### processingStage()
+
+**Signature:**
+
+```java
+public ProcessingStage processingStage()
+```
+
+###### shouldProcess()
+
+**Signature:**
+
+```java
+public boolean shouldProcess(ExtractionResult result, ExtractionConfig config)
+```
+
+###### estimatedDurationMs()
+
+**Signature:**
+
+```java
+public long estimatedDurationMs(ExtractionResult result)
+```
+
+
+---
+
+#### LanguageRegistry
+
+Language support registry for OCR backends.
+
+Maintains a mapping of OCR backend names to their supported language codes.
+This is the single source of truth for language support across all bindings.
+
+##### Methods
+
+###### global()
+
+Get the default global registry instance.
+
+The registry is created on first access and reused for all subsequent calls.
+
+**Returns:**
+
+A reference to the global `LanguageRegistry` instance.
+
+**Signature:**
+
+```java
+public static LanguageRegistry global()
+```
+
+###### getSupportedLanguages()
+
+Get supported languages for a specific OCR backend.
+
+**Returns:**
+
+`Some(&[String])` if the backend is registered, `null` otherwise.
+
+**Signature:**
+
+```java
+public Optional<List<String>> getSupportedLanguages(String backend)
+```
+
+###### isLanguageSupported()
+
+Check if a language is supported by a specific backend.
+
+**Returns:**
+
+`true` if the language is supported, `false` otherwise.
+
+**Signature:**
+
+```java
+public boolean isLanguageSupported(String backend, String language)
+```
+
+###### getBackends()
+
+Get all registered backend names.
+
+**Returns:**
+
+A vector of backend names in the registry.
+
+**Signature:**
+
+```java
+public List<String> getBackends()
+```
+
+###### getLanguageCount()
+
+Get language count for a specific backend.
+
+**Returns:**
+
+Number of supported languages for the backend, or 0 if backend not found.
+
+**Signature:**
+
+```java
+public long getLanguageCount(String backend)
+```
+
+###### defaultOptions()
+
+**Signature:**
+
+```java
+public static LanguageRegistry defaultOptions()
+```
+
+
+---
+
+#### LatexExtractor
+
+LaTeX document extractor
+
+##### Methods
+
+###### buildInternalDocument()
+
+Build an `InternalDocument` from LaTeX source.
+
+Captures `\label{}` as anchors, `\ref{}` as CrossReference relationships,
+`\cite{}` as CitationReference relationships, and footnotes.
+
+**Signature:**
+
+```java
+public static InternalDocument buildInternalDocument(String source, boolean injectPlaceholders)
+```
+
+###### defaultOptions()
+
+**Signature:**
+
+```java
+public static LatexExtractor defaultOptions()
+```
+
+###### name()
+
+**Signature:**
+
+```java
+public String name()
+```
+
+###### version()
+
+**Signature:**
+
+```java
+public String version()
+```
+
+###### initialize()
+
+**Signature:**
+
+```java
+public void initialize() throws Error
+```
+
+###### shutdown()
+
+**Signature:**
+
+```java
+public void shutdown() throws Error
+```
+
+###### description()
+
+**Signature:**
+
+```java
+public String description()
+```
+
+###### author()
+
+**Signature:**
+
+```java
+public String author()
+```
+
+###### extractBytes()
+
+**Signature:**
+
+```java
+public InternalDocument extractBytes(byte[] content, String mimeType, ExtractionConfig config) throws Error
+```
+
+###### extractFile()
+
+**Signature:**
+
+```java
+public InternalDocument extractFile(String path, String mimeType, ExtractionConfig config) throws Error
+```
+
+###### supportedMimeTypes()
+
+**Signature:**
+
+```java
+public List<String> supportedMimeTypes()
+```
+
+###### priority()
+
+**Signature:**
+
+```java
+public int priority()
+```
+
+
+---
+
+#### LayoutDetection
+
+A single layout detection result.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `class` | `LayoutClass` | — | Class (layout class) |
+| `confidence` | `float` | — | Confidence |
+| `bbox` | `BBox` | — | Bbox (b box) |
+
+##### Methods
+
+###### sortByConfidenceDesc()
+
+Sort detections by confidence in descending order.
+
+**Signature:**
+
+```java
+public static List<LayoutDetection> sortByConfidenceDesc(List<LayoutDetection> detections)
+```
+
+###### fmt()
+
+**Signature:**
+
+```java
+public Unknown fmt(Formatter f)
+```
+
+
+---
+
+#### LayoutDetectionConfig
+
+Layout detection configuration.
+
+Controls layout detection behavior in the extraction pipeline.
+When set on `ExtractionConfig`, layout detection
+is enabled for PDF extraction.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `confidenceThreshold` | `Optional<float>` | `null` | Confidence threshold override (None = use model default). |
+| `applyHeuristics` | `boolean` | `true` | Whether to apply postprocessing heuristics (default: true). |
+| `tableModel` | `TableModel` | `TableModel.TATR` | Table structure recognition model. Controls which model is used for table cell detection within layout-detected table regions. Defaults to `TableModel.Tatr`. |
+| `acceleration` | `Optional<AccelerationConfig>` | `null` | Hardware acceleration for ONNX models (layout detection + table structure). When set, controls which execution provider (CPU, CUDA, CoreML, TensorRT) is used for inference. Defaults to `None` (auto-select per platform). |
+
+##### Methods
+
+###### defaultOptions()
+
+**Signature:**
+
+```java
+public static LayoutDetectionConfig defaultOptions()
+```
+
+
+---
+
+#### LayoutEngine
+
+High-level layout detection engine.
+
+Wraps model loading, inference, and postprocessing into a single
+reusable object. Models are downloaded and cached on first use.
+
+##### Methods
+
+###### fromConfig()
+
+Create a layout engine from a full config.
+
+**Signature:**
+
+```java
+public static LayoutEngine fromConfig(LayoutEngineConfig config) throws LayoutError
+```
+
+###### detect()
+
+Run layout detection on an image.
+
+Returns a `DetectionResult` with bounding boxes, classes, and confidence scores.
+If `apply_heuristics` is enabled in config, postprocessing is applied automatically.
+
+**Signature:**
+
+```java
+public DetectionResult detect(RgbImage img) throws LayoutError
+```
+
+###### detectTimed()
+
+Run layout detection on an image and return granular timing data.
+
+Identical to `detect` but also returns a `DetectTimings` breakdown.
+Use this when you need per-step profiling (preprocess / onnx / postprocess).
+
+**Signature:**
+
+```java
+public DetectionResultDetectTimings detectTimed(RgbImage img) throws LayoutError
+```
+
+###### detectBatch()
+
+Run layout detection on a batch of images in a single model call.
+
+Returns one `(DetectionResult, DetectTimings)` tuple per input image.
+Postprocessing heuristics are applied per image when enabled in config.
+
+Timing note: `preprocess_ms` and `onnx_ms` in each `DetectTimings` are the
+amortized per-image share of the batch operation (total / N), not independent
+per-image measurements.
+
+**Signature:**
+
+```java
+public List<DetectionResultDetectTimings> detectBatch(List<RgbImage> images) throws LayoutError
+```
+
+###### modelName()
+
+Get the model name.
+
+**Signature:**
+
+```java
+public String modelName()
+```
+
+###### config()
+
+Return a reference to the engine's configuration.
+
+Used by callers (e.g. parallel layout runners) that need to create
+additional engines with identical settings.
+
+**Signature:**
+
+```java
+public LayoutEngineConfig config()
+```
+
+
+---
+
+#### LayoutEngineConfig
+
+Full configuration for the layout engine.
+
+Provides fine-grained control over model selection, thresholds, and
+postprocessing.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `backend` | `ModelBackend` | `ModelBackend.RT_DETR` | Which model backend to use. |
+| `confidenceThreshold` | `Optional<float>` | `null` | Confidence threshold override (None = use model default). |
+| `applyHeuristics` | `boolean` | `true` | Whether to apply postprocessing heuristics. |
+| `cacheDir` | `Optional<String>` | `null` | Custom cache directory for model files (None = default). |
+| `acceleration` | `Optional<AccelerationConfig>` | `null` | Hardware acceleration for ONNX inference. |
+
+##### Methods
+
+###### defaultOptions()
+
+**Signature:**
+
+```java
+public static LayoutEngineConfig defaultOptions()
+```
+
+
+---
+
+#### LayoutModel
+
+Common interface for all layout detection model backends.
+
+##### Methods
+
+###### detect()
+
+Run layout detection on an image using the default confidence threshold.
+
+**Signature:**
+
+```java
+public List<LayoutDetection> detect(RgbImage img) throws LayoutError
+```
+
+###### detectWithThreshold()
+
+Run layout detection with a custom confidence threshold.
+
+**Signature:**
+
+```java
+public List<LayoutDetection> detectWithThreshold(RgbImage img, float threshold) throws LayoutError
+```
+
+###### detectBatch()
+
+Run layout detection on a batch of images in a single model call.
+
+Returns one `Vec<LayoutDetection>` per input image (same order).
+`threshold` overrides the model's default confidence cutoff when `Some`.
+
+The default implementation is a sequential fallback: models that support
+true batched inference (e.g. `rtdetr.RtDetrModel`) override this.
+
+**Signature:**
+
+```java
+public List<List<LayoutDetection>> detectBatch(List<RgbImage> images, float threshold) throws LayoutError
+```
+
+###### name()
+
+Human-readable model name.
+
+**Signature:**
+
+```java
+public String name()
+```
+
+
+---
+
+#### LayoutModelManager
+
+Manages layout model downloading, caching, and path resolution.
+
+##### Methods
+
+###### ensureRtdetrModel()
+
+Ensure the RT-DETR model (Docling Heron) exists locally, downloading if needed.
+
+**Signature:**
+
+```java
+public String ensureRtdetrModel() throws LayoutError
+```
+
+###### isRtdetrCached()
+
+Check if the RT-DETR model is cached.
+
+**Signature:**
+
+```java
+public boolean isRtdetrCached()
+```
+
+###### ensureTatrModel()
+
+Ensure the TATR table structure recognition model exists locally, downloading if needed.
+
+**Signature:**
+
+```java
+public String ensureTatrModel() throws LayoutError
+```
+
+###### isTatrCached()
+
+Check if the TATR model is cached.
+
+**Signature:**
+
+```java
+public boolean isTatrCached()
+```
+
+###### ensureSlanetModel()
+
+Ensure a SLANeXT table structure model exists locally, downloading if needed.
+
+`variant` must be one of: `"slanet_wired"`, `"slanet_wireless"`, `"slanet_plus"`.
+
+**Signature:**
+
+```java
+public String ensureSlanetModel(String variant) throws LayoutError
+```
+
+###### ensureTableClassifier()
+
+Ensure the table classifier model exists locally, downloading if needed.
+
+**Signature:**
+
+```java
+public String ensureTableClassifier() throws LayoutError
+```
+
+###### cacheDir()
+
+Get the cache directory path.
+
+**Signature:**
+
+```java
+public String cacheDir()
+```
+
+###### manifest()
+
+Returns the manifest of all layout model files with checksums and sizes.
+
+Paths are relative to the cache root (prefixed with "layout/").
+
+**Signature:**
+
+```java
+public static List<ModelManifestEntry> manifest()
+```
+
+###### ensureDefaultModels()
+
+Ensures the default layout models (RT-DETR + TATR) are downloaded and cached.
+
+This downloads only the core models needed for basic layout detection and table
+structure recognition. Use `ensure_all_models` to also download the larger
+SLANeXT variants (~730MB).
+
+**Signature:**
+
+```java
+public void ensureDefaultModels() throws LayoutError
+```
+
+###### ensureAllModels()
+
+Ensures all layout models are downloaded and cached.
+
+Downloads RT-DETR, TATR, and all SLANeXT table structure variants (~730MB).
+For a lighter download that omits SLANeXT, use `ensure_default_models`.
+
+**Signature:**
+
+```java
+public void ensureAllModels() throws LayoutError
+```
+
+
+---
+
+#### LayoutRegion
+
+A detected layout region on a page.
+
+When layout detection is enabled, each page may have layout regions
+identifying different content types (text, pictures, tables, etc.)
+with confidence scores and spatial positions.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `class` | `String` | — | Layout class name (e.g. "picture", "table", "text", "section_header"). |
+| `confidence` | `double` | — | Confidence score from the layout detection model (0.0 to 1.0). |
+| `boundingBox` | `BoundingBox` | — | Bounding box in document coordinate space. |
+| `areaFraction` | `double` | — | Fraction of the page area covered by this region (0.0 to 1.0). |
+
+
+---
+
+#### LayoutTimingReport
+
+Timing breakdown for the entire layout detection run.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `totalMs` | `double` | — | Total ms |
+| `perPage` | `List<PageTiming>` | — | Per page |
+
+##### Methods
+
+###### avgRenderMs()
+
+**Signature:**
+
+```java
+public double avgRenderMs()
+```
+
+###### avgInferenceMs()
+
+**Signature:**
+
+```java
+public double avgInferenceMs()
+```
+
+###### avgPreprocessMs()
+
+**Signature:**
+
+```java
+public double avgPreprocessMs()
+```
+
+###### avgOnnxMs()
+
+**Signature:**
+
+```java
+public double avgOnnxMs()
+```
+
+###### avgPostprocessMs()
+
+**Signature:**
+
+```java
+public double avgPostprocessMs()
+```
+
+###### totalInferenceMs()
+
+**Signature:**
+
+```java
+public double totalInferenceMs()
+```
+
+###### totalRenderMs()
+
+**Signature:**
+
+```java
+public double totalRenderMs()
+```
+
+###### totalPreprocessMs()
+
+**Signature:**
+
+```java
+public double totalPreprocessMs()
+```
+
+###### totalOnnxMs()
+
+**Signature:**
+
+```java
+public double totalOnnxMs()
+```
+
+###### totalPostprocessMs()
+
+**Signature:**
+
+```java
+public double totalPostprocessMs()
+```
+
+
+---
+
+#### LinkMetadata
+
+Link element metadata.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `href` | `String` | — | The href URL value |
+| `text` | `String` | — | Link text content (normalized) |
+| `title` | `Optional<String>` | `null` | Optional title attribute |
+| `linkType` | `LinkType` | — | Link type classification |
+| `rel` | `List<String>` | — | Rel attribute values |
+| `attributes` | `List<StringString>` | — | Additional attributes as key-value pairs |
+
+
+---
+
+#### ListItemMetadata
+
+Metadata about a detected list item.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `listType` | `ListType` | — | Type of list (Bullet, Numbered, etc.) |
+| `byteStart` | `long` | — | Starting byte offset in the content string |
+| `byteEnd` | `long` | — | Ending byte offset in the content string |
+| `indentLevel` | `int` | — | List item indent level |
+
+
+---
+
+#### LlmConfig
+
+Configuration for an LLM provider/model via liter-llm.
+
+Each feature (VLM OCR, VLM embeddings, structured extraction) carries
+its own `LlmConfig`, allowing different providers per feature.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `model` | `String` | — | Provider/model string using liter-llm routing format. Examples: `"openai/gpt-4o"`, `"anthropic/claude-sonnet-4-20250514"`, `"groq/llama-3.1-70b-versatile"`. |
+| `apiKey` | `Optional<String>` | `null` | API key for the provider. When `None`, liter-llm falls back to the provider's standard environment variable (e.g., `OPENAI_API_KEY`). |
+| `baseUrl` | `Optional<String>` | `null` | Custom base URL override for the provider endpoint. |
+| `timeoutSecs` | `Optional<long>` | `null` | Request timeout in seconds (default: 60). |
+| `maxRetries` | `Optional<int>` | `null` | Maximum retry attempts (default: 3). |
+| `temperature` | `Optional<double>` | `null` | Sampling temperature for generation tasks. |
+| `maxTokens` | `Optional<long>` | `null` | Maximum tokens to generate. |
+
+
+---
+
+#### LlmUsage
+
+Token usage and cost data for a single LLM call made during extraction.
+
+Populated when VLM OCR, structured extraction, or LLM-based embeddings
+are used. Multiple entries may be present when multiple LLM calls occur
+within one extraction (e.g. VLM OCR + structured extraction).
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `model` | `String` | — | The LLM model identifier (e.g. "openai/gpt-4o", "anthropic/claude-sonnet-4-20250514"). |
+| `source` | `String` | — | The pipeline stage that triggered this LLM call (e.g. "vlm_ocr", "structured_extraction", "embeddings"). |
+| `inputTokens` | `Optional<long>` | `null` | Number of input/prompt tokens consumed. |
+| `outputTokens` | `Optional<long>` | `null` | Number of output/completion tokens generated. |
+| `totalTokens` | `Optional<long>` | `null` | Total tokens (input + output). |
+| `estimatedCost` | `Optional<double>` | `null` | Estimated cost in USD based on the provider's published pricing. |
+| `finishReason` | `Optional<String>` | `null` | Why the model stopped generating (e.g. "stop", "length", "content_filter"). |
+
+
+---
+
+#### ManifestEntryResponse
+
+Model manifest entry for cache management.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `relativePath` | `String` | — | Relative path within the cache directory |
+| `sha256` | `String` | — | SHA256 checksum of the model file |
+| `sizeBytes` | `long` | — | Expected file size in bytes |
+| `sourceUrl` | `String` | — | HuggingFace source URL for downloading |
+
+
+---
+
+#### ManifestResponse
+
+Model manifest response.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `kreuzbergVersion` | `String` | — | Kreuzberg version |
+| `totalSizeBytes` | `long` | — | Total size of all models in bytes |
+| `modelCount` | `long` | — | Number of models in the manifest |
+| `models` | `List<ManifestEntryResponse>` | — | Individual model entries |
+
+
+---
+
+#### MarkdownExtractor
+
+Markdown extractor with metadata and table support.
+
+Parses markdown documents with YAML frontmatter, extracting:
+- Metadata from YAML frontmatter
+- Plain text content
+- Tables as structured data
+- Document structure (headings, links, code blocks)
+- Images from data URIs
+
+##### Methods
+
+###### buildInternalDocument()
+
+Build an `InternalDocument` from pulldown-cmark events and optional YAML frontmatter.
+
+**Signature:**
+
+```java
+public static InternalDocument buildInternalDocument(List<Event> events, Value yaml)
+```
+
+###### defaultOptions()
+
+**Signature:**
+
+```java
+public static MarkdownExtractor defaultOptions()
+```
+
+###### name()
+
+**Signature:**
+
+```java
+public String name()
+```
+
+###### version()
+
+**Signature:**
+
+```java
+public String version()
+```
+
+###### initialize()
+
+**Signature:**
+
+```java
+public void initialize() throws Error
+```
+
+###### shutdown()
+
+**Signature:**
+
+```java
+public void shutdown() throws Error
+```
+
+###### description()
+
+**Signature:**
+
+```java
+public String description()
+```
+
+###### author()
+
+**Signature:**
+
+```java
+public String author()
+```
+
+###### extractBytes()
+
+**Signature:**
+
+```java
+public InternalDocument extractBytes(byte[] content, String mimeType, ExtractionConfig config) throws Error
+```
+
+###### extractFile()
+
+**Signature:**
+
+```java
+public InternalDocument extractFile(String path, String mimeType, ExtractionConfig config) throws Error
+```
+
+###### supportedMimeTypes()
+
+**Signature:**
+
+```java
+public List<String> supportedMimeTypes()
+```
+
+###### priority()
+
+**Signature:**
+
+```java
+public int priority()
+```
+
+
+---
+
+#### MdxExtractor
+
+MDX extractor with JSX stripping and Markdown processing.
+
+Strips MDX-specific syntax (imports, exports, JSX component tags,
+inline expressions) and processes the remaining content as Markdown,
+extracting metadata from YAML frontmatter and tables.
+
+##### Methods
+
+###### buildInternalDocument()
+
+Build an `InternalDocument` from pulldown-cmark events after JSX stripping.
+
+JSX blocks that were stripped are recorded as raw blocks in the internal document.
+
+**Signature:**
+
+```java
+public static InternalDocument buildInternalDocument(List<Event> events, Value yaml, List<String> rawJsxBlocks)
+```
+
+###### defaultOptions()
+
+**Signature:**
+
+```java
+public static MdxExtractor defaultOptions()
+```
+
+###### name()
+
+**Signature:**
+
+```java
+public String name()
+```
+
+###### version()
+
+**Signature:**
+
+```java
+public String version()
+```
+
+###### initialize()
+
+**Signature:**
+
+```java
+public void initialize() throws Error
+```
+
+###### shutdown()
+
+**Signature:**
+
+```java
+public void shutdown() throws Error
+```
+
+###### description()
+
+**Signature:**
+
+```java
+public String description()
+```
+
+###### author()
+
+**Signature:**
+
+```java
+public String author()
+```
+
+###### extractBytes()
+
+**Signature:**
+
+```java
+public InternalDocument extractBytes(byte[] content, String mimeType, ExtractionConfig config) throws Error
+```
+
+###### extractFile()
+
+**Signature:**
+
+```java
+public InternalDocument extractFile(String path, String mimeType, ExtractionConfig config) throws Error
+```
+
+###### supportedMimeTypes()
+
+**Signature:**
+
+```java
+public List<String> supportedMimeTypes()
+```
+
+###### priority()
+
+**Signature:**
+
+```java
+public int priority()
+```
+
+
+---
+
+#### MergedChunk
+
+A merged chunk produced by `merge_segments`.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `text` | `String` | — | Text |
+| `byteStart` | `long` | — | Byte start |
+| `byteEnd` | `long` | — | Byte end |
+
+
+---
+
+#### Metadata
+
+Extraction result metadata.
+
+Contains common fields applicable to all formats, format-specific metadata
+via a discriminated union, and additional custom fields from postprocessors.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `title` | `Optional<String>` | `null` | Document title |
+| `subject` | `Optional<String>` | `null` | Document subject or description |
+| `authors` | `Optional<List<String>>` | `Collections.emptyList()` | Primary author(s) - always Vec for consistency |
+| `keywords` | `Optional<List<String>>` | `Collections.emptyList()` | Keywords/tags - always Vec for consistency |
+| `language` | `Optional<String>` | `null` | Primary language (ISO 639 code) |
+| `createdAt` | `Optional<String>` | `null` | Creation timestamp (ISO 8601 format) |
+| `modifiedAt` | `Optional<String>` | `null` | Last modification timestamp (ISO 8601 format) |
+| `createdBy` | `Optional<String>` | `null` | User who created the document |
+| `modifiedBy` | `Optional<String>` | `null` | User who last modified the document |
+| `pages` | `Optional<PageStructure>` | `null` | Page/slide/sheet structure with boundaries |
+| `format` | `Optional<FormatMetadata>` | `null` | Format-specific metadata (discriminated union) Contains detailed metadata specific to the document format. Serializes with a `format_type` discriminator field. |
+| `imagePreprocessing` | `Optional<ImagePreprocessingMetadata>` | `null` | Image preprocessing metadata (when OCR preprocessing was applied) |
+| `jsonSchema` | `Optional<Object>` | `null` | JSON schema (for structured data extraction) |
+| `error` | `Optional<ErrorMetadata>` | `null` | Error metadata (for batch operations) |
+| `extractionDurationMs` | `Optional<long>` | `null` | Extraction duration in milliseconds (for benchmarking). This field is populated by batch extraction to provide per-file timing information. It's `None` for single-file extraction (which uses external timing). |
+| `category` | `Optional<String>` | `null` | Document category (from frontmatter or classification). |
+| `tags` | `Optional<List<String>>` | `Collections.emptyList()` | Document tags (from frontmatter). |
+| `documentVersion` | `Optional<String>` | `null` | Document version string (from frontmatter). |
+| `abstractText` | `Optional<String>` | `null` | Abstract or summary text (from frontmatter). |
+| `outputFormat` | `Optional<String>` | `null` | Output format identifier (e.g., "markdown", "html", "text"). Set by the output format pipeline stage when format conversion is applied. Previously stored in `metadata.additional["output_format"]`. |
+| `additional` | `AHashMap` | — | Additional custom fields from postprocessors. **Deprecated**: Prefer using typed fields on `ExtractionResult` and `Metadata` instead of inserting into this map. Typed fields provide better cross-language compatibility and type safety. This field will be removed in a future major version. This flattened map allows Python/TypeScript postprocessors to add arbitrary fields (entity extraction, keyword extraction, etc.). Fields are merged at the root level during serialization. Uses `Cow<'static, str>` keys so static string keys avoid allocation. |
+
+
+---
+
+#### MetricsLayer
+
+A `tower.Layer` that records service-level extraction metrics.
+
+##### Methods
+
+###### layer()
+
+**Signature:**
+
+```java
+public Service layer(S inner)
+```
+
+
+---
+
+#### ModelCache
+
+##### Methods
+
+###### put()
+
+Return a model to the cache for reuse.
+
+If the cache already holds a model (e.g. from a concurrent caller),
+the returned model is silently dropped.
+
+**Signature:**
+
+```java
+public void put(T model)
+```
+
+###### take()
+
+Take the cached model if one exists, without creating a new one.
+
+**Signature:**
+
+```java
+public Optional<T> take()
+```
+
+
+---
+
+#### ModelManager
+
+Manages PaddleOCR model downloading, caching, and path resolution.
+
+The model manager ensures that PaddleOCR models are available locally,
+organized by model type. Shared models (det, cls) are downloaded once,
+while recognition models are downloaded per-script-family on demand.
+
+##### Methods
+
+###### cacheDir()
+
+Gets the cache directory path.
+
+**Signature:**
+
+```java
+public String cacheDir()
+```
+
+###### ensureRecModel()
+
+Ensures a recognition model for the given script family exists locally.
+
+Downloads the model and character dictionary from HuggingFace if not cached.
+
+**Signature:**
+
+```java
+public RecModelPaths ensureRecModel(String family) throws KreuzbergError
+```
+
+###### ensureModelsExist()
+
+Backward-compatible method that ensures all models for English exist.
+
+**Signature:**
+
+```java
+public ModelPaths ensureModelsExist() throws KreuzbergError
+```
+
+###### modelPath()
+
+Returns the path for a model type directory (det, cls).
+
+**Signature:**
+
+```java
+public String modelPath(String modelType)
+```
+
+###### areSharedModelsCached()
+
+Checks if shared models (det + cls) are cached locally.
+
+**Signature:**
+
+```java
+public boolean areSharedModelsCached()
+```
+
+###### isRecModelCached()
+
+Checks if a recognition model for the given family is cached.
+
+**Signature:**
+
+```java
+public boolean isRecModelCached(String family)
+```
+
+###### areModelsCached()
+
+Checks if all required models are cached (shared + English v2 rec).
+
+**Signature:**
+
+```java
+public boolean areModelsCached()
+```
+
+###### clearCache()
+
+Clears all cached models from the cache directory.
+
+**Signature:**
+
+```java
+public void clearCache() throws KreuzbergError
+```
+
+###### cacheStats()
+
+Returns statistics about the current cache.
+
+**Signature:**
+
+```java
+public CacheStats cacheStats() throws KreuzbergError
+```
+
+###### manifest()
+
+Returns the manifest of all PaddleOCR model files with checksums and sizes.
+
+This includes shared models (det, cls) and all 9 per-script recognition model families.
+Paths are relative to the cache root (prefixed with "paddle-ocr/").
+
+**Signature:**
+
+```java
+public static List<ModelManifestEntry> manifest()
+```
+
+###### ensureAllModels()
+
+Ensures all v2 models are downloaded and cached.
+
+Downloads:
+- Both detection tiers (server + mobile)
+- Classification model (PP-LCNet textline_ori)
+- Document orientation model (PP-LCNet doc_ori)
+- All v2 unified rec models (server, mobile, en_mobile)
+- All per-script rec models for uncovered scripts
+
+**Signature:**
+
+```java
+public void ensureAllModels() throws KreuzbergError
+```
+
+###### ensureV2DetModel()
+
+Ensures the v2 detection model for the given tier is cached locally.
+
+Downloads from HuggingFace if not cached. Returns the path to the
+directory containing the ONNX model file.
+
+**Signature:**
+
+```java
+public String ensureV2DetModel(String tier) throws KreuzbergError
+```
+
+###### ensureV2ClsModel()
+
+Ensures the v2 classification model is cached locally.
+
+The cls model is the same for both tiers.
+
+**Signature:**
+
+```java
+public String ensureV2ClsModel() throws KreuzbergError
+```
+
+###### ensureDocOriModel()
+
+Ensures the v2 document orientation model is cached locally.
+
+Used for page-level auto_rotate when PaddleOCR backend is active.
+
+**Signature:**
+
+```java
+public String ensureDocOriModel() throws KreuzbergError
+```
+
+###### ensureSharedModels()
+
+Ensures shared models (det + cls) are cached for the given tier.
+
+**Signature:**
+
+```java
+public SharedModelPaths ensureSharedModels(String tier) throws KreuzbergError
+```
+
+###### resolveRecModel()
+
+Resolves the recognition model for a script family and tier.
+
+Returns the model directory, dict file path, and a model key for
+engine pool sharing. Multiple families may share the same model key
+(e.g. chinese and japanese both use "v2:unified_server").
+
+# Selection matrix
+
+| Family | Server | Mobile |
+|---|---|---|
+| english | v2 unified_server (84MB) | v2 unified_mobile (16.5MB) |
+| chinese (ch, jpn, chinese_cht) | v2 unified_server (84MB) | v2 unified_mobile (16.5MB) |
+| all others | per-script (unchanged) | per-script (unchanged) |
+
+**Signature:**
+
+```java
+public ResolvedRecModel resolveRecModel(String family, String tier) throws KreuzbergError
+```
+
+
+---
+
+#### ModelManifestEntry
+
+A single model file entry in the cache manifest.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `relativePath` | `String` | — | Relative path within the cache directory (e.g., "paddle-ocr/det/model.onnx"). |
+| `sha256` | `String` | — | SHA256 checksum of the model file. |
+| `sizeBytes` | `long` | — | Expected file size in bytes. |
+| `sourceUrl` | `String` | — | HuggingFace source URL for downloading. |
+
+
+---
+
+#### ModelPaths
+
+Combined paths to all models needed for OCR (backward compatibility).
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `detModel` | `String` | — | Path to the detection model directory. |
+| `clsModel` | `String` | — | Path to the classification model directory. |
+| `recModel` | `String` | — | Path to the recognition model directory. |
+| `dictFile` | `String` | — | Path to the character dictionary file. |
+
+
+---
+
+#### NativeTextStats
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `nonWhitespace` | `long` | — | Non whitespace |
+| `alnum` | `long` | — | Alnum |
+| `meaningfulWords` | `long` | — | Meaningful words |
+| `alnumRatio` | `double` | — | Alnum ratio |
+| `garbageCharCount` | `long` | — | Count of Unicode replacement characters (U+FFFD) indicating encoding failures. |
+| `fragmentedWordRatio` | `double` | — | Fraction of whitespace-delimited words that are 1-2 characters (0.0-1.0). High values indicate fragmented/garbled text extraction. |
+| `consecutiveRepeatRatio` | `double` | — | Fraction of consecutive word pairs that are identical (0.0-1.0). High values indicate column scrambling where text is duplicated. |
+| `avgWordLength` | `double` | — | Average word length (by chars). Very low values indicate garbled extraction. |
+| `wordCount` | `long` | — | Total word count (whitespace-delimited). |
+
+##### Methods
+
+###### compute()
+
+**Signature:**
+
+```java
+public static NativeTextStats compute(String text, OcrQualityThresholds thresholds)
+```
+
+###### from()
+
+Convenience method using default thresholds.
+
+**Signature:**
+
+```java
+public static NativeTextStats from(String text)
+```
+
+
+---
+
+#### NodeId
+
+Deterministic node identifier.
+
+Generated from a hash of `node_type + text + page`. The same document
+always produces the same IDs, making them useful for diffing, caching,
+and external references.
+
+##### Methods
+
+###### generate()
+
+Generate a deterministic `NodeId` from node content.
+
+Uses wrapping multiplication hashing on the node type discriminant,
+text content, page number, and node index to produce a stable hex identifier.
+The index parameter ensures uniqueness for duplicate content on the same page.
+
+# Parameters
+
+- `node_type`: The node type discriminant (e.g., "paragraph", "heading")
+- `text`: The text content of the node
+- `page`: The page number (None becomes u64.MAX for hashing)
+- `index`: The position of this node in the document's nodes array
+
+**Signature:**
+
+```java
+public static NodeId generate(String nodeType, String text, int page, int index)
+```
+
+###### asRef()
+
+**Signature:**
+
+```java
+public String asRef()
+```
+
+###### fmt()
+
+**Signature:**
+
+```java
+public Unknown fmt(Formatter f)
+```
+
+
+---
+
+#### NormalizeResult
+
+Result of image normalization
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `rgbData` | `byte[]` | — | Processed RGB image data (height * width * 3 bytes) |
+| `dimensions` | `UsizeUsize` | — | Image dimensions (width, height) |
+| `metadata` | `ImagePreprocessingMetadata` | — | Preprocessing metadata |
+
+
+---
+
+#### Note
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `id` | `String` | — | Unique identifier |
+| `noteType` | `NoteType` | — | Note type (note type) |
+| `paragraphs` | `List<Paragraph>` | — | Paragraphs |
+
+
+---
+
+#### NumbersExtractor
+
+Apple Numbers spreadsheet extractor.
+
+Supports `.numbers` files (modern iWork format, 2013+).
+
+Extracts cell string values and sheet names from the IWA container:
+ZIP → Snappy → protobuf text fields. Output is formatted as plain text
+with one text token per line (representing cell values and labels).
+
+##### Methods
+
+###### defaultOptions()
+
+**Signature:**
+
+```java
+public static NumbersExtractor defaultOptions()
+```
+
+###### name()
+
+**Signature:**
+
+```java
+public String name()
+```
+
+###### version()
+
+**Signature:**
+
+```java
+public String version()
+```
+
+###### initialize()
+
+**Signature:**
+
+```java
+public void initialize() throws Error
+```
+
+###### shutdown()
+
+**Signature:**
+
+```java
+public void shutdown() throws Error
+```
+
+###### description()
+
+**Signature:**
+
+```java
+public String description()
+```
+
+###### author()
+
+**Signature:**
+
+```java
+public String author()
+```
+
+###### extractBytes()
+
+**Signature:**
+
+```java
+public InternalDocument extractBytes(byte[] content, String mimeType, ExtractionConfig config) throws Error
+```
+
+###### supportedMimeTypes()
+
+**Signature:**
+
+```java
+public List<String> supportedMimeTypes()
+```
+
+###### priority()
+
+**Signature:**
+
+```java
+public int priority()
+```
+
+
+---
+
+#### OcrBackend
+
+Trait for OCR backend plugins.
+
+Implement this trait to add custom OCR capabilities. OCR backends can be:
+- Native Rust implementations (like Tesseract)
+- FFI bridges to Python libraries (like EasyOCR, PaddleOCR)
+- Cloud-based OCR services (Google Vision, AWS Textract, etc.)
+
+# Thread Safety
+
+OCR backends must be thread-safe (`Send + Sync`) to support concurrent processing.
+
+##### Methods
+
+###### processImage()
+
+Process an image and extract text via OCR.
+
+**Returns:**
+
+An `ExtractionResult` containing the extracted text and metadata.
+
+**Errors:**
+
+- `KreuzbergError.Ocr` - OCR processing failed
+- `KreuzbergError.Validation` - Invalid image format or configuration
+- `KreuzbergError.Io` - I/O errors (these always bubble up)
+
+**Signature:**
+
+```java
+public ExtractionResult processImage(byte[] imageBytes, OcrConfig config) throws Error
+```
+
+###### processImageFile()
+
+Process a file and extract text via OCR.
+
+Default implementation reads the file and calls `process_image`.
+Override for custom file handling or optimizations.
+
+**Errors:**
+
+Same as `process_image`, plus file I/O errors.
+
+**Signature:**
+
+```java
+public ExtractionResult processImageFile(String path, OcrConfig config) throws Error
+```
+
+###### supportsLanguage()
+
+Check if this backend supports a given language code.
+
+**Returns:**
+
+`true` if the language is supported, `false` otherwise.
+
+**Signature:**
+
+```java
+public boolean supportsLanguage(String lang)
+```
+
+###### backendType()
+
+Get the backend type identifier.
+
+**Returns:**
+
+The backend type enum value.
+
+**Signature:**
+
+```java
+public OcrBackendType backendType()
+```
+
+###### supportedLanguages()
+
+Optional: Get a list of all supported languages.
+
+Defaults to empty list. Override to provide comprehensive language support info.
+
+**Signature:**
+
+```java
+public List<String> supportedLanguages()
+```
+
+###### supportsTableDetection()
+
+Optional: Check if the backend supports table detection.
+
+Defaults to `false`. Override if your backend can detect and extract tables.
+
+**Signature:**
+
+```java
+public boolean supportsTableDetection()
+```
+
+###### supportsDocumentProcessing()
+
+Check if the backend supports direct document-level processing (e.g. for PDFs).
+
+Defaults to `false`. Override if the backend has optimized document processing.
+
+**Signature:**
+
+```java
+public boolean supportsDocumentProcessing()
+```
+
+###### processDocument()
+
+Process a document file directly via OCR.
+
+Only called if `supports_document_processing` returns `true`.
+
+**Signature:**
+
+```java
+public ExtractionResult processDocument(String path, OcrConfig config) throws Error
+```
+
+
+---
+
+#### OcrBackendRegistry
+
+Registry for OCR backend plugins.
+
+Manages OCR backends with backend type and language-based selection.
+
+# Thread Safety
+
+The registry is thread-safe and can be accessed concurrently from multiple threads.
+
+##### Methods
+
+###### newEmpty()
+
+Create a new empty OCR backend registry without default backends.
+
+This is useful for testing or when you want full control over backend registration.
+
+**Signature:**
+
+```java
+public static OcrBackendRegistry newEmpty()
+```
+
+###### register()
+
+Register an OCR backend.
+
+**Returns:**
+
+- `Ok(())` if registration succeeded
+- `Err(...)` if initialization failed
+
+**Signature:**
+
+```java
+public void register(OcrBackend backend) throws Error
+```
+
+###### get()
+
+Get an OCR backend by name.
+
+**Returns:**
+
+The backend if found, or an error if not registered.
+
+**Signature:**
+
+```java
+public OcrBackend get(String name) throws Error
+```
+
+###### getForLanguage()
+
+Get an OCR backend that supports a specific language.
+
+Returns the first backend that supports the language.
+
+**Returns:**
+
+The first backend supporting the language, or an error if none found.
+
+**Signature:**
+
+```java
+public OcrBackend getForLanguage(String language) throws Error
+```
+
+###### list()
+
+List all registered backend names.
+
+**Signature:**
+
+```java
+public List<String> list()
+```
+
+###### remove()
+
+Remove a backend from the registry.
+
+Calls `shutdown()` on the backend before removing.
+
+**Signature:**
+
+```java
+public void remove(String name) throws Error
+```
+
+###### shutdownAll()
+
+Shutdown all backends and clear the registry.
+
+**Signature:**
+
+```java
+public void shutdownAll() throws Error
+```
+
+###### resetToDefaults()
+
+Shutdown all backends and re-register the built-in defaults.
+
+**Signature:**
+
+```java
+public void resetToDefaults() throws Error
+```
+
+###### defaultOptions()
+
+**Signature:**
+
+```java
+public static OcrBackendRegistry defaultOptions()
+```
+
+
+---
+
+#### OcrCache
+
+##### Methods
+
+###### new()
+
+**Signature:**
+
+```java
+public static OcrCache new(String cacheDir) throws OcrError
+```
+
+###### getCachedResult()
+
+**Signature:**
+
+```java
+public Optional<OcrExtractionResult> getCachedResult(String imageHash, String backend, String config) throws OcrError
+```
+
+###### setCachedResult()
+
+**Signature:**
+
+```java
+public void setCachedResult(String imageHash, String backend, String config, OcrExtractionResult result) throws OcrError
+```
+
+###### clear()
+
+**Signature:**
+
+```java
+public void clear() throws OcrError
+```
+
+###### getStats()
+
+**Signature:**
+
+```java
+public OcrCacheStats getStats() throws OcrError
+```
+
+
+---
+
+#### OcrCacheStats
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `totalFiles` | `long` | — | Total files |
+| `totalSizeMb` | `double` | — | Total size mb |
+
+
+---
+
+#### OcrConfidence
+
+Confidence scores for an OCR element.
+
+Separates detection confidence (how confident that text exists at this location)
+from recognition confidence (how confident about the actual text content).
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `detection` | `Optional<double>` | `null` | Detection confidence: how confident the OCR engine is that text exists here. PaddleOCR provides this as `box_score`, Tesseract doesn't have a direct equivalent. Range: 0.0 to 1.0 (or None if not available). |
+| `recognition` | `double` | — | Recognition confidence: how confident about the text content. Range: 0.0 to 1.0. |
+
+##### Methods
+
+###### fromTesseract()
+
+Create confidence from Tesseract's single confidence value.
+
+Tesseract provides confidence as 0-100, which we normalize to 0.0-1.0.
+
+**Signature:**
+
+```java
+public static OcrConfidence fromTesseract(double confidence)
+```
+
+###### fromPaddle()
+
+Create confidence from PaddleOCR scores.
+
+Both scores should be in 0.0-1.0 range, but PaddleOCR may occasionally return
+values slightly above 1.0 due to model calibration. This method clamps both
+values to ensure they stay within the valid 0.0-1.0 range.
+
+**Signature:**
+
+```java
+public static OcrConfidence fromPaddle(float boxScore, float textScore)
+```
+
+
+---
+
+#### OcrConfig
+
+OCR configuration.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `enabled` | `boolean` | `true` | Whether OCR is enabled. Setting `enabled: false` is a shorthand for `disable_ocr: true` on the parent `ExtractionConfig`. Images return metadata only; PDFs use native text extraction without OCR fallback. Defaults to `True`. When `False`, all other OCR settings are ignored. |
+| `backend` | `String` | — | OCR backend: tesseract, easyocr, paddleocr |
+| `language` | `String` | — | Language code (e.g., "eng", "deu") |
+| `tesseractConfig` | `Optional<TesseractConfig>` | `null` | Tesseract-specific configuration (optional) |
+| `outputFormat` | `Optional<OutputFormat>` | `null` | Output format for OCR results (optional, for format conversion) |
+| `paddleOcrConfig` | `Optional<Object>` | `null` | PaddleOCR-specific configuration (optional, JSON passthrough) |
+| `elementConfig` | `Optional<OcrElementConfig>` | `null` | OCR element extraction configuration |
+| `qualityThresholds` | `Optional<OcrQualityThresholds>` | `null` | Quality thresholds for the native-text-to-OCR fallback decision. When None, uses compiled defaults (matching previous hardcoded behavior). |
+| `pipeline` | `Optional<OcrPipelineConfig>` | `null` | Multi-backend OCR pipeline configuration. When set, enables weighted fallback across multiple OCR backends based on output quality. When None, uses the single `backend` field (same as today). |
+| `autoRotate` | `boolean` | `false` | Enable automatic page rotation based on orientation detection. When enabled, uses Tesseract's `DetectOrientationScript()` to detect page orientation (0/90/180/270 degrees) before OCR. If the page is rotated with high confidence, the image is corrected before recognition. This is critical for handling rotated scanned documents. |
+| `vlmConfig` | `Optional<LlmConfig>` | `null` | VLM (Vision Language Model) OCR configuration. Required when `backend` is `"vlm"`. Uses liter-llm to send page images to a vision model for text extraction. |
+| `vlmPrompt` | `Optional<String>` | `null` | Custom Jinja2 prompt template for VLM OCR. When `None`, uses the default template. Available variables: - `{{ language }}` — The document language code (e.g., "eng", "deu"). |
+
+##### Methods
+
+###### defaultOptions()
+
+**Signature:**
+
+```java
+public static OcrConfig defaultOptions()
+```
+
+###### validate()
+
+Validates that the configured backend is supported.
+
+This method checks that the backend name is one of the supported OCR backends:
+- tesseract
+- easyocr
+- paddleocr
+
+Typos in backend names are caught at configuration validation time, not at runtime.
+Also validates pipeline stage backends when a pipeline is configured.
+
+**Signature:**
+
+```java
+public void validate() throws KreuzbergError
+```
+
+###### effectiveThresholds()
+
+Returns the effective quality thresholds, using configured values or defaults.
+
+**Signature:**
+
+```java
+public OcrQualityThresholds effectiveThresholds()
+```
+
+###### effectivePipeline()
+
+Returns the effective pipeline config.
+
+- If `pipeline` is explicitly set, returns it.
+- If `paddle-ocr` feature is compiled in and no explicit pipeline is set,
+  auto-constructs a default pipeline: primary backend (priority 100) + paddleocr (priority 50).
+- Otherwise returns `null` (single-backend mode, same as today).
+
+**Signature:**
+
+```java
+public Optional<OcrPipelineConfig> effectivePipeline()
+```
+
+
+---
+
+#### OcrElement
+
+A unified OCR element representing detected text with full metadata.
+
+This is the primary type for structured OCR output, preserving all information
+from both Tesseract and PaddleOCR backends.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `text` | `String` | — | The recognized text content. |
+| `geometry` | `OcrBoundingGeometry` | `OcrBoundingGeometry.RECTANGLE` | Bounding geometry (rectangle or quadrilateral). |
+| `confidence` | `OcrConfidence` | — | Confidence scores for detection and recognition. |
+| `level` | `OcrElementLevel` | `OcrElementLevel.LINE` | Hierarchical level (word, line, block, page). |
+| `rotation` | `Optional<OcrRotation>` | `null` | Rotation information (if detected). |
+| `pageNumber` | `long` | — | Page number (1-indexed). |
+| `parentId` | `Optional<String>` | `null` | Parent element ID for hierarchical relationships. Only used for Tesseract output which has word -> line -> block hierarchy. |
+| `backendMetadata` | `Map<String, Object>` | `Collections.emptyMap()` | Backend-specific metadata that doesn't fit the unified schema. |
+
+##### Methods
+
+###### withLevel()
+
+Set the hierarchical level.
+
+**Signature:**
+
+```java
+public OcrElement withLevel(OcrElementLevel level)
+```
+
+###### withRotation()
+
+Set rotation information.
+
+**Signature:**
+
+```java
+public OcrElement withRotation(OcrRotation rotation)
+```
+
+###### withPageNumber()
+
+Set page number.
+
+**Signature:**
+
+```java
+public OcrElement withPageNumber(long pageNumber)
+```
+
+###### withParentId()
+
+Set parent element ID.
+
+**Signature:**
+
+```java
+public OcrElement withParentId(String parentId)
+```
+
+###### withMetadata()
+
+Add backend-specific metadata.
+
+**Signature:**
+
+```java
+public OcrElement withMetadata(String key, Object value)
+```
+
+###### withRotationOpt()
+
+**Signature:**
+
+```java
+public OcrElement withRotationOpt(OcrRotation rotation)
+```
+
+
+---
+
+#### OcrElementConfig
+
+Configuration for OCR element extraction.
+
+Controls how OCR elements are extracted and filtered.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `includeElements` | `boolean` | — | Whether to include OCR elements in the extraction result. When true, the `ocr_elements` field in `ExtractionResult` will be populated. |
+| `minLevel` | `OcrElementLevel` | `OcrElementLevel.LINE` | Minimum hierarchical level to include. Elements below this level (e.g., words when min_level is Line) will be excluded. |
+| `minConfidence` | `double` | — | Minimum recognition confidence threshold (0.0-1.0). Elements with confidence below this threshold will be filtered out. |
+| `buildHierarchy` | `boolean` | — | Whether to build hierarchical relationships between elements. When true, `parent_id` fields will be populated based on spatial containment. Only meaningful for Tesseract output. |
+
+
+---
+
+#### OcrExtractionResult
+
+OCR extraction result.
+
+Result of performing OCR on an image or scanned document,
+including recognized text and detected tables.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `content` | `String` | — | Recognized text content |
+| `mimeType` | `String` | — | Original MIME type of the processed image |
+| `metadata` | `Map<String, Object>` | — | OCR processing metadata (confidence scores, language, etc.) |
+| `tables` | `List<OcrTable>` | — | Tables detected and extracted via OCR |
+| `ocrElements` | `Optional<List<OcrElement>>` | `null` | Structured OCR elements with bounding boxes and confidence scores. Available when TSV output is requested or table detection is enabled. |
+| `internalDocument` | `Optional<InternalDocument>` | `null` | Structured document produced from hOCR parsing. Carries paragraph structure, bounding boxes, and confidence scores that the flattened `content` string discards. |
+
+
+---
+
+#### OcrFallbackDecision
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `stats` | `NativeTextStats` | — | Stats (native text stats) |
+| `avgNonWhitespace` | `double` | — | Avg non whitespace |
+| `avgAlnum` | `double` | — | Avg alnum |
+| `fallback` | `boolean` | — | Fallback |
+
+
+---
+
+#### OcrMetadata
+
+OCR processing metadata.
+
+Captures information about OCR processing configuration and results.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `language` | `String` | — | OCR language code(s) used |
+| `psm` | `int` | — | Tesseract Page Segmentation Mode (PSM) |
+| `outputFormat` | `String` | — | Output format (e.g., "text", "hocr") |
+| `tableCount` | `long` | — | Number of tables detected |
+| `tableRows` | `Optional<long>` | `null` | Table rows |
+| `tableCols` | `Optional<long>` | `null` | Table cols |
+
+
+---
+
+#### OcrPipelineConfig
+
+Multi-backend OCR pipeline with quality-based fallback.
+
+Backends are tried in priority order (highest first). After each backend
+produces output, quality is evaluated. If it meets `quality_thresholds.pipeline_min_quality`,
+the result is accepted. Otherwise the next backend is tried.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `stages` | `List<OcrPipelineStage>` | — | Ordered list of backends to try. Sorted by priority (descending) at runtime. |
+| `qualityThresholds` | `OcrQualityThresholds` | — | Quality thresholds for deciding whether to accept a result or try the next backend. |
+
+
+---
+
+#### OcrPipelineStage
+
+A single backend stage in the OCR pipeline.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `backend` | `String` | — | Backend name: "tesseract", "paddleocr", "easyocr", or a custom registered name. |
+| `priority` | `int` | — | Priority weight (higher = tried first). Stages are sorted by priority descending. |
+| `language` | `Optional<String>` | `null` | Language override for this stage (None = use parent OcrConfig.language). |
+| `tesseractConfig` | `Optional<TesseractConfig>` | `null` | Tesseract-specific config override for this stage. |
+| `paddleOcrConfig` | `Optional<Object>` | `null` | PaddleOCR-specific config for this stage. |
+| `vlmConfig` | `Optional<LlmConfig>` | `null` | VLM config override for this pipeline stage. |
+
+
+---
+
+#### OcrProcessor
+
+##### Methods
+
+###### new()
+
+**Signature:**
+
+```java
+public static OcrProcessor new(String cacheDir) throws OcrError
+```
+
+###### processImage()
+
+**Signature:**
+
+```java
+public OcrExtractionResult processImage(byte[] imageBytes, TesseractConfig config) throws OcrError
+```
+
+###### processImageWithFormat()
+
+Process an image with OCR and respect the output format from ExtractionConfig.
+
+This variant allows specifying an output format (Plain, Markdown, Djot) which
+affects how the OCR result's mime_type is set when markdown output is requested.
+
+**Signature:**
+
+```java
+public OcrExtractionResult processImageWithFormat(byte[] imageBytes, TesseractConfig config, OutputFormat outputFormat) throws OcrError
+```
+
+###### clearCache()
+
+**Signature:**
+
+```java
+public void clearCache() throws OcrError
+```
+
+###### getCacheStats()
+
+**Signature:**
+
+```java
+public OcrCacheStats getCacheStats() throws OcrError
+```
+
+###### processImageFile()
+
+**Signature:**
+
+```java
+public OcrExtractionResult processImageFile(String filePath, TesseractConfig config) throws OcrError
+```
+
+###### processImageFileWithFormat()
+
+Process a file with OCR and respect the output format from ExtractionConfig.
+
+This variant allows specifying an output format (Plain, Markdown, Djot) which
+affects how the OCR result's mime_type is set when markdown output is requested.
+
+**Signature:**
+
+```java
+public OcrExtractionResult processImageFileWithFormat(String filePath, TesseractConfig config, OutputFormat outputFormat) throws OcrError
+```
+
+###### processImageFilesBatch()
+
+Process multiple image files in parallel using Rayon.
+
+This method processes OCR operations in parallel across CPU cores for improved throughput.
+Results are returned in the same order as the input file paths.
+
+**Signature:**
+
+```java
+public List<BatchItemResult> processImageFilesBatch(List<String> filePaths, TesseractConfig config)
+```
+
+
+---
+
+#### OcrQualityThresholds
+
+Quality thresholds for OCR fallback decisions and pipeline quality gating.
+
+All fields default to the values that match the previous hardcoded behavior,
+so `OcrQualityThresholds.default()` preserves existing semantics exactly.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `minTotalNonWhitespace` | `long` | `64` | Minimum total non-whitespace characters to consider text substantive. |
+| `minNonWhitespacePerPage` | `double` | `32` | Minimum non-whitespace characters per page on average. |
+| `minMeaningfulWordLen` | `long` | `4` | Minimum character count for a word to be "meaningful". |
+| `minMeaningfulWords` | `long` | `3` | Minimum count of meaningful words before text is accepted. |
+| `minAlnumRatio` | `double` | `0.3` | Minimum alphanumeric ratio (non-whitespace chars that are alphanumeric). |
+| `minGarbageChars` | `long` | `5` | Minimum Unicode replacement characters (U+FFFD) to trigger OCR fallback. |
+| `maxFragmentedWordRatio` | `double` | `0.6` | Maximum fraction of short (1-2 char) words before text is considered fragmented. |
+| `criticalFragmentedWordRatio` | `double` | `0.8` | Critical fragmentation threshold — triggers OCR regardless of meaningful words. Normal English text has ~20-30% short words. 80%+ is definitive garbage. |
+| `minAvgWordLength` | `double` | `2` | Minimum average word length. Below this with enough words indicates garbled extraction. |
+| `minWordsForAvgLengthCheck` | `long` | `50` | Minimum word count before average word length check applies. |
+| `minConsecutiveRepeatRatio` | `double` | `0.08` | Minimum consecutive word repetition ratio to detect column scrambling. |
+| `minWordsForRepeatCheck` | `long` | `50` | Minimum word count before consecutive repetition check is applied. |
+| `substantiveMinChars` | `long` | `100` | Minimum character count for "substantive markdown" OCR skip gate. |
+| `nonTextMinChars` | `long` | `20` | Minimum character count for "non-text content" OCR skip gate. |
+| `alnumWsRatioThreshold` | `double` | `0.4` | Alphanumeric+whitespace ratio threshold for skip decisions. |
+| `pipelineMinQuality` | `double` | `0.5` | Minimum quality score (0.0-1.0) for a pipeline stage result to be accepted. If the result from a backend scores below this, try the next backend. |
+
+##### Methods
+
+###### defaultOptions()
+
+**Signature:**
+
+```java
+public static OcrQualityThresholds defaultOptions()
+```
+
+
+---
+
+#### OcrRotation
+
+Rotation information for an OCR element.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `angleDegrees` | `double` | — | Rotation angle in degrees (0, 90, 180, 270 for PaddleOCR). |
+| `confidence` | `Optional<double>` | `null` | Confidence score for the rotation detection. |
+
+##### Methods
+
+###### fromPaddle()
+
+Create rotation from PaddleOCR angle classification.
+
+PaddleOCR uses angle_index (0-3) representing 0, 90, 180, 270 degrees.
+
+**Errors:**
+
+Returns an error if `angle_index` is not in the valid range (0-3).
+
+**Signature:**
+
+```java
+public static OcrRotation fromPaddle(int angleIndex, float angleScore) throws String
+```
+
+
+---
+
+#### OcrTable
+
+Table detected via OCR.
+
+Represents a table structure recognized during OCR processing.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `cells` | `List<List<String>>` | — | Table cells as a 2D vector (rows × columns) |
+| `markdown` | `String` | — | Markdown representation of the table |
+| `pageNumber` | `long` | — | Page number where the table was found (1-indexed) |
+| `boundingBox` | `Optional<OcrTableBoundingBox>` | `null` | Bounding box of the table in pixel coordinates (from OCR word positions). |
+
+
+---
+
+#### OcrTableBoundingBox
+
+Bounding box for an OCR-detected table in pixel coordinates.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `left` | `int` | — | Left x-coordinate (pixels) |
+| `top` | `int` | — | Top y-coordinate (pixels) |
+| `right` | `int` | — | Right x-coordinate (pixels) |
+| `bottom` | `int` | — | Bottom y-coordinate (pixels) |
+
+
+---
+
+#### OdtExtractor
+
+High-performance ODT extractor using native Rust XML parsing.
+
+This extractor provides:
+- Fast text extraction via roxmltree XML parsing
+- Comprehensive metadata extraction from meta.xml
+- Table extraction with row and cell support
+- Formatting preservation (bold, italic, strikeout)
+- Support for headings, paragraphs, and special elements
+
+##### Methods
+
+###### defaultOptions()
+
+**Signature:**
+
+```java
+public static OdtExtractor defaultOptions()
+```
+
+###### name()
+
+**Signature:**
+
+```java
+public String name()
+```
+
+###### version()
+
+**Signature:**
+
+```java
+public String version()
+```
+
+###### initialize()
+
+**Signature:**
+
+```java
+public void initialize() throws Error
+```
+
+###### shutdown()
+
+**Signature:**
+
+```java
+public void shutdown() throws Error
+```
+
+###### description()
+
+**Signature:**
+
+```java
+public String description()
+```
+
+###### author()
+
+**Signature:**
+
+```java
+public String author()
+```
+
+###### extractBytes()
+
+**Signature:**
+
+```java
+public InternalDocument extractBytes(byte[] content, String mimeType, ExtractionConfig config) throws Error
+```
+
+###### supportedMimeTypes()
+
+**Signature:**
+
+```java
+public List<String> supportedMimeTypes()
+```
+
+###### priority()
+
+**Signature:**
+
+```java
+public int priority()
+```
+
+
+---
+
+#### OdtProperties
+
+OpenDocument metadata from meta.xml
+
+Contains metadata fields defined by the OASIS OpenDocument Format standard.
+Uses Dublin Core elements (dc:) and OpenDocument meta elements (meta:).
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `title` | `Optional<String>` | `null` | Document title (dc:title) |
+| `subject` | `Optional<String>` | `null` | Document subject/topic (dc:subject) |
+| `creator` | `Optional<String>` | `null` | Current document creator/author (dc:creator) |
+| `initialCreator` | `Optional<String>` | `null` | Initial creator of the document (meta:initial-creator) |
+| `keywords` | `Optional<String>` | `null` | Keywords or tags (meta:keyword) |
+| `description` | `Optional<String>` | `null` | Document description (dc:description) |
+| `date` | `Optional<String>` | `null` | Current modification date (dc:date) |
+| `creationDate` | `Optional<String>` | `null` | Initial creation date (meta:creation-date) |
+| `language` | `Optional<String>` | `null` | Document language (dc:language) |
+| `generator` | `Optional<String>` | `null` | Generator/application that created the document (meta:generator) |
+| `editingDuration` | `Optional<String>` | `null` | Editing duration in ISO 8601 format (meta:editing-duration) |
+| `editingCycles` | `Optional<String>` | `null` | Number of edits/revisions (meta:editing-cycles) |
+| `pageCount` | `Optional<int>` | `null` | Document statistics - page count (meta:page-count) |
+| `wordCount` | `Optional<int>` | `null` | Document statistics - word count (meta:word-count) |
+| `characterCount` | `Optional<int>` | `null` | Document statistics - character count (meta:character-count) |
+| `paragraphCount` | `Optional<int>` | `null` | Document statistics - paragraph count (meta:paragraph-count) |
+| `tableCount` | `Optional<int>` | `null` | Document statistics - table count (meta:table-count) |
+| `imageCount` | `Optional<int>` | `null` | Document statistics - image count (meta:image-count) |
+
+
+---
+
+#### OpenWebDocumentMetadata
+
+Metadata for the OpenWebUI external document loader response.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `source` | `String` | — | Original filename |
+
+
+---
+
+#### OpenWebDocumentResponse
+
+OpenWebUI "External" engine response format.
+
+Returned by `PUT /process` for the OpenWebUI external document loader.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `pageContent` | `String` | — | Extracted text content |
+| `metadata` | `OpenWebDocumentMetadata` | — | Document metadata |
+
+
+---
+
+#### OpmlExtractor
+
+OPML format extractor.
+
+Extracts outline structure and metadata from OPML documents using native Rust parsing.
+
+##### Methods
+
+###### defaultOptions()
+
+**Signature:**
+
+```java
+public static OpmlExtractor defaultOptions()
+```
+
+###### name()
+
+**Signature:**
+
+```java
+public String name()
+```
+
+###### version()
+
+**Signature:**
+
+```java
+public String version()
+```
+
+###### initialize()
+
+**Signature:**
+
+```java
+public void initialize() throws Error
+```
+
+###### shutdown()
+
+**Signature:**
+
+```java
+public void shutdown() throws Error
+```
+
+###### description()
+
+**Signature:**
+
+```java
+public String description()
+```
+
+###### author()
+
+**Signature:**
+
+```java
+public String author()
+```
+
+###### extractBytes()
+
+**Signature:**
+
+```java
+public InternalDocument extractBytes(byte[] content, String mimeType, ExtractionConfig config) throws Error
+```
+
+###### supportedMimeTypes()
+
+**Signature:**
+
+```java
+public List<String> supportedMimeTypes()
+```
+
+###### priority()
+
+**Signature:**
+
+```java
+public int priority()
+```
+
+
+---
+
+#### OrgModeExtractor
+
+Org Mode document extractor.
+
+Provides native Rust-based Org Mode extraction using the `org` library,
+extracting structured content and metadata.
+
+##### Methods
+
+###### buildInternalDocument()
+
+Build an `InternalDocument` from Org Mode source text.
+
+Handles headings, paragraphs, lists, code blocks, tables, inline links,
+and footnote references.
+
+**Signature:**
+
+```java
+public static InternalDocument buildInternalDocument(String orgText)
+```
+
+###### defaultOptions()
+
+**Signature:**
+
+```java
+public static OrgModeExtractor defaultOptions()
+```
+
+###### name()
+
+**Signature:**
+
+```java
+public String name()
+```
+
+###### version()
+
+**Signature:**
+
+```java
+public String version()
+```
+
+###### initialize()
+
+**Signature:**
+
+```java
+public void initialize() throws Error
+```
+
+###### shutdown()
+
+**Signature:**
+
+```java
+public void shutdown() throws Error
+```
+
+###### description()
+
+**Signature:**
+
+```java
+public String description()
+```
+
+###### author()
+
+**Signature:**
+
+```java
+public String author()
+```
+
+###### extractBytes()
+
+**Signature:**
+
+```java
+public InternalDocument extractBytes(byte[] content, String mimeType, ExtractionConfig config) throws Error
+```
+
+###### extractFile()
+
+**Signature:**
+
+```java
+public InternalDocument extractFile(String path, String mimeType, ExtractionConfig config) throws Error
+```
+
+###### supportedMimeTypes()
+
+**Signature:**
+
+```java
+public List<String> supportedMimeTypes()
+```
+
+###### priority()
+
+**Signature:**
+
+```java
+public int priority()
+```
+
+
+---
+
+#### OrientationResult
+
+Document orientation detection result.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `degrees` | `int` | — | Detected orientation in degrees (0, 90, 180, or 270). |
+| `confidence` | `float` | — | Confidence score (0.0-1.0). |
+
+
+---
+
+#### PaddleOcrBackend
+
+PaddleOCR backend using ONNX Runtime.
+
+Maintains a pool of OCR engines keyed by script family. Each family has its own
+recognition model and character dictionary, while detection and classification
+models are shared across all families.
+
+# Thread Safety
+
+The backend is `Send + Sync` and can be used across threads safely via `Arc`.
+Each engine in the pool has its own mutex, so concurrent OCR on different
+script families does not block.
+
+##### Methods
+
+###### new()
+
+Create a new PaddleOCR backend with default configuration.
+
+**Signature:**
+
+```java
+public static PaddleOcrBackend new() throws Error
+```
+
+###### withConfig()
+
+Create a new PaddleOCR backend with custom configuration.
+
+**Signature:**
+
+```java
+public static PaddleOcrBackend withConfig(PaddleOcrConfig config) throws Error
+```
+
+###### name()
+
+**Signature:**
+
+```java
+public String name()
+```
+
+###### version()
+
+**Signature:**
+
+```java
+public String version()
+```
+
+###### initialize()
+
+**Signature:**
+
+```java
+public void initialize() throws Error
+```
+
+###### shutdown()
+
+**Signature:**
+
+```java
+public void shutdown() throws Error
+```
+
+###### processImage()
+
+**Signature:**
+
+```java
+public ExtractionResult processImage(byte[] imageBytes, OcrConfig config) throws Error
+```
+
+###### processImageFile()
+
+**Signature:**
+
+```java
+public ExtractionResult processImageFile(String path, OcrConfig config) throws Error
+```
+
+###### supportsLanguage()
+
+**Signature:**
+
+```java
+public boolean supportsLanguage(String lang)
+```
+
+###### backendType()
+
+**Signature:**
+
+```java
+public OcrBackendType backendType()
+```
+
+###### supportedLanguages()
+
+**Signature:**
+
+```java
+public List<String> supportedLanguages()
+```
+
+###### supportsTableDetection()
+
+**Signature:**
+
+```java
+public boolean supportsTableDetection()
+```
+
+###### defaultOptions()
+
+**Signature:**
+
+```java
+public static PaddleOcrBackend defaultOptions()
+```
+
+
+---
+
+#### PaddleOcrConfig
+
+Configuration for PaddleOCR backend.
+
+Configures PaddleOCR text detection and recognition with multi-language support.
+Uses a builder pattern for convenient configuration.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `language` | `String` | — | Language code (e.g., "en", "ch", "jpn", "kor", "deu", "fra") |
+| `cacheDir` | `Optional<String>` | `null` | Optional custom cache directory for model files |
+| `useAngleCls` | `boolean` | — | Enable angle classification for rotated text (default: false). Can misfire on short text regions, rotating crops incorrectly before recognition. |
+| `enableTableDetection` | `boolean` | — | Enable table structure detection (default: false) |
+| `detDbThresh` | `float` | — | Database threshold for text detection (default: 0.3) Range: 0.0-1.0, higher values require more confident detections |
+| `detDbBoxThresh` | `float` | — | Box threshold for text bounding box refinement (default: 0.5) Range: 0.0-1.0 |
+| `detDbUnclipRatio` | `float` | — | Unclip ratio for expanding text bounding boxes (default: 1.6) Controls the expansion of detected text regions |
+| `detLimitSideLen` | `int` | — | Maximum side length for detection image (default: 960) Larger images may be resized to this limit for faster inference |
+| `recBatchNum` | `int` | — | Batch size for recognition inference (default: 6) Number of text regions to process simultaneously |
+| `padding` | `int` | — | Padding in pixels added around the image before detection (default: 10). Large values can include surrounding content like table gridlines. |
+| `dropScore` | `float` | — | Minimum recognition confidence score for text lines (default: 0.5). Text regions with recognition confidence below this threshold are discarded. Matches PaddleOCR Python's `drop_score` parameter. Range: 0.0-1.0 |
+| `modelTier` | `String` | — | Model tier controlling detection/recognition model size and accuracy trade-off. - `"mobile"` (default): Lightweight models (~4.5MB detection, ~16.5MB recognition), fast download and inference - `"server"`: Large, high-accuracy models (~88MB detection, ~84MB recognition), best for GPU or complex documents |
+
+##### Methods
+
+###### withCacheDir()
+
+Sets a custom cache directory for model files.
+
+**Signature:**
+
+```java
+public PaddleOcrConfig withCacheDir(String path)
+```
+
+###### withTableDetection()
+
+Enables or disables table structure detection.
+
+**Signature:**
+
+```java
+public PaddleOcrConfig withTableDetection(boolean enable)
+```
+
+###### withAngleCls()
+
+Enables or disables angle classification for rotated text.
+
+**Signature:**
+
+```java
+public PaddleOcrConfig withAngleCls(boolean enable)
+```
+
+###### withDetDbThresh()
+
+Sets the database threshold for text detection.
+
+**Signature:**
+
+```java
+public PaddleOcrConfig withDetDbThresh(float threshold)
+```
+
+###### withDetDbBoxThresh()
+
+Sets the box threshold for text bounding box refinement.
+
+**Signature:**
+
+```java
+public PaddleOcrConfig withDetDbBoxThresh(float threshold)
+```
+
+###### withDetDbUnclipRatio()
+
+Sets the unclip ratio for expanding text bounding boxes.
+
+**Signature:**
+
+```java
+public PaddleOcrConfig withDetDbUnclipRatio(float ratio)
+```
+
+###### withDetLimitSideLen()
+
+Sets the maximum side length for detection images.
+
+**Signature:**
+
+```java
+public PaddleOcrConfig withDetLimitSideLen(int length)
+```
+
+###### withRecBatchNum()
+
+Sets the batch size for recognition inference.
+
+**Signature:**
+
+```java
+public PaddleOcrConfig withRecBatchNum(int batchSize)
+```
+
+###### withDropScore()
+
+Sets the minimum recognition confidence threshold.
+
+**Signature:**
+
+```java
+public PaddleOcrConfig withDropScore(float score)
+```
+
+###### withPadding()
+
+Sets padding in pixels added around images before detection.
+
+**Signature:**
+
+```java
+public PaddleOcrConfig withPadding(int padding)
+```
+
+###### withModelTier()
+
+Sets the model tier controlling detection/recognition model size.
+
+**Signature:**
+
+```java
+public PaddleOcrConfig withModelTier(String tier)
+```
+
+###### resolveCacheDir()
+
+Resolves the cache directory, checking in order:
+1. Configured `cache_dir` if set
+2. `KREUZBERG_CACHE_DIR` environment variable + `/paddle-ocr`
+3. Default: `.kreuzberg/paddle-ocr/` (consistent with other cache types)
+
+**Returns:**
+
+The resolved cache directory path
+
+**Signature:**
+
+```java
+public String resolveCacheDir()
+```
+
+###### defaultOptions()
+
+Creates a default configuration with English language support.
+
+**Signature:**
+
+```java
+public static PaddleOcrConfig defaultOptions()
+```
+
+
+---
+
+#### PageBoundary
+
+Byte offset boundary for a page.
+
+Tracks where a specific page's content starts and ends in the main content string,
+enabling mapping from byte positions to page numbers. Offsets are guaranteed to be
+at valid UTF-8 character boundaries when using standard String methods (push_str, push, etc.).
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `byteStart` | `long` | — | Byte offset where this page starts in the content string (UTF-8 valid boundary, inclusive) |
+| `byteEnd` | `long` | — | Byte offset where this page ends in the content string (UTF-8 valid boundary, exclusive) |
+| `pageNumber` | `long` | — | Page number (1-indexed) |
+
+
+---
+
+#### PageConfig
+
+Page extraction and tracking configuration.
+
+Controls how pages are extracted, tracked, and represented in the extraction results.
+When `null`, page tracking is disabled.
+
+Page range tracking in chunk metadata (first_page/last_page) is automatically enabled
+when page boundaries are available and chunking is configured.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `extractPages` | `boolean` | `false` | Extract pages as separate array (ExtractionResult.pages) |
+| `insertPageMarkers` | `boolean` | `false` | Insert page markers in main content string |
+| `markerFormat` | `String` | `"
+
+<!-- PAGE {page_num} -->
+
+"` | Page marker format (use {page_num} placeholder) Default: "\n\n<!-- PAGE {page_num} -->\n\n" |
+
+##### Methods
+
+###### defaultOptions()
+
+**Signature:**
+
+```java
+public static PageConfig defaultOptions()
+```
+
+
+---
+
+#### PageContent
+
+Content for a single page/slide.
+
+When page extraction is enabled, documents are split into per-page content
+with associated tables and images mapped to each page.
+
+# Performance
+
+Uses Arc-wrapped tables and images for memory efficiency:
+- `Vec<Arc<Table>>` enables zero-copy sharing of table data
+- `Vec<Arc<ExtractedImage>>` enables zero-copy sharing of image data
+- Maintains exact JSON compatibility via custom Serialize/Deserialize
+
+This reduces memory overhead for documents with shared tables/images
+by avoiding redundant copies during serialization.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `pageNumber` | `long` | — | Page number (1-indexed) |
+| `content` | `String` | — | Text content for this page |
+| `tables` | `List<Table>` | — | Tables found on this page (uses Arc for memory efficiency) Serializes as Vec<Table> for JSON compatibility while maintaining Arc semantics in-memory for zero-copy sharing. |
+| `images` | `List<ExtractedImage>` | — | Images found on this page (uses Arc for memory efficiency) Serializes as Vec<ExtractedImage> for JSON compatibility while maintaining Arc semantics in-memory for zero-copy sharing. |
+| `hierarchy` | `Optional<PageHierarchy>` | `null` | Hierarchy information for the page (when hierarchy extraction is enabled) Contains text hierarchy levels (H1-H6) extracted from the page content. |
+| `isBlank` | `Optional<boolean>` | `null` | Whether this page is blank (no meaningful text content) Determined during extraction based on text content analysis. A page is blank if it has fewer than 3 non-whitespace characters and contains no tables or images. |
+| `layoutRegions` | `Optional<List<LayoutRegion>>` | `null` | Layout detection regions for this page (when layout detection is enabled). Contains detected layout regions with class, confidence, bounding box, and area fraction. Only populated when layout detection is configured. |
+
+
+---
+
+#### PageHierarchy
+
+Page hierarchy structure containing heading levels and block information.
+
+Used when PDF text hierarchy extraction is enabled. Contains hierarchical
+blocks with heading levels (H1-H6) for semantic document structure.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `blockCount` | `long` | — | Number of hierarchy blocks on this page |
+| `blocks` | `List<HierarchicalBlock>` | — | Hierarchical blocks with heading levels |
+
+
+---
+
+#### PageInfo
+
+Metadata for individual page/slide/sheet.
+
+Captures per-page information including dimensions, content counts,
+and visibility state (for presentations).
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `number` | `long` | — | Page number (1-indexed) |
+| `title` | `Optional<String>` | `null` | Page title (usually for presentations) |
+| `dimensions` | `Optional<F64F64>` | `null` | Dimensions in points (PDF) or pixels (images): (width, height) |
+| `imageCount` | `Optional<long>` | `null` | Number of images on this page |
+| `tableCount` | `Optional<long>` | `null` | Number of tables on this page |
+| `hidden` | `Optional<boolean>` | `null` | Whether this page is hidden (e.g., in presentations) |
+| `isBlank` | `Optional<boolean>` | `null` | Whether this page is blank (no meaningful text, no images, no tables) A page is considered blank if it has fewer than 3 non-whitespace characters and contains no tables or images. This is useful for filtering out empty pages in scanned documents or PDFs with blank separator pages. |
+
+
+---
+
+#### PageLayoutRegion
+
+A detected layout region mapped to PDF coordinate space.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `class` | `LayoutClass` | — | Class (layout class) |
+| `confidence` | `float` | — | Confidence |
+| `bbox` | `PdfLayoutBBox` | — | Bbox (pdf layout b box) |
+
+
+---
+
+#### PageLayoutResult
+
+Layout detection results for a single page.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `pageIndex` | `long` | — | Page index |
+| `regions` | `List<PageLayoutRegion>` | — | Regions |
+| `pageWidthPts` | `float` | — | Page width pts |
+| `pageHeightPts` | `float` | — | Page height pts |
+| `renderWidthPx` | `int` | — | Width of the rendered image used for layout detection (pixels). |
+| `renderHeightPx` | `int` | — | Height of the rendered image used for layout detection (pixels). |
+
+
+---
+
+#### PageMargins
+
+Page margins in twips (twentieths of a point).
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `top` | `Optional<int>` | `null` | Top margin in twips. |
+| `right` | `Optional<int>` | `null` | Right margin in twips. |
+| `bottom` | `Optional<int>` | `null` | Bottom margin in twips. |
+| `left` | `Optional<int>` | `null` | Left margin in twips. |
+| `header` | `Optional<int>` | `null` | Header offset in twips. |
+| `footer` | `Optional<int>` | `null` | Footer offset in twips. |
+| `gutter` | `Optional<int>` | `null` | Gutter margin in twips. |
+
+##### Methods
+
+###### toPoints()
+
+Convert all margins from twips to points.
+
+Conversion factor: 1 twip = 1/20 point, or equivalently divide by 20.
+
+**Signature:**
+
+```java
+public PageMarginsPoints toPoints()
+```
+
+
+---
+
+#### PageMarginsPoints
+
+Page margins converted to points (1/72 inch).
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `top` | `Optional<double>` | `null` | Top |
+| `right` | `Optional<double>` | `null` | Right |
+| `bottom` | `Optional<double>` | `null` | Bottom |
+| `left` | `Optional<double>` | `null` | Left |
+| `header` | `Optional<double>` | `null` | Header |
+| `footer` | `Optional<double>` | `null` | Footer |
+| `gutter` | `Optional<double>` | `null` | Gutter |
+
+
+---
+
+#### PageRenderOptions
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `targetDpi` | `int` | `300` | Target dpi |
+| `maxImageDimension` | `int` | `65536` | Maximum image dimension |
+| `autoAdjustDpi` | `boolean` | `true` | Auto adjust dpi |
+| `minDpi` | `int` | `72` | Minimum dpi |
+| `maxDpi` | `int` | `600` | Maximum dpi |
+
+##### Methods
+
+###### defaultOptions()
+
+**Signature:**
+
+```java
+public static PageRenderOptions defaultOptions()
+```
+
+
+---
+
+#### PageStructure
+
+Unified page structure for documents.
+
+Supports different page types (PDF pages, PPTX slides, Excel sheets)
+with character offset boundaries for chunk-to-page mapping.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `totalCount` | `long` | — | Total number of pages/slides/sheets |
+| `unitType` | `PageUnitType` | — | Type of paginated unit |
+| `boundaries` | `Optional<List<PageBoundary>>` | `null` | Character offset boundaries for each page Maps character ranges in the extracted content to page numbers. Used for chunk page range calculation. |
+| `pages` | `Optional<List<PageInfo>>` | `null` | Detailed per-page metadata (optional, only when needed) |
+
+
+---
+
+#### PageTiming
+
+Timing breakdown for a single page.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `renderMs` | `double` | — | Time to render the PDF page to a raster image (amortized from batch render). |
+| `preprocessMs` | `double` | — | Time spent in image preprocessing (resize, normalize, tensor construction). |
+| `onnxMs` | `double` | — | Time for the ONNX model session.run() call (actual neural network inference). |
+| `inferenceMs` | `double` | — | Total model inference time (preprocess + onnx), as measured by the engine. |
+| `postprocessMs` | `double` | — | Time spent in postprocessing (confidence filtering, overlap resolution). |
+| `mappingMs` | `double` | — | Time to map pixel-space bounding boxes to PDF coordinate space. |
+
+
+---
+
+#### PagesExtractor
+
+Apple Pages document extractor.
+
+Supports `.pages` files (modern iWork format, 2013+).
+
+Extracts all text content from the document by parsing the IWA
+(iWork Archive) container: ZIP → Snappy → protobuf text fields.
+
+##### Methods
+
+###### defaultOptions()
+
+**Signature:**
+
+```java
+public static PagesExtractor defaultOptions()
+```
+
+###### name()
+
+**Signature:**
+
+```java
+public String name()
+```
+
+###### version()
+
+**Signature:**
+
+```java
+public String version()
+```
+
+###### initialize()
+
+**Signature:**
+
+```java
+public void initialize() throws Error
+```
+
+###### shutdown()
+
+**Signature:**
+
+```java
+public void shutdown() throws Error
+```
+
+###### description()
+
+**Signature:**
+
+```java
+public String description()
+```
+
+###### author()
+
+**Signature:**
+
+```java
+public String author()
+```
+
+###### extractBytes()
+
+**Signature:**
+
+```java
+public InternalDocument extractBytes(byte[] content, String mimeType, ExtractionConfig config) throws Error
+```
+
+###### supportedMimeTypes()
+
+**Signature:**
+
+```java
+public List<String> supportedMimeTypes()
+```
+
+###### priority()
+
+**Signature:**
+
+```java
+public int priority()
+```
+
+
+---
+
+#### PanicContext
+
+Context information captured when a panic occurs.
+
+This struct stores detailed information about where and when a panic happened,
+enabling better error reporting across FFI boundaries.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `file` | `String` | — | Source file where the panic occurred |
+| `line` | `int` | — | Line number where the panic occurred |
+| `function` | `String` | — | Function name where the panic occurred |
+| `message` | `String` | — | Panic message extracted from the panic payload |
+| `timestamp` | `SystemTime` | — | Timestamp when the panic was captured |
+
+##### Methods
+
+###### format()
+
+Formats the panic context as a human-readable string.
+
+**Signature:**
+
+```java
+public String format()
+```
+
+
+---
+
+#### ParaText
+
+Plain text content decoded from a ParaText record (tag 0x43).
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `content` | `String` | — | The extracted text content |
+
+##### Methods
+
+###### fromRecord()
+
+Decode a ParaText record from raw bytes.
+
+The data field of a TAG_PARA_TEXT record is a sequence of UTF-16LE code
+units.  Control characters < 0x0020 are mapped to whitespace or skipped;
+characters in the private-use range 0xF020–0xF07F (HWP internal controls)
+are discarded.
+
+**Signature:**
+
+```java
+public static ParaText fromRecord(Record record) throws Error
+```
+
+
+---
+
+#### Paragraph
+
+A single paragraph; may or may not carry a text payload.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `text` | `Optional<ParaText>` | `null` | Text (para text) |
+
+
+---
+
+#### ParagraphMeta
+
+Metadata for a single paragraph extracted from RTF.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `headingLevel` | `byte` | — | Heading level (1-based): 1 = H1, 2 = H2, etc. 0 = not a heading. |
+| `listLevel` | `Optional<byte>` | `null` | List nesting level (0-based). `None` means not a list item. |
+| `listId` | `Optional<short>` | `null` | List override ID (\lsN). Used to detect list boundaries. |
+| `isTable` | `boolean` | — | Whether this paragraph is a table placeholder (text is in tables vec). |
+| `ordered` | `boolean` | — | Whether this list item is ordered (numbered/lettered). Detected from `\listtext` or `\pntext` content. `False` = unordered (bullet). |
+
+
+---
+
+#### ParagraphProperties
+
+Paragraph-level formatting properties (alignment, spacing, indentation, etc.).
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `alignment` | `Optional<String>` | `null` | `"left"`, `"center"`, `"right"`, `"both"` (justified). |
+| `spacingBefore` | `Optional<int>` | `null` | Spacing before paragraph in twips. |
+| `spacingAfter` | `Optional<int>` | `null` | Spacing after paragraph in twips. |
+| `spacingLine` | `Optional<int>` | `null` | Line spacing in twips or 240ths of a line. |
+| `spacingLineRule` | `Optional<String>` | `null` | Line spacing rule: "auto", "exact", or "atLeast". |
+| `indentLeft` | `Optional<int>` | `null` | Left indentation in twips. |
+| `indentRight` | `Optional<int>` | `null` | Right indentation in twips. |
+| `indentFirstLine` | `Optional<int>` | `null` | First-line indentation in twips. |
+| `indentHanging` | `Optional<int>` | `null` | Hanging indentation in twips. |
+| `outlineLevel` | `Optional<byte>` | `null` | Outline level 0-8 for heading levels. |
+| `keepNext` | `Optional<boolean>` | `null` | Keep with next paragraph on same page. |
+| `keepLines` | `Optional<boolean>` | `null` | Keep all lines of paragraph on same page. |
+| `pageBreakBefore` | `Optional<boolean>` | `null` | Force page break before paragraph. |
+| `widowControl` | `Optional<boolean>` | `null` | Prevent widow/orphan lines. |
+| `suppressAutoHyphens` | `Optional<boolean>` | `null` | Suppress automatic hyphenation. |
+| `bidi` | `Optional<boolean>` | `null` | Right-to-left paragraph direction. |
+| `shadingFill` | `Optional<String>` | `null` | Background color hex value (from w:shd w:fill). |
+| `shadingVal` | `Optional<String>` | `null` | Shading pattern value (from w:shd w:val). |
+| `borderTop` | `Optional<String>` | `null` | Top border style (from w:pBdr/w:top w:val). |
+| `borderBottom` | `Optional<String>` | `null` | Bottom border style (from w:pBdr/w:bottom w:val). |
+| `borderLeft` | `Optional<String>` | `null` | Left border style (from w:pBdr/w:left w:val). |
+| `borderRight` | `Optional<String>` | `null` | Right border style (from w:pBdr/w:right w:val). |
+
+
+---
+
+#### PdfAnnotation
+
+A PDF annotation extracted from a document page.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `annotationType` | `PdfAnnotationType` | — | The type of annotation. |
+| `content` | `Optional<String>` | `null` | Text content of the annotation (e.g., comment text, link URL). |
+| `pageNumber` | `long` | — | Page number where the annotation appears (1-indexed). |
+| `boundingBox` | `Optional<BoundingBox>` | `null` | Bounding box of the annotation on the page. |
+
+
+---
+
+#### PdfConfig
+
+PDF-specific configuration.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `backend` | `PdfBackend` | `PdfBackend.PDFIUM` | PDF extraction backend. Default: `Pdfium`. |
+| `extractImages` | `boolean` | `false` | Extract images from PDF |
+| `passwords` | `Optional<List<String>>` | `null` | List of passwords to try when opening encrypted PDFs |
+| `extractMetadata` | `boolean` | `true` | Extract PDF metadata |
+| `hierarchy` | `Optional<HierarchyConfig>` | `null` | Hierarchy extraction configuration (None = hierarchy extraction disabled) |
+| `extractAnnotations` | `boolean` | `false` | Extract PDF annotations (text notes, highlights, links, stamps). Default: false |
+| `topMarginFraction` | `Optional<float>` | `null` | Top margin fraction (0.0–1.0) of page height to exclude headers/running heads. Default: 0.06 (6%) |
+| `bottomMarginFraction` | `Optional<float>` | `null` | Bottom margin fraction (0.0–1.0) of page height to exclude footers/page numbers. Default: 0.05 (5%) |
+| `allowSingleColumnTables` | `boolean` | `false` | Allow single-column pseudo tables in extraction results. By default, tables with fewer than 2 columns (layout-guided) or 3 columns (heuristic) are rejected. When `True`, the minimum column count is relaxed to 1, allowing single-column structured data (glossaries, itemized lists) to be emitted as tables. Other quality filters (density, sparsity, prose detection) still apply. |
+
+##### Methods
+
+###### defaultOptions()
+
+**Signature:**
+
+```java
+public static PdfConfig defaultOptions()
+```
+
+
+---
+
+#### PdfExtractionMetadata
+
+Complete PDF extraction metadata including common and PDF-specific fields.
+
+This struct combines common document fields (title, authors, dates) with
+PDF-specific metadata and optional page structure information. It is returned
+by `extract_metadata_from_document()` when page boundaries are provided.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `title` | `Optional<String>` | `null` | Document title |
+| `subject` | `Optional<String>` | `null` | Document subject or description |
+| `authors` | `Optional<List<String>>` | `null` | Document authors (parsed from PDF Author field) |
+| `keywords` | `Optional<List<String>>` | `null` | Document keywords (parsed from PDF Keywords field) |
+| `createdAt` | `Optional<String>` | `null` | Creation timestamp (ISO 8601 format) |
+| `modifiedAt` | `Optional<String>` | `null` | Last modification timestamp (ISO 8601 format) |
+| `createdBy` | `Optional<String>` | `null` | Application or user that created the document |
+| `pdfSpecific` | `PdfMetadata` | — | PDF-specific metadata |
+| `pageStructure` | `Optional<PageStructure>` | `null` | Page structure with boundaries and optional per-page metadata |
+
+
+---
+
+#### PdfExtractor
+
+PDF document extractor using pypdfium2 and playa-pdf.
+
+##### Methods
+
+###### defaultOptions()
+
+**Signature:**
+
+```java
+public static PdfExtractor defaultOptions()
+```
+
+###### name()
+
+**Signature:**
+
+```java
+public String name()
+```
+
+###### version()
+
+**Signature:**
+
+```java
+public String version()
+```
+
+###### initialize()
+
+**Signature:**
+
+```java
+public void initialize() throws Error
+```
+
+###### shutdown()
+
+**Signature:**
+
+```java
+public void shutdown() throws Error
+```
+
+###### extractBytes()
+
+**Signature:**
+
+```java
+public InternalDocument extractBytes(byte[] content, String mimeType, ExtractionConfig config) throws Error
+```
+
+###### supportedMimeTypes()
+
+**Signature:**
+
+```java
+public List<String> supportedMimeTypes()
+```
+
+
+---
+
+#### PdfImage
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `pageNumber` | `long` | — | Page number |
+| `imageIndex` | `long` | — | Image index |
+| `width` | `long` | — | Width |
+| `height` | `long` | — | Height |
+| `colorSpace` | `Optional<String>` | `null` | Color space |
+| `bitsPerComponent` | `Optional<long>` | `null` | Bits per component |
+| `filters` | `List<String>` | — | Original PDF stream filters (e.g. `["FlateDecode"]`, `["DCTDecode"]`). |
+| `data` | `byte[]` | — | The decoded image bytes in a standard format (JPEG, PNG, etc.). |
+| `decodedFormat` | `String` | — | The format of `data` after decoding: `"jpeg"`, `"png"`, `"jpeg2000"`, `"ccitt"`, or `"raw"`. |
+
+
+---
+
+#### PdfImageExtractor
+
+##### Methods
+
+###### new()
+
+**Signature:**
+
+```java
+public static PdfImageExtractor new(byte[] pdfBytes) throws Error
+```
+
+###### newWithPassword()
+
+**Signature:**
+
+```java
+public static PdfImageExtractor newWithPassword(byte[] pdfBytes, String password) throws Error
+```
+
+###### extractImages()
+
+**Signature:**
+
+```java
+public List<PdfImage> extractImages() throws Error
+```
+
+###### extractImagesFromPage()
+
+**Signature:**
+
+```java
+public List<PdfImage> extractImagesFromPage(int pageNumber) throws Error
+```
+
+###### getImageCount()
+
+**Signature:**
+
+```java
+public long getImageCount() throws Error
+```
+
+
+---
+
+#### PdfLayoutBBox
+
+Bounding box in PDF coordinate space (points, y=0 at bottom of page).
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `left` | `float` | — | Left |
+| `bottom` | `float` | — | Bottom |
+| `right` | `float` | — | Right |
+| `top` | `float` | — | Top |
+
+##### Methods
+
+###### width()
+
+**Signature:**
+
+```java
+public float width()
+```
+
+###### height()
+
+**Signature:**
+
+```java
+public float height()
+```
+
+
+---
+
+#### PdfMetadata
+
+PDF-specific metadata.
+
+Contains metadata fields specific to PDF documents that are not in the common
+`Metadata` structure. Common fields like title, authors, keywords, and dates
+are now at the `Metadata` level.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `pdfVersion` | `Optional<String>` | `null` | PDF version (e.g., "1.7", "2.0") |
+| `producer` | `Optional<String>` | `null` | PDF producer (application that created the PDF) |
+| `isEncrypted` | `Optional<boolean>` | `null` | Whether the PDF is encrypted/password-protected |
+| `width` | `Optional<long>` | `null` | First page width in points (1/72 inch) |
+| `height` | `Optional<long>` | `null` | First page height in points (1/72 inch) |
+| `pageCount` | `Optional<long>` | `null` | Total number of pages in the PDF document |
+
+
+---
+
+#### PdfPageIterator
+
+Lazy page-by-page PDF renderer.
+
+Reads the file once at construction and yields one PNG-encoded page per
+`next()` call. Only one rendered page is held in memory at a time.
+
+The PDFium mutex is acquired and released per page, so other PDF
+operations can proceed between iterations. This makes the iterator
+safe to use in long-running loops (e.g., sending each page to a vision
+model for OCR) without blocking all PDF processing.
+
+Use the iterator when memory is a concern or when you want to process
+pages as they are rendered.
+
+##### Methods
+
+###### new()
+
+Create an iterator from raw PDF bytes.
+
+Validates the PDF and determines the page count. The PDF bytes are
+owned by the iterator — the file is not re-read from disk.
+
+**Errors:**
+
+Returns an error if the PDF is invalid or password-protected without
+the correct password.
+
+**Signature:**
+
+```java
+public static PdfPageIterator new(byte[] pdfBytes, int dpi, String password) throws Error
+```
+
+###### fromFile()
+
+Create an iterator from a file path.
+
+Reads the file into memory once. Subsequent iterations render from
+the owned bytes without re-reading the file.
+
+**Errors:**
+
+Returns an error if the file cannot be read or the PDF is invalid.
+
+**Signature:**
+
+```java
+public static PdfPageIterator fromFile(Path path, int dpi, String password) throws Error
+```
+
+###### pageCount()
+
+Number of pages in the PDF.
+
+**Signature:**
+
+```java
+public long pageCount()
+```
+
+###### next()
+
+**Signature:**
+
+```java
+public Optional<Item> next()
+```
+
+###### sizeHint()
+
+**Signature:**
+
+```java
+public UsizeOptionUsize sizeHint()
+```
+
+
+---
+
+#### PdfRenderer
+
+##### Methods
+
+###### new()
+
+**Signature:**
+
+```java
+public static PdfRenderer new() throws Error
+```
+
+
+---
+
+#### PdfTextExtractor
+
+##### Methods
+
+###### new()
+
+**Signature:**
+
+```java
+public static PdfTextExtractor new() throws Error
+```
+
+
+---
+
+#### PdfUnifiedExtractionResult
+
+Result type for unified PDF text and metadata extraction.
+
+Contains text, optional page boundaries, optional per-page content, and metadata.
+
+
+---
+
+#### PlainTextExtractor
+
+Plain text extractor.
+
+Extracts content from plain text files (.txt).
+
+##### Methods
+
+###### defaultOptions()
+
+**Signature:**
+
+```java
+public static PlainTextExtractor defaultOptions()
+```
+
+###### name()
+
+**Signature:**
+
+```java
+public String name()
+```
+
+###### version()
+
+**Signature:**
+
+```java
+public String version()
+```
+
+###### initialize()
+
+**Signature:**
+
+```java
+public void initialize() throws Error
+```
+
+###### shutdown()
+
+**Signature:**
+
+```java
+public void shutdown() throws Error
+```
+
+###### description()
+
+**Signature:**
+
+```java
+public String description()
+```
+
+###### author()
+
+**Signature:**
+
+```java
+public String author()
+```
+
+###### extractBytes()
+
+**Signature:**
+
+```java
+public InternalDocument extractBytes(byte[] content, String mimeType, ExtractionConfig config) throws Error
+```
+
+###### supportedMimeTypes()
+
+**Signature:**
+
+```java
+public List<String> supportedMimeTypes()
+```
+
+###### priority()
+
+**Signature:**
+
+```java
+public int priority()
+```
+
+
+---
+
+#### Plugin
+
+Base trait that all plugins must implement.
+
+This trait provides common functionality for plugin lifecycle management,
+identification, and metadata.
+
+# Thread Safety
+
+All plugins must be `Send + Sync` to support concurrent usage across threads.
+
+##### Methods
+
+###### name()
+
+Returns the unique name/identifier for this plugin.
+
+The name should be:
+- Unique across all plugins
+- Lowercase with hyphens (e.g., "my-custom-plugin")
+- URL-safe characters only
+
+**Signature:**
+
+```java
+public String name()
+```
+
+###### version()
+
+Returns the semantic version of this plugin.
+
+Should follow semver format: `MAJOR.MINOR.PATCH`
+
+**Signature:**
+
+```java
+public String version()
+```
+
+###### initialize()
+
+Initialize the plugin.
+
+Called once when the plugin is registered. Use this to:
+- Load configuration
+- Initialize resources (connections, caches, etc.)
+- Validate dependencies
+
+# Thread Safety
+
+This method takes `&self` instead of `&mut self` to work with `Arc<dyn Plugin>`.
+Plugins needing mutable state during initialization should use interior mutability
+patterns (Mutex, RwLock, OnceCell, etc.).
+
+**Errors:**
+
+Should return an error if initialization fails. The plugin will not be
+registered if this method returns an error.
+
+**Signature:**
+
+```java
+public void initialize() throws Error
+```
+
+###### shutdown()
+
+Shutdown the plugin.
+
+Called when the plugin is being unregistered or the application is shutting down.
+Use this to:
+- Close connections
+- Flush caches
+- Release resources
+
+# Thread Safety
+
+This method takes `&self` instead of `&mut self` to work with `Arc<dyn Plugin>`.
+Plugins needing mutable state during shutdown should use interior mutability
+patterns (Mutex, RwLock, etc.).
+
+**Errors:**
+
+Errors during shutdown are logged but don't prevent the shutdown process.
+
+**Signature:**
+
+```java
+public void shutdown() throws Error
+```
+
+###### description()
+
+Optional plugin description for debugging and logging.
+
+Defaults to empty string if not overridden.
+
+**Signature:**
+
+```java
+public String description()
+```
+
+###### author()
+
+Optional plugin author information.
+
+Defaults to empty string if not overridden.
+
+**Signature:**
+
+```java
+public String author()
+```
+
+
+---
+
+#### PluginHealthStatus
+
+Plugin health status information.
+
+Contains diagnostic information about registered plugins for each type.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `ocrBackendsCount` | `long` | — | Number of registered OCR backends |
+| `ocrBackends` | `List<String>` | — | Names of registered OCR backends |
+| `extractorsCount` | `long` | — | Number of registered document extractors |
+| `extractors` | `List<String>` | — | Names of registered document extractors |
+| `postProcessorsCount` | `long` | — | Number of registered post-processors |
+| `postProcessors` | `List<String>` | — | Names of registered post-processors |
+| `validatorsCount` | `long` | — | Number of registered validators |
+| `validators` | `List<String>` | — | Names of registered validators |
+
+##### Methods
+
+###### check()
+
+Check plugin health and return status.
+
+This function reads all plugin registries and collects information
+about registered plugins. It logs warnings if critical plugins are missing.
+
+**Returns:**
+
+`PluginHealthStatus` with counts and names of all registered plugins.
+
+**Signature:**
+
+```java
+public static PluginHealthStatus check()
+```
+
+
+---
+
+#### Pool
+
+##### Methods
+
+###### acquire()
+
+Acquire an object from the pool or create a new one if empty.
+
+**Returns:**
+
+A `PoolGuard<T>` that will return the object to the pool when dropped.
+
+**Panics:**
+
+Panics if the mutex is already locked by the current thread (deadlock).
+This is a safety mechanism provided by parking_lot to prevent subtle bugs.
+
+**Signature:**
+
+```java
+public PoolGuard acquire() throws PoolError
+```
+
+###### size()
+
+Get the current number of objects in the pool.
+
+**Signature:**
+
+```java
+public long size()
+```
+
+###### clear()
+
+Clear the pool, discarding all pooled objects.
+
+**Signature:**
+
+```java
+public void clear() throws PoolError
+```
+
+
+---
+
+#### PoolConfig
+
+Configuration for the string buffer pool.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `maxBuffersPerSize` | `long` | `4` | Maximum buffers per size bucket |
+| `initialCapacity` | `long` | `4096` | Initial capacity for new buffers |
+| `maxCapacityBeforeDiscard` | `long` | `65536` | Maximum capacity before discarding |
+
+##### Methods
+
+###### defaultOptions()
+
+**Signature:**
+
+```java
+public static PoolConfig defaultOptions()
+```
+
+
+---
+
+#### PoolMetrics
+
+Metrics tracking for pool allocations and reuse patterns.
+
+These metrics help identify pool efficiency and allocation patterns.
+Only available when the `pool-metrics` feature is enabled.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `totalAcquires` | `AtomicUsize` | — | Total number of acquire calls on this pool |
+| `totalCacheHits` | `AtomicUsize` | — | Total number of cache hits (reused objects from pool) |
+| `peakItemsStored` | `AtomicUsize` | — | Peak number of objects stored simultaneously in this pool |
+| `totalCreations` | `AtomicUsize` | — | Total number of objects created by the factory function |
+
+##### Methods
+
+###### hitRate()
+
+Calculate the cache hit rate as a percentage (0.0-100.0).
+
+**Signature:**
+
+```java
+public double hitRate()
+```
+
+###### snapshot()
+
+Get all metrics as a struct for reporting.
+
+**Signature:**
+
+```java
+public PoolMetricsSnapshot snapshot()
+```
+
+###### reset()
+
+Reset all metrics to zero.
+
+**Signature:**
+
+```java
+public void reset()
+```
+
+###### defaultOptions()
+
+**Signature:**
+
+```java
+public static PoolMetrics defaultOptions()
+```
+
+
+---
+
+#### PoolMetricsSnapshot
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `totalAcquires` | `long` | — | Total acquires |
+| `totalCacheHits` | `long` | — | Total cache hits |
+| `peakItemsStored` | `long` | — | Peak items stored |
+| `totalCreations` | `long` | — | Total creations |
+
+
+---
+
+#### PoolSizeHint
+
+Hint for optimal pool sizing based on document characteristics.
+
+This struct contains the estimated sizes for string and byte buffers
+that should be allocated in the pool to handle extraction without
+excessive reallocation.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `estimatedTotalSize` | `long` | — | Estimated total string buffer pool size in bytes |
+| `stringBufferCount` | `long` | — | Recommended number of string buffers |
+| `stringBufferCapacity` | `long` | — | Recommended capacity per string buffer in bytes |
+| `byteBufferCount` | `long` | — | Recommended number of byte buffers |
+| `byteBufferCapacity` | `long` | — | Recommended capacity per byte buffer in bytes |
+
+##### Methods
+
+###### estimatedStringPoolMemory()
+
+Calculate the estimated string pool memory in bytes.
+
+This is the total estimated memory for all string buffers.
+
+**Signature:**
+
+```java
+public long estimatedStringPoolMemory()
+```
+
+###### estimatedBytePoolMemory()
+
+Calculate the estimated byte pool memory in bytes.
+
+This is the total estimated memory for all byte buffers.
+
+**Signature:**
+
+```java
+public long estimatedBytePoolMemory()
+```
+
+###### totalPoolMemory()
+
+Calculate the total estimated pool memory in bytes.
+
+This includes both string and byte buffer pools.
+
+**Signature:**
+
+```java
+public long totalPoolMemory()
+```
+
+
+---
+
+#### PooledString
+
+RAII wrapper for a pooled string buffer.
+
+Automatically returns the buffer to the pool when dropped.
+
+##### Methods
+
+###### bufferMut()
+
+Get mutable access to the underlying string buffer.
+
+**Signature:**
+
+```java
+public String bufferMut()
+```
+
+###### asStr()
+
+Get immutable access to the underlying string buffer.
+
+**Signature:**
+
+```java
+public String asStr()
+```
+
+###### deref()
+
+**Signature:**
+
+```java
+public Target deref()
+```
+
+###### derefMut()
+
+**Signature:**
+
+```java
+public Target derefMut()
+```
+
+###### drop()
+
+**Signature:**
+
+```java
+public void drop()
+```
+
+###### fmt()
+
+**Signature:**
+
+```java
+public Unknown fmt(Formatter f)
+```
+
+
+---
+
+#### Position
+
+Horizontal or vertical position.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `relativeFrom` | `String` | — | Relative from |
+| `offset` | `Optional<long>` | `null` | Offset |
+
+
+---
+
+#### PostProcessorConfig
+
+Post-processor configuration.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `enabled` | `boolean` | `true` | Enable post-processors |
+| `enabledProcessors` | `Optional<List<String>>` | `null` | Whitelist of processor names to run (None = all enabled) |
+| `disabledProcessors` | `Optional<List<String>>` | `null` | Blacklist of processor names to skip (None = none disabled) |
+| `enabledSet` | `Optional<AHashSet>` | `null` | Pre-computed AHashSet for O(1) enabled processor lookup |
+| `disabledSet` | `Optional<AHashSet>` | `null` | Pre-computed AHashSet for O(1) disabled processor lookup |
+
+##### Methods
+
+###### buildLookupSets()
+
+Pre-compute HashSets for O(1) processor name lookups.
+
+This method converts the enabled/disabled processor Vec to HashSet
+for constant-time lookups in the pipeline.
+
+**Signature:**
+
+```java
+public void buildLookupSets()
+```
+
+###### defaultOptions()
+
+**Signature:**
+
+```java
+public static PostProcessorConfig defaultOptions()
+```
+
+
+---
+
+#### PostProcessorRegistry
+
+Registry for post-processor plugins.
+
+Manages post-processors organized by processing stage.
+
+##### Methods
+
+###### register()
+
+Register a post-processor.
+
+**Signature:**
+
+```java
+public void register(PostProcessor processor, int priority) throws Error
+```
+
+###### getForStage()
+
+Get all processors for a specific stage, in priority order.
+
+**Returns:**
+
+Vector of processors in priority order (highest first).
+
+**Signature:**
+
+```java
+public List<PostProcessor> getForStage(ProcessingStage stage)
+```
+
+###### list()
+
+List all registered processor names.
+
+**Signature:**
+
+```java
+public List<String> list()
+```
+
+###### remove()
+
+Remove a processor from the registry.
+
+**Signature:**
+
+```java
+public void remove(String name) throws Error
+```
+
+###### shutdownAll()
+
+Shutdown all processors and clear the registry.
+
+**Signature:**
+
+```java
+public void shutdownAll() throws Error
+```
+
+###### defaultOptions()
+
+**Signature:**
+
+```java
+public static PostProcessorRegistry defaultOptions()
+```
+
+
+---
+
+#### PptExtractionResult
+
+Result of PPT text extraction.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `text` | `String` | — | Extracted text content, with slides separated by double newlines. |
+| `slideCount` | `long` | — | Number of slides found. |
+| `metadata` | `PptMetadata` | — | Document metadata. |
+| `speakerNotes` | `List<String>` | — | Speaker notes text per slide (if available). |
+
+
+---
+
+#### PptExtractor
+
+Native PPT extractor using OLE/CFB parsing.
+
+This extractor handles PowerPoint 97-2003 binary (.ppt) files without
+requiring LibreOffice, providing ~50x faster extraction.
+
+##### Methods
+
+###### defaultOptions()
+
+**Signature:**
+
+```java
+public static PptExtractor defaultOptions()
+```
+
+###### name()
+
+**Signature:**
+
+```java
+public String name()
+```
+
+###### version()
+
+**Signature:**
+
+```java
+public String version()
+```
+
+###### initialize()
+
+**Signature:**
+
+```java
+public void initialize() throws Error
+```
+
+###### shutdown()
+
+**Signature:**
+
+```java
+public void shutdown() throws Error
+```
+
+###### description()
+
+**Signature:**
+
+```java
+public String description()
+```
+
+###### author()
+
+**Signature:**
+
+```java
+public String author()
+```
+
+###### extractBytes()
+
+**Signature:**
+
+```java
+public InternalDocument extractBytes(byte[] content, String mimeType, ExtractionConfig config) throws Error
+```
+
+###### supportedMimeTypes()
+
+**Signature:**
+
+```java
+public List<String> supportedMimeTypes()
+```
+
+###### priority()
+
+**Signature:**
+
+```java
+public int priority()
+```
+
+
+---
+
+#### PptMetadata
+
+Metadata extracted from PPT files.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `title` | `Optional<String>` | `null` | Title |
+| `subject` | `Optional<String>` | `null` | Subject |
+| `author` | `Optional<String>` | `null` | Author |
+| `lastAuthor` | `Optional<String>` | `null` | Last author |
+
+
+---
+
+#### PptxAppProperties
+
+Application properties from docProps/app.xml for PPTX
+
+Contains PowerPoint-specific document metadata.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `application` | `Optional<String>` | `null` | Application name (e.g., "Microsoft Office PowerPoint") |
+| `appVersion` | `Optional<String>` | `null` | Application version |
+| `totalTime` | `Optional<int>` | `null` | Total editing time in minutes |
+| `company` | `Optional<String>` | `null` | Company name |
+| `docSecurity` | `Optional<int>` | `null` | Document security level |
+| `scaleCrop` | `Optional<boolean>` | `null` | Scale crop flag |
+| `linksUpToDate` | `Optional<boolean>` | `null` | Links up to date flag |
+| `sharedDoc` | `Optional<boolean>` | `null` | Shared document flag |
+| `hyperlinksChanged` | `Optional<boolean>` | `null` | Hyperlinks changed flag |
+| `slides` | `Optional<int>` | `null` | Number of slides |
+| `notes` | `Optional<int>` | `null` | Number of notes |
+| `hiddenSlides` | `Optional<int>` | `null` | Number of hidden slides |
+| `multimediaClips` | `Optional<int>` | `null` | Number of multimedia clips |
+| `presentationFormat` | `Optional<String>` | `null` | Presentation format (e.g., "Widescreen", "Standard") |
+| `slideTitles` | `List<String>` | `Collections.emptyList()` | Slide titles |
+
+
+---
+
+#### PptxExtractionOptions
+
+Options for PPTX content extraction.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `extractImages` | `boolean` | `true` | Whether to extract embedded images. |
+| `pageConfig` | `Optional<PageConfig>` | `null` | Optional page configuration for boundary tracking. |
+| `plain` | `boolean` | `false` | Whether to output plain text (no markdown). |
+| `includeStructure` | `boolean` | `false` | Whether to build the `DocumentStructure` tree. |
+| `injectPlaceholders` | `boolean` | `true` | Whether to emit `![alt](target)` references in markdown output. |
+
+##### Methods
+
+###### defaultOptions()
+
+**Signature:**
+
+```java
+public static PptxExtractionOptions defaultOptions()
+```
+
+
+---
+
+#### PptxExtractionResult
+
+PowerPoint (PPTX) extraction result.
+
+Contains extracted slide content, metadata, and embedded images/tables.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `content` | `String` | — | Extracted text content from all slides |
+| `metadata` | `PptxMetadata` | — | Presentation metadata |
+| `slideCount` | `long` | — | Total number of slides |
+| `imageCount` | `long` | — | Total number of embedded images |
+| `tableCount` | `long` | — | Total number of tables |
+| `images` | `List<ExtractedImage>` | — | Extracted images from the presentation |
+| `pageStructure` | `Optional<PageStructure>` | `null` | Slide structure with boundaries (when page tracking is enabled) |
+| `pageContents` | `Optional<List<PageContent>>` | `null` | Per-slide content (when page tracking is enabled) |
+| `document` | `Optional<DocumentStructure>` | `null` | Structured document representation |
+| `hyperlinks` | `List<StringOptionString>` | — | Hyperlinks discovered in slides as (url, optional_label) pairs. |
+| `officeMetadata` | `Map<String, String>` | — | Office metadata extracted from docProps/core.xml and docProps/app.xml. Contains keys like "title", "author", "created_by", "subject", "keywords", "modified_by", "created_at", "modified_at", etc. |
+
+
+---
+
+#### PptxExtractor
+
+PowerPoint presentation extractor.
+
+Supports: .pptx, .pptm, .ppsx
+
+##### Methods
+
+###### defaultOptions()
+
+**Signature:**
+
+```java
+public static PptxExtractor defaultOptions()
+```
+
+###### name()
+
+**Signature:**
+
+```java
+public String name()
+```
+
+###### version()
+
+**Signature:**
+
+```java
+public String version()
+```
+
+###### initialize()
+
+**Signature:**
+
+```java
+public void initialize() throws Error
+```
+
+###### shutdown()
+
+**Signature:**
+
+```java
+public void shutdown() throws Error
+```
+
+###### extractBytes()
+
+**Signature:**
+
+```java
+public InternalDocument extractBytes(byte[] content, String mimeType, ExtractionConfig config) throws Error
+```
+
+###### extractFile()
+
+**Signature:**
+
+```java
+public InternalDocument extractFile(String path, String mimeType, ExtractionConfig config) throws Error
+```
+
+###### supportedMimeTypes()
+
+**Signature:**
+
+```java
+public List<String> supportedMimeTypes()
+```
+
+###### priority()
+
+**Signature:**
+
+```java
+public int priority()
+```
+
+
+---
+
+#### PptxMetadata
+
+PowerPoint presentation metadata.
+
+Extracted from PPTX files containing slide counts and presentation details.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `slideCount` | `long` | — | Total number of slides in the presentation |
+| `slideNames` | `List<String>` | `Collections.emptyList()` | Names of slides (if available) |
+| `imageCount` | `Optional<long>` | `null` | Number of embedded images |
+| `tableCount` | `Optional<long>` | `null` | Number of tables |
+
+
+---
+
+#### ProcessingWarning
+
+A non-fatal warning from a processing pipeline stage.
+
+Captures errors from optional features that don't prevent extraction
+but may indicate degraded results.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `source` | `Str` | — | The pipeline stage or feature that produced this warning (e.g., "embedding", "chunking", "language_detection", "output_format"). |
+| `message` | `Str` | — | Human-readable description of what went wrong. |
+
+
+---
+
+#### PstExtractor
+
+PST file extractor.
+
+Supports: .pst (Microsoft Outlook Personal Folders)
+
+##### Methods
+
+###### defaultOptions()
+
+**Signature:**
+
+```java
+public static PstExtractor defaultOptions()
+```
+
+###### name()
+
+**Signature:**
+
+```java
+public String name()
+```
+
+###### version()
+
+**Signature:**
+
+```java
+public String version()
+```
+
+###### initialize()
+
+**Signature:**
+
+```java
+public void initialize() throws Error
+```
+
+###### shutdown()
+
+**Signature:**
+
+```java
+public void shutdown() throws Error
+```
+
+###### extractSync()
+
+**Signature:**
+
+```java
+public InternalDocument extractSync(byte[] content, String mimeType, ExtractionConfig config) throws Error
+```
+
+###### extractBytes()
+
+**Signature:**
+
+```java
+public InternalDocument extractBytes(byte[] content, String mimeType, ExtractionConfig config) throws Error
+```
+
+###### supportedMimeTypes()
+
+**Signature:**
+
+```java
+public List<String> supportedMimeTypes()
+```
+
+###### priority()
+
+**Signature:**
+
+```java
+public int priority()
+```
+
+###### asSyncExtractor()
+
+**Signature:**
+
+```java
+public Optional<SyncExtractor> asSyncExtractor()
+```
+
+
+---
+
+#### PstMetadata
+
+Outlook PST archive metadata.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `messageCount` | `long` | — | Number of message |
+
+
+---
+
+#### QualityProcessor
+
+Post-processor that calculates quality score and cleans text.
+
+This processor:
+- Runs in the Early processing stage
+- Calculates quality score when `config.enable_quality_processing` is true
+- Stores quality score in `metadata.additional["quality_score"]`
+- Cleans and normalizes extracted text
+
+##### Methods
+
+###### name()
+
+**Signature:**
+
+```java
+public String name()
+```
+
+###### version()
+
+**Signature:**
+
+```java
+public String version()
+```
+
+###### initialize()
+
+**Signature:**
+
+```java
+public void initialize() throws Error
+```
+
+###### shutdown()
+
+**Signature:**
+
+```java
+public void shutdown() throws Error
+```
+
+###### process()
+
+**Signature:**
+
+```java
+public void process(ExtractionResult result, ExtractionConfig config) throws Error
+```
+
+###### processingStage()
+
+**Signature:**
+
+```java
+public ProcessingStage processingStage()
+```
+
+###### shouldProcess()
+
+**Signature:**
+
+```java
+public boolean shouldProcess(ExtractionResult result, ExtractionConfig config)
+```
+
+###### estimatedDurationMs()
+
+**Signature:**
+
+```java
+public long estimatedDurationMs(ExtractionResult result)
+```
+
+
+---
+
+#### RakeParams
+
+RAKE-specific parameters.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `minWordLength` | `long` | `1` | Minimum word length to consider (default: 1). |
+| `maxWordsPerPhrase` | `long` | `3` | Maximum words in a keyword phrase (default: 3). |
+
+##### Methods
+
+###### defaultOptions()
+
+**Signature:**
+
+```java
+public static RakeParams defaultOptions()
+```
+
+
+---
+
+#### RecModelPaths
+
+Paths to a recognition model and its character dictionary.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `recModel` | `String` | — | Path to the recognition model directory. |
+| `dictFile` | `String` | — | Path to the character dictionary file. |
+
+
+---
+
+#### RecognizedTable
+
+Pre-computed table markdown for a table detection region.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `detectionBbox` | `BBox` | — | Detection bbox that this table corresponds to (for matching). |
+| `cells` | `List<List<String>>` | — | Table cells as a 2D vector (rows x columns). |
+| `markdown` | `String` | — | Rendered markdown table. |
+
+
+---
+
+#### Record
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `tagId` | `short` | — | Tag id |
+| `data` | `byte[]` | — | Data |
+
+##### Methods
+
+###### parse()
+
+**Signature:**
+
+```java
+public static Record parse(StreamReader reader) throws Error
+```
+
+###### dataReader()
+
+Return a fresh `StreamReader` over this record's data bytes.
+
+**Signature:**
+
+```java
+public StreamReader dataReader()
+```
+
+
+---
+
+#### Recyclable
+
+Trait for types that can be pooled and reused.
+
+Implementing this trait allows a type to be used with `Pool<T>`.
+The `reset()` method should clear the object's state for reuse.
+
+##### Methods
+
+###### reset()
+
+Reset the object to a reusable state.
+
+This is called when returning an object to the pool.
+Should clear any internal data while preserving capacity.
+
+**Signature:**
+
+```java
+public void reset()
+```
+
+
+---
+
+#### Relationship
+
+A relationship between two elements in the document.
+
+During extraction, targets may be unresolved keys (`RelationshipTarget.Key`).
+The derivation step resolves these to indices using the element anchor index.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `source` | `int` | — | Index of the source element in `InternalDocument.elements`. |
+| `target` | `RelationshipTarget` | — | Target of the relationship (resolved index or unresolved key). |
+| `kind` | `RelationshipKind` | — | Semantic kind of the relationship. |
+
+
+---
+
+#### Renderer
+
+Trait for document renderers that convert `InternalDocument` to output strings.
+
+Renderers are stateless converters that transform the internal document
+representation into a specific output format (Markdown, HTML, Djot, plain text, etc.).
+
+# Thread Safety
+
+Renderers must be `Send + Sync` to support concurrent rendering across threads.
+
+##### Methods
+
+###### name()
+
+The format name (e.g., "markdown", "html", "djot", "plain").
+
+**Signature:**
+
+```java
+public String name()
+```
+
+###### render()
+
+Render an `InternalDocument` to the output format.
+
+**Returns:**
+
+The rendered output as a string.
+
+**Errors:**
+
+Returns an error if rendering fails.
+
+**Signature:**
+
+```java
+public String render(InternalDocument doc) throws Error
+```
+
+
+---
+
+#### RendererRegistry
+
+Registry for document renderer plugins.
+
+Manages renderers that convert `InternalDocument` to output format strings.
+
+# Thread Safety
+
+The registry is thread-safe and can be accessed concurrently from multiple threads.
+
+##### Methods
+
+###### newEmpty()
+
+Create a new empty renderer registry without built-in renderers.
+
+Useful for testing or when you want full control over renderer registration.
+
+**Signature:**
+
+```java
+public static RendererRegistry newEmpty()
+```
+
+###### register()
+
+Register a renderer.
+
+**Returns:**
+
+- `Ok(())` if registration succeeded
+- `Err(...)` if the renderer name is invalid
+
+**Signature:**
+
+```java
+public void register(Renderer renderer) throws Error
+```
+
+###### get()
+
+Get a renderer by name.
+
+**Returns:**
+
+The renderer if found, or an error if not registered.
+
+**Signature:**
+
+```java
+public Renderer get(String name) throws Error
+```
+
+###### render()
+
+Render a document using the named renderer.
+
+Convenience method that looks up the renderer by name and renders the document.
+
+**Returns:**
+
+The rendered output string, or an error if the renderer is not found or rendering fails.
+
+**Signature:**
+
+```java
+public String render(String name, InternalDocument doc) throws Error
+```
+
+###### list()
+
+List all registered renderer names.
+
+**Signature:**
+
+```java
+public List<String> list()
+```
+
+###### remove()
+
+Remove a renderer from the registry.
+
+**Signature:**
+
+```java
+public void remove(String name)
+```
+
+###### resetToDefaults()
+
+Clear all renderers and re-register the built-in defaults.
+
+**Signature:**
+
+```java
+public void resetToDefaults() throws Error
+```
+
+###### defaultOptions()
+
+**Signature:**
+
+```java
+public static RendererRegistry defaultOptions()
+```
+
+
+---
+
+#### ResolvedRecModel
+
+Resolved recognition model with engine pool key for sharing.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `modelDir` | `String` | — | Directory containing model.onnx. |
+| `dictFile` | `String` | — | Path to the character dictionary file. |
+| `modelKey` | `String` | — | Engine pool key for sharing engines across script families. Multiple families may share the same key (e.g. chinese and japanese both map to "v2:unified_server" when using server tier). |
+
+
+---
+
+#### ResolvedStyle
+
+Fully resolved (flattened) style after walking the inheritance chain.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `paragraphProperties` | `ParagraphProperties` | — | Paragraph properties (paragraph properties) |
+| `runProperties` | `RunProperties` | — | Run properties (run properties) |
+
+
+---
+
+#### RowProperties
+
+Row-level properties from `<w:trPr>`.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `height` | `Optional<int>` | `null` | Height |
+| `heightRule` | `Optional<String>` | `null` | Height rule |
+| `isHeader` | `boolean` | — | Whether header |
+| `cantSplit` | `boolean` | — | Cant split |
+
+
+---
+
+#### RstExtractor
+
+Native Rust reStructuredText extractor.
+
+Parses RST documents using document tree parsing and extracts:
+- Metadata from field lists
+- Document structure (headings, sections)
+- Text content and inline formatting
+- Code blocks and directives
+- Tables and lists
+
+##### Methods
+
+###### buildInternalDocument()
+
+Build an `InternalDocument` from RST content.
+
+Handles sections, paragraphs, code blocks, tables, footnotes, citations,
+and cross-references.
+
+**Signature:**
+
+```java
+public static InternalDocument buildInternalDocument(String content, boolean injectPlaceholders)
+```
+
+###### defaultOptions()
+
+**Signature:**
+
+```java
+public static RstExtractor defaultOptions()
+```
+
+###### name()
+
+**Signature:**
+
+```java
+public String name()
+```
+
+###### version()
+
+**Signature:**
+
+```java
+public String version()
+```
+
+###### initialize()
+
+**Signature:**
+
+```java
+public void initialize() throws Error
+```
+
+###### shutdown()
+
+**Signature:**
+
+```java
+public void shutdown() throws Error
+```
+
+###### description()
+
+**Signature:**
+
+```java
+public String description()
+```
+
+###### author()
+
+**Signature:**
+
+```java
+public String author()
+```
+
+###### extractBytes()
+
+**Signature:**
+
+```java
+public InternalDocument extractBytes(byte[] content, String mimeType, ExtractionConfig config) throws Error
+```
+
+###### extractFile()
+
+**Signature:**
+
+```java
+public InternalDocument extractFile(String path, String mimeType, ExtractionConfig config) throws Error
+```
+
+###### supportedMimeTypes()
+
+**Signature:**
+
+```java
+public List<String> supportedMimeTypes()
+```
+
+###### priority()
+
+**Signature:**
+
+```java
+public int priority()
+```
+
+
+---
+
+#### RtDetrModel
+
+Docling RT-DETR v2 layout detection model.
+
+This model is NMS-free (transformer-based end-to-end detection).
+
+Input tensors:
+  - `images`:            f32 [batch, 3, 640, 640]  (preprocessed pixel data)
+  - `orig_target_sizes`: i64 [batch, 2]            ([height, width] of original image)
+
+Output tensors:
+  - `labels`: i64 [batch, num_queries]   (class IDs, 0-16)
+  - `boxes`:  f32 [batch, num_queries, 4] (bounding boxes in original image coordinates)
+  - `scores`: f32 [batch, num_queries]   (confidence scores)
+
+##### Methods
+
+###### fromFile()
+
+Load a Docling RT-DETR ONNX model from a file.
+
+**Signature:**
+
+```java
+public static RtDetrModel fromFile(String path, AccelerationConfig accel) throws LayoutError
+```
+
+###### detect()
+
+**Signature:**
+
+```java
+public List<LayoutDetection> detect(RgbImage img) throws LayoutError
+```
+
+###### detectWithThreshold()
+
+**Signature:**
+
+```java
+public List<LayoutDetection> detectWithThreshold(RgbImage img, float threshold) throws LayoutError
+```
+
+###### detectBatch()
+
+**Signature:**
+
+```java
+public List<List<LayoutDetection>> detectBatch(List<RgbImage> images, float threshold) throws LayoutError
+```
+
+###### name()
+
+**Signature:**
+
+```java
+public String name()
+```
+
+
+---
+
+#### RtfExtractor
+
+Native Rust RTF extractor.
+
+Extracts text content, metadata, and structure from RTF documents
+
+##### Methods
+
+###### defaultOptions()
+
+**Signature:**
+
+```java
+public static RtfExtractor defaultOptions()
+```
+
+###### name()
+
+**Signature:**
+
+```java
+public String name()
+```
+
+###### version()
+
+**Signature:**
+
+```java
+public String version()
+```
+
+###### initialize()
+
+**Signature:**
+
+```java
+public void initialize() throws Error
+```
+
+###### shutdown()
+
+**Signature:**
+
+```java
+public void shutdown() throws Error
+```
+
+###### description()
+
+**Signature:**
+
+```java
+public String description()
+```
+
+###### author()
+
+**Signature:**
+
+```java
+public String author()
+```
+
+###### extractBytes()
+
+**Signature:**
+
+```java
+public InternalDocument extractBytes(byte[] content, String mimeType, ExtractionConfig config) throws Error
+```
+
+###### supportedMimeTypes()
+
+**Signature:**
+
+```java
+public List<String> supportedMimeTypes()
+```
+
+###### priority()
+
+**Signature:**
+
+```java
+public int priority()
+```
+
+
+---
+
+#### Run
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `text` | `String` | — | Text |
+| `bold` | `boolean` | — | Bold |
+| `italic` | `boolean` | — | Italic |
+| `underline` | `boolean` | — | Underline |
+| `strikethrough` | `boolean` | — | Strikethrough |
+| `subscript` | `boolean` | — | Subscript |
+| `superscript` | `boolean` | — | Superscript |
+| `fontSize` | `Optional<int>` | `null` | Font size in half-points (from `w:sz`). |
+| `fontColor` | `Optional<String>` | `null` | Font color as "RRGGBB" hex (from `w:color`). |
+| `highlight` | `Optional<String>` | `null` | Highlight color name (from `w:highlight`). |
+| `hyperlinkUrl` | `Optional<String>` | `null` | Hyperlink url |
+| `mathLatex` | `Optional<StringBool>` | `null` | LaTeX math content: (latex_source, is_display_math). When set, this run represents an equation and `text` is ignored. |
+
+##### Methods
+
+###### toMarkdown()
+
+Render this run as markdown with formatting markers.
+
+**Signature:**
+
+```java
+public String toMarkdown()
+```
+
+
+---
+
+#### RunProperties
+
+Run-level formatting properties (bold, italic, font, size, color, etc.).
+
+All fields are `Option` so that inheritance resolution can distinguish
+"not set" (`null`) from "explicitly set" (`Some`).
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `bold` | `Optional<boolean>` | `null` | Bold |
+| `italic` | `Optional<boolean>` | `null` | Italic |
+| `underline` | `Optional<boolean>` | `null` | Underline |
+| `strikethrough` | `Optional<boolean>` | `null` | Strikethrough |
+| `color` | `Optional<String>` | `null` | Hex RGB color, e.g. `"2F5496"`. |
+| `fontSizeHalfPoints` | `Optional<int>` | `null` | Font size in half-points (`w:sz` val). Divide by 2 to get points. |
+| `fontAscii` | `Optional<String>` | `null` | ASCII font family (`w:rFonts w:ascii`). |
+| `fontAsciiTheme` | `Optional<String>` | `null` | ASCII theme font (`w:rFonts w:asciiTheme`). |
+| `vertAlign` | `Optional<String>` | `null` | Vertical alignment: "superscript", "subscript", or "baseline". |
+| `fontHAnsi` | `Optional<String>` | `null` | High ANSI font family (w:rFonts w:hAnsi). |
+| `fontCs` | `Optional<String>` | `null` | Complex script font family (w:rFonts w:cs). |
+| `fontEastAsia` | `Optional<String>` | `null` | East Asian font family (w:rFonts w:eastAsia). |
+| `highlight` | `Optional<String>` | `null` | Highlight color name (e.g., "yellow", "green", "cyan"). |
+| `caps` | `Optional<boolean>` | `null` | All caps text transformation. |
+| `smallCaps` | `Optional<boolean>` | `null` | Small caps text transformation. |
+| `shadow` | `Optional<boolean>` | `null` | Text shadow effect. |
+| `outline` | `Optional<boolean>` | `null` | Text outline effect. |
+| `emboss` | `Optional<boolean>` | `null` | Text emboss effect. |
+| `imprint` | `Optional<boolean>` | `null` | Text imprint (engrave) effect. |
+| `charSpacing` | `Optional<int>` | `null` | Character spacing in twips (from w:spacing w:val). |
+| `position` | `Optional<int>` | `null` | Vertical position offset in half-points (from w:position w:val). |
+| `kern` | `Optional<int>` | `null` | Kerning threshold in half-points (from w:kern w:val). |
+| `themeColor` | `Optional<String>` | `null` | Theme color reference (e.g., "accent1", "dk1"). |
+| `themeTint` | `Optional<String>` | `null` | Theme color tint modification (hex value). |
+| `themeShade` | `Optional<String>` | `null` | Theme color shade modification (hex value). |
+
+
+---
+
+#### Section
+
+A body-text section containing a flat list of paragraphs.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `paragraphs` | `List<Paragraph>` | `Collections.emptyList()` | Paragraphs |
+
+
+---
+
+#### SectionProperties
+
+DOCX section properties parsed from `w:sectPr` element.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `pageWidthTwips` | `Optional<int>` | `null` | Page width in twips (from `w:pgSz w:w`). |
+| `pageHeightTwips` | `Optional<int>` | `null` | Page height in twips (from `w:pgSz w:h`). |
+| `orientation` | `Optional<Orientation>` | `null` | Page orientation (from `w:pgSz w:orient`). |
+| `margins` | `PageMargins` | — | Page margins (from `w:pgMar`). |
+| `columns` | `ColumnLayout` | — | Column layout (from `w:cols`). |
+| `docGridLinePitch` | `Optional<int>` | `null` | Document grid line pitch in twips (from `w:docGrid w:linePitch`). |
+
+##### Methods
+
+###### pageWidthPoints()
+
+Convert page width from twips to points.
+
+**Signature:**
+
+```java
+public Optional<Double> pageWidthPoints()
+```
+
+###### pageHeightPoints()
+
+Convert page height from twips to points.
+
+**Signature:**
+
+```java
+public Optional<Double> pageHeightPoints()
+```
+
+
+---
+
+#### SecurityLimits
+
+Configuration for security limits across extractors.
+
+All limits are intentionally conservative to prevent DoS attacks
+while still supporting legitimate documents.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `maxArchiveSize` | `long` | — | Maximum uncompressed size for archives (500 MB) |
+| `maxCompressionRatio` | `long` | `100` | Maximum compression ratio before flagging as potential bomb (100:1) |
+| `maxFilesInArchive` | `long` | `10000` | Maximum number of files in archive (10,000) |
+| `maxNestingDepth` | `long` | `100` | Maximum nesting depth for structures (100) |
+| `maxEntityLength` | `long` | `32` | Maximum entity/string length (32) |
+| `maxContentSize` | `long` | — | Maximum string growth per document (100 MB) |
+| `maxIterations` | `long` | `10000000` | Maximum iterations per operation |
+| `maxXmlDepth` | `long` | `100` | Maximum XML depth (100 levels) |
+| `maxTableCells` | `long` | `100000` | Maximum cells per table (100,000) |
+
+##### Methods
+
+###### defaultOptions()
+
+**Signature:**
+
+```java
+public static SecurityLimits defaultOptions()
+```
+
+
+---
+
+#### SegmentData
+
+Text segment data extracted from PDF using pdfium's pre-merged segments.
+
+Pdfium merges characters sharing the same baseline and font settings into segments,
+providing correct word boundaries without gap-based heuristics. Each segment contains
+the full text run, bounding box, and font metadata sampled from the first character.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `text` | `String` | — | The segment text content (may contain spaces / multiple words) |
+| `x` | `float` | — | Left x position in PDF units |
+| `y` | `float` | — | Bottom y position in PDF units (PDF coordinate system, y=0 at bottom) |
+| `width` | `float` | — | Width of the segment bounding box |
+| `height` | `float` | — | Height of the segment bounding box |
+| `fontSize` | `float` | — | Font size in points (from first character) |
+| `isBold` | `boolean` | — | Whether the font is bold |
+| `isItalic` | `boolean` | — | Whether the font is italic |
+| `isMonospace` | `boolean` | — | Whether the font is monospace (e.g. Courier, Consolas) |
+| `baselineY` | `float` | — | Baseline Y position (from first character origin, falls back to bounds bottom) |
+| `assignedRole` | `Optional<byte>` | `null` | Pre-assigned heading level from the PDF structure tree (1-6), or `None` when the heading level is unknown and must be inferred via font-size clustering. |
+
+
+---
+
+#### ServerConfig
+
+API server configuration.
+
+This struct holds all configuration options for the Kreuzberg API server,
+including host/port settings, CORS configuration, and upload limits.
+
+# Defaults
+
+- `host`: "127.0.0.1" (localhost only)
+- `port`: 8000
+- `cors_origins`: empty vector (allows all origins)
+- `max_request_body_bytes`: 104_857_600 (100 MB)
+- `max_multipart_field_bytes`: 104_857_600 (100 MB)
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `host` | `String` | — | Server host address (e.g., "127.0.0.1", "0.0.0.0") |
+| `port` | `short` | — | Server port number |
+| `corsOrigins` | `List<String>` | `Collections.emptyList()` | CORS allowed origins. Empty vector means allow all origins. If this is an empty vector, the server will accept requests from any origin. If populated with specific origins (e.g., ["<https://example.com">]), only those origins will be allowed. |
+| `maxRequestBodyBytes` | `long` | — | Maximum size of request body in bytes (default: 100 MB) |
+| `maxMultipartFieldBytes` | `long` | — | Maximum size of multipart fields in bytes (default: 100 MB) |
+
+##### Methods
+
+###### defaultOptions()
+
+**Signature:**
+
+```java
+public static ServerConfig defaultOptions()
+```
+
+###### listenAddr()
+
+Get the server listen address (host:port).
+
+**Signature:**
+
+```java
+public String listenAddr()
+```
+
+###### corsAllowsAll()
+
+Check if CORS allows all origins.
+
+Returns `true` if the `cors_origins` vector is empty, meaning all origins
+are allowed. Returns `false` if specific origins are configured.
+
+**Signature:**
+
+```java
+public boolean corsAllowsAll()
+```
+
+###### isOriginAllowed()
+
+Check if a given origin is allowed by CORS configuration.
+
+Returns `true` if:
+- CORS allows all origins (empty origins list), or
+- The given origin is in the allowed origins list
+
+**Signature:**
+
+```java
+public boolean isOriginAllowed(String origin)
+```
+
+###### maxRequestBodyMb()
+
+Get maximum request body size in megabytes (rounded up).
+
+**Signature:**
+
+```java
+public long maxRequestBodyMb()
+```
+
+###### maxMultipartFieldMb()
+
+Get maximum multipart field size in megabytes (rounded up).
+
+**Signature:**
+
+```java
+public long maxMultipartFieldMb()
+```
+
+###### applyEnvOverrides()
+
+Apply environment variable overrides to the configuration.
+
+Reads the following environment variables and overrides config values if set:
+
+- `KREUZBERG_HOST` - Server host address
+- `KREUZBERG_PORT` - Server port number (parsed as u16)
+- `KREUZBERG_CORS_ORIGINS` - Comma-separated list of allowed origins
+- `KREUZBERG_MAX_REQUEST_BODY_BYTES` - Max request body size in bytes
+- `KREUZBERG_MAX_MULTIPART_FIELD_BYTES` - Max multipart field size in bytes
+
+**Errors:**
+
+Returns `KreuzbergError.Validation` if:
+- `KREUZBERG_PORT` cannot be parsed as u16
+- `KREUZBERG_MAX_REQUEST_BODY_BYTES` cannot be parsed as usize
+- `KREUZBERG_MAX_MULTIPART_FIELD_BYTES` cannot be parsed as usize
+
+**Signature:**
+
+```java
+public void applyEnvOverrides() throws Error
+```
+
+###### fromFile()
+
+Load server configuration from a file.
+
+Automatically detects the file format based on extension:
+- `.toml` - TOML format
+- `.yaml` or `.yml` - YAML format
+- `.json` - JSON format
+
+This function handles two config file formats:
+1. Flat format: Server config at root level
+2. Nested format: Server config under `[server]` section (combined with ExtractionConfig)
+
+**Errors:**
+
+Returns `KreuzbergError.Validation` if:
+- File doesn't exist or cannot be read
+- File extension is not recognized
+- File content is invalid for the detected format
+
+**Signature:**
+
+```java
+public static ServerConfig fromFile(Path path) throws Error
+```
+
+###### fromTomlFile()
+
+Load server configuration from a TOML file.
+
+**Errors:**
+
+Returns `KreuzbergError.Validation` if the file doesn't exist or is invalid TOML.
+
+**Signature:**
+
+```java
+public static ServerConfig fromTomlFile(Path path) throws Error
+```
+
+###### fromYamlFile()
+
+Load server configuration from a YAML file.
+
+**Errors:**
+
+Returns `KreuzbergError.Validation` if the file doesn't exist or is invalid YAML.
+
+**Signature:**
+
+```java
+public static ServerConfig fromYamlFile(Path path) throws Error
+```
+
+###### fromJsonFile()
+
+Load server configuration from a JSON file.
+
+**Errors:**
+
+Returns `KreuzbergError.Validation` if the file doesn't exist or is invalid JSON.
+
+**Signature:**
+
+```java
+public static ServerConfig fromJsonFile(Path path) throws Error
+```
+
+
+---
+
+#### SevenZExtractor
+
+7z archive extractor.
+
+Extracts file lists and text content from 7z archives.
+
+##### Methods
+
+###### defaultOptions()
+
+**Signature:**
+
+```java
+public static SevenZExtractor defaultOptions()
+```
+
+###### name()
+
+**Signature:**
+
+```java
+public String name()
+```
+
+###### version()
+
+**Signature:**
+
+```java
+public String version()
+```
+
+###### initialize()
+
+**Signature:**
+
+```java
+public void initialize() throws Error
+```
+
+###### shutdown()
+
+**Signature:**
+
+```java
+public void shutdown() throws Error
+```
+
+###### description()
+
+**Signature:**
+
+```java
+public String description()
+```
+
+###### author()
+
+**Signature:**
+
+```java
+public String author()
+```
+
+###### extractBytes()
+
+**Signature:**
+
+```java
+public InternalDocument extractBytes(byte[] content, String mimeType, ExtractionConfig config) throws Error
+```
+
+###### supportedMimeTypes()
+
+**Signature:**
+
+```java
+public List<String> supportedMimeTypes()
+```
+
+###### priority()
+
+**Signature:**
+
+```java
+public int priority()
+```
+
+###### asSyncExtractor()
+
+**Signature:**
+
+```java
+public Optional<SyncExtractor> asSyncExtractor()
+```
+
+###### extractSync()
+
+**Signature:**
+
+```java
+public InternalDocument extractSync(byte[] content, String mimeType, ExtractionConfig config) throws Error
+```
+
+
+---
+
+#### SharedModelPaths
+
+Paths to shared models (detection + classification).
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `detModel` | `String` | — | Path to the detection model directory. |
+| `clsModel` | `String` | — | Path to the classification model directory. |
+
+
+---
+
+#### SlanetCell
+
+A single cell detected by SLANeXT.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `polygon` | `F328` | — | Bounding box polygon in image pixel coordinates. Format: [x1, y1, x2, y2, x3, y3, x4, y4] (4 corners, clockwise from top-left). |
+| `bbox` | `F324` | — | Axis-aligned bounding box derived from polygon: [left, top, right, bottom]. |
+| `row` | `long` | — | Row index in the table (0-based). |
+| `col` | `long` | — | Column index within the row (0-based). |
+
+
+---
+
+#### SlanetModel
+
+SLANeXT table structure recognition model.
+
+Wraps an ORT session for SLANeXT ONNX model and provides preprocessing,
+inference, and post-processing in a single `recognize` call.
+
+##### Methods
+
+###### fromFile()
+
+Load a SLANeXT ONNX model from a file path.
+
+**Signature:**
+
+```java
+public static SlanetModel fromFile(String path, AccelerationConfig accel) throws LayoutError
+```
+
+###### recognize()
+
+Recognize table structure from a cropped table image.
+
+Returns a `SlanetResult` with detected cells, grid dimensions,
+and structure tokens.
+
+**Signature:**
+
+```java
+public SlanetResult recognize(RgbImage tableImg) throws LayoutError
+```
+
+
+---
+
+#### SlanetResult
+
+SLANeXT recognition result for a single table image.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `cells` | `List<SlanetCell>` | — | Detected cells with bounding boxes and grid positions. |
+| `numRows` | `long` | — | Number of rows in the table. |
+| `numCols` | `long` | — | Maximum number of columns across all rows. |
+| `confidence` | `float` | — | Average structure prediction confidence. |
+| `structureTokens` | `List<String>` | — | Raw HTML structure tokens (for debugging). |
+
+
+---
+
+#### StreamReader
+
+##### Methods
+
+###### readU8()
+
+**Signature:**
+
+```java
+public byte readU8() throws Error
+```
+
+###### readU16()
+
+**Signature:**
+
+```java
+public short readU16() throws Error
+```
+
+###### readU32()
+
+**Signature:**
+
+```java
+public int readU32() throws Error
+```
+
+###### readBytes()
+
+**Signature:**
+
+```java
+public byte[] readBytes(long len) throws Error
+```
+
+###### position()
+
+Current byte position within the stream.
+
+**Signature:**
+
+```java
+public long position()
+```
+
+###### remaining()
+
+Number of bytes remaining from the current position to the end.
+
+**Signature:**
+
+```java
+public long remaining()
+```
+
+
+---
+
+#### StringBufferPool
+
+Convenience type alias for a pooled String.
+
+
+---
+
+#### StringBufferPoolMetrics
+
+Metrics for StringBufferPool (only available with `pool-metrics` feature).
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `totalAcquires` | `long` | — | Total number of acquire calls |
+| `totalReuses` | `long` | — | Total number of buffer reuses from pool |
+| `hitRate` | `double` | — | Hit rate as percentage (0.0-100.0) |
+
+
+---
+
+#### StringGrowthValidator
+
+Helper struct for tracking and validating string growth.
+
+##### Methods
+
+###### checkAppend()
+
+Validate and update size after appending.
+
+**Returns:**
+* `Ok(())` if size is within limits
+* `Err(SecurityError)` if size exceeds limit
+
+**Signature:**
+
+```java
+public void checkAppend(long len) throws SecurityError
+```
+
+###### currentSize()
+
+Get current size.
+
+**Signature:**
+
+```java
+public long currentSize()
+```
+
+
+---
+
+#### StructuredData
+
+Structured data (Schema.org, microdata, RDFa) block.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `dataType` | `StructuredDataType` | — | Type of structured data |
+| `rawJson` | `String` | — | Raw JSON string representation |
+| `schemaType` | `Optional<String>` | `null` | Schema type if detectable (e.g., "Article", "Event", "Product") |
+
+
+---
+
+#### StructuredDataResult
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `content` | `String` | — | The extracted text content |
+| `format` | `Str` | — | Format (str) |
+| `metadata` | `Map<String, String>` | — | Document metadata |
+| `textFields` | `List<String>` | — | Text fields |
+
+
+---
+
+#### StructuredExtractionConfig
+
+Configuration for LLM-based structured data extraction.
+
+Sends extracted document content to a VLM with a JSON schema,
+returning structured data that conforms to the schema.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `schema` | `Object` | — | JSON Schema defining the desired output structure. |
+| `schemaName` | `String` | — | Schema name passed to the LLM's structured output mode. |
+| `schemaDescription` | `Optional<String>` | `null` | Optional schema description for the LLM. |
+| `strict` | `boolean` | — | Enable strict mode — output must exactly match the schema. |
+| `prompt` | `Optional<String>` | `null` | Custom Jinja2 extraction prompt template. When `None`, a default template is used. Available template variables: - `{{ content }}` — The extracted document text. - `{{ schema }}` — The JSON schema as a formatted string. - `{{ schema_name }}` — The schema name. - `{{ schema_description }}` — The schema description (may be empty). |
+| `llm` | `LlmConfig` | — | LLM configuration for the extraction. |
+
+
+---
+
+#### StructuredExtractionResponse
+
+Response from structured extraction endpoint.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `structuredOutput` | `Object` | — | Structured data conforming to the provided JSON schema |
+| `content` | `String` | — | Extracted document text content |
+| `mimeType` | `String` | — | Detected MIME type of the input file |
+
+
+---
+
+#### StructuredExtractor
+
+Structured data extractor supporting JSON, JSONL/NDJSON, YAML, and TOML.
+
+##### Methods
+
+###### defaultOptions()
+
+**Signature:**
+
+```java
+public static StructuredExtractor defaultOptions()
+```
+
+###### name()
+
+**Signature:**
+
+```java
+public String name()
+```
+
+###### version()
+
+**Signature:**
+
+```java
+public String version()
+```
+
+###### initialize()
+
+**Signature:**
+
+```java
+public void initialize() throws Error
+```
+
+###### shutdown()
+
+**Signature:**
+
+```java
+public void shutdown() throws Error
+```
+
+###### extractBytes()
+
+**Signature:**
+
+```java
+public InternalDocument extractBytes(byte[] content, String mimeType, ExtractionConfig config) throws Error
+```
+
+###### supportedMimeTypes()
+
+**Signature:**
+
+```java
+public List<String> supportedMimeTypes()
+```
+
+###### priority()
+
+**Signature:**
+
+```java
+public int priority()
+```
+
+
+---
+
+#### StyleCatalog
+
+Catalog of all styles parsed from `word/styles.xml`, plus document defaults.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `styles` | `AHashMap` | — | Styles (a hash map) |
+| `defaultParagraphProperties` | `ParagraphProperties` | — | Default paragraph properties (paragraph properties) |
+| `defaultRunProperties` | `RunProperties` | — | Default run properties (run properties) |
+
+##### Methods
+
+###### resolveStyle()
+
+Resolve a style by walking its `basedOn` inheritance chain.
+
+The resolution order is:
+1. Document defaults (`<w:docDefaults>`)
+2. Base style chain (walking `basedOn` from root to leaf)
+3. The style itself
+
+For `Option` fields, a child value of `Some(x)` overrides the parent.
+A value of `null` inherits from the parent. For boolean toggle properties,
+`Some(false)` explicitly disables the property.
+
+The chain depth is limited to 20 to prevent infinite loops from circular references.
+
+**Signature:**
+
+```java
+public ResolvedStyle resolveStyle(String styleId)
+```
+
+
+---
+
+#### StyleDefinition
+
+A single style definition parsed from `<w:style>` in `word/styles.xml`.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `id` | `String` | — | The style ID (`w:styleId` attribute). |
+| `name` | `Optional<String>` | `null` | Human-readable name (`<w:name w:val="..."/>`). |
+| `styleType` | `StyleType` | — | Style type: paragraph, character, table, or numbering. |
+| `basedOn` | `Optional<String>` | `null` | ID of the parent style (`<w:basedOn w:val="..."/>`). |
+| `nextStyle` | `Optional<String>` | `null` | ID of the style to apply to the next paragraph (`<w:next w:val="..."/>`). |
+| `isDefault` | `boolean` | — | Whether this is the default style for its type. |
+| `paragraphProperties` | `ParagraphProperties` | — | Paragraph properties defined directly on this style. |
+| `runProperties` | `RunProperties` | — | Run properties defined directly on this style. |
+
+
+---
+
+#### StyledHtmlRenderer
+
+Styled HTML renderer.
+
+Implements the `Renderer` trait; registered as `"html"` when the
+`html` feature is active. Configuration is baked in at
+construction time — no per-render allocation for CSS resolution.
+
+##### Methods
+
+###### new()
+
+**Signature:**
+
+```java
+public static StyledHtmlRenderer new(HtmlOutputConfig config) throws Error
+```
+
+###### name()
+
+**Signature:**
+
+```java
+public String name()
+```
+
+###### render()
+
+**Signature:**
+
+```java
+public String render(InternalDocument doc) throws Error
+```
+
+
+---
+
+#### SupportedFormat
+
+A supported document format entry.
+
+Represents a file extension and its corresponding MIME type that Kreuzberg can process.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `extension` | `String` | — | File extension (without leading dot), e.g., "pdf", "docx" |
+| `mimeType` | `String` | — | MIME type string, e.g., "application/pdf" |
+
+
+---
+
+#### SyncExtractor
+
+Trait for extractors that can work synchronously (WASM-compatible).
+
+This trait defines the synchronous extraction interface for WASM targets and other
+environments where async/tokio runtimes are not available or desirable.
+
+# Implementation
+
+Extractors that need to support WASM should implement this trait in addition to
+the async `DocumentExtractor` trait. This allows the same extractor to work in both
+environments by delegating to the sync implementation.
+
+# MIME Type Validation
+
+The `mime_type` parameter is guaranteed to be already validated.
+
+##### Methods
+
+###### extractSync()
+
+Extract content from a byte array synchronously.
+
+This method performs extraction without requiring an async runtime.
+It is called by `extract_bytes_sync()` when the `tokio-runtime` feature is disabled.
+
+**Returns:**
+
+An `InternalDocument` containing the extracted elements, metadata, and tables.
+
+**Signature:**
+
+```java
+public InternalDocument extractSync(byte[] content, String mimeType, ExtractionConfig config) throws Error
+```
+
+
+---
+
+#### Table
+
+Extracted table structure.
+
+Represents a table detected and extracted from a document (PDF, image, etc.).
+Tables are converted to both structured cell data and Markdown format.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `cells` | `List<List<String>>` | `Collections.emptyList()` | Table cells as a 2D vector (rows × columns) |
+| `markdown` | `String` | — | Markdown representation of the table |
+| `pageNumber` | `long` | — | Page number where the table was found (1-indexed) |
+| `boundingBox` | `Optional<BoundingBox>` | `null` | Bounding box of the table on the page (PDF coordinates: x0=left, y0=bottom, x1=right, y1=top). Only populated for PDF-extracted tables when position data is available. |
+
+
+---
+
+#### TableBorders
+
+Borders for a table (6 borders: top, bottom, left, right, insideH, insideV).
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `top` | `Optional<BorderStyle>` | `null` | Top (border style) |
+| `bottom` | `Optional<BorderStyle>` | `null` | Bottom (border style) |
+| `left` | `Optional<BorderStyle>` | `null` | Left (border style) |
+| `right` | `Optional<BorderStyle>` | `null` | Right (border style) |
+| `insideH` | `Optional<BorderStyle>` | `null` | Inside h (border style) |
+| `insideV` | `Optional<BorderStyle>` | `null` | Inside v (border style) |
+
+
+---
+
+#### TableCell
+
+Individual table cell with content and optional styling.
+
+Future extension point for rich table support with cell-level metadata.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `content` | `String` | — | Cell content as text |
+| `rowSpan` | `long` | — | Row span (number of rows this cell spans) |
+| `colSpan` | `long` | — | Column span (number of columns this cell spans) |
+| `isHeader` | `boolean` | — | Whether this is a header cell |
+
+
+---
+
+#### TableClassifier
+
+PP-LCNet table classifier model.
+
+##### Methods
+
+###### fromFile()
+
+Load the table classifier ONNX model from a file path.
+
+**Signature:**
+
+```java
+public static TableClassifier fromFile(String path, AccelerationConfig accel) throws LayoutError
+```
+
+###### classify()
+
+Classify a cropped table image as wired or wireless.
+
+**Signature:**
+
+```java
+public TableType classify(RgbImage tableImg) throws LayoutError
+```
+
+
+---
+
+#### TableGrid
+
+Structured table grid with cell-level metadata.
+
+Stores row/column dimensions and a flat list of cells with position info.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `rows` | `int` | — | Number of rows in the table. |
+| `cols` | `int` | — | Number of columns in the table. |
+| `cells` | `List<GridCell>` | `Collections.emptyList()` | All cells in row-major order. |
+
+
+---
+
+#### TableLook
+
+Table look bitmask/flags controlling conditional formatting bands.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `firstRow` | `boolean` | — | First row |
+| `lastRow` | `boolean` | — | Last row |
+| `firstColumn` | `boolean` | — | First column |
+| `lastColumn` | `boolean` | — | Last column |
+| `noHBand` | `boolean` | — | No h band |
+| `noVBand` | `boolean` | — | No v band |
+
+
+---
+
+#### TableProperties
+
+Table-level properties from `<w:tblPr>`.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `styleId` | `Optional<String>` | `null` | Style id |
+| `width` | `Optional<TableWidth>` | `null` | Width (table width) |
+| `alignment` | `Optional<String>` | `null` | Alignment |
+| `layout` | `Optional<String>` | `null` | Layout |
+| `look` | `Optional<TableLook>` | `null` | Look (table look) |
+| `borders` | `Optional<TableBorders>` | `null` | Borders (table borders) |
+| `cellMargins` | `Optional<CellMargins>` | `null` | Cell margins (cell margins) |
+| `indent` | `Optional<TableWidth>` | `null` | Indent (table width) |
+| `caption` | `Optional<String>` | `null` | Caption |
+
+
+---
+
+#### TableRow
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `cells` | `List<TableCell>` | `Collections.emptyList()` | Cells |
+| `properties` | `Optional<RowProperties>` | `null` | Properties (row properties) |
+
+
+---
+
+#### TableValidator
+
+Helper struct for validating table cell counts.
+
+##### Methods
+
+###### addCells()
+
+Add cells to table and validate.
+
+**Returns:**
+* `Ok(())` if cell count is within limits
+* `Err(SecurityError)` if cell count exceeds limit
+
+**Signature:**
+
+```java
+public void addCells(long count) throws SecurityError
+```
+
+###### currentCells()
+
+Get current cell count.
+
+**Signature:**
+
+```java
+public long currentCells()
+```
+
+
+---
+
+#### TableWidth
+
+Width specification used for tables and cells.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `value` | `int` | — | Value |
+| `widthType` | `String` | — | Width type |
+
+
+---
+
+#### TarExtractor
+
+TAR archive extractor.
+
+Extracts file lists and text content from TAR archives.
+
+##### Methods
+
+###### defaultOptions()
+
+**Signature:**
+
+```java
+public static TarExtractor defaultOptions()
+```
+
+###### name()
+
+**Signature:**
+
+```java
+public String name()
+```
+
+###### version()
+
+**Signature:**
+
+```java
+public String version()
+```
+
+###### initialize()
+
+**Signature:**
+
+```java
+public void initialize() throws Error
+```
+
+###### shutdown()
+
+**Signature:**
+
+```java
+public void shutdown() throws Error
+```
+
+###### description()
+
+**Signature:**
+
+```java
+public String description()
+```
+
+###### author()
+
+**Signature:**
+
+```java
+public String author()
+```
+
+###### extractBytes()
+
+**Signature:**
+
+```java
+public InternalDocument extractBytes(byte[] content, String mimeType, ExtractionConfig config) throws Error
+```
+
+###### supportedMimeTypes()
+
+**Signature:**
+
+```java
+public List<String> supportedMimeTypes()
+```
+
+###### priority()
+
+**Signature:**
+
+```java
+public int priority()
+```
+
+###### asSyncExtractor()
+
+**Signature:**
+
+```java
+public Optional<SyncExtractor> asSyncExtractor()
+```
+
+###### extractSync()
+
+**Signature:**
+
+```java
+public InternalDocument extractSync(byte[] content, String mimeType, ExtractionConfig config) throws Error
+```
+
+
+---
+
+#### TatrDetection
+
+A single TATR detection result.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `bbox` | `F324` | — | Bounding box in crop-pixel coordinates: `[x1, y1, x2, y2]`. |
+| `confidence` | `float` | — | Detection confidence score (0.0..1.0). |
+| `class` | `TatrClass` | — | Detected class. |
+
+
+---
+
+#### TatrModel
+
+TATR (Table Transformer) table structure recognition model.
+
+Wraps an ORT session for the TATR ONNX model and provides preprocessing,
+inference, and post-processing in a single `recognize` call.
+
+##### Methods
+
+###### fromFile()
+
+Load a TATR ONNX model from a file path.
+
+Uses the default execution provider selection from `build_session`
+with a CPU-only fallback if the platform EP fails.
+
+**Signature:**
+
+```java
+public static TatrModel fromFile(String path, AccelerationConfig accel) throws LayoutError
+```
+
+###### recognize()
+
+Recognize table structure from a cropped table image.
+
+Returns a `TatrResult` with detected rows, columns, headers, and
+spanning cells in the input image's pixel coordinate space.
+
+**Signature:**
+
+```java
+public TatrResult recognize(RgbImage tableImg) throws LayoutError
+```
+
+
+---
+
+#### TatrResult
+
+Aggregated TATR recognition result with detections separated by class.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `rows` | `List<TatrDetection>` | — | Detected rows, sorted top-to-bottom by `y2`. |
+| `columns` | `List<TatrDetection>` | — | Detected columns, sorted left-to-right by `x2`. |
+| `headers` | `List<TatrDetection>` | — | Detected headers (ColumnHeader and ProjectedRowHeader). |
+| `spanning` | `List<TatrDetection>` | — | Detected spanning cells. |
+
+
+---
+
+#### TessdataManager
+
+Manages tessdata file downloading, caching, and manifest generation.
+
+##### Methods
+
+###### cacheDir()
+
+Get the cache directory path.
+
+**Signature:**
+
+```java
+public String cacheDir()
+```
+
+###### isLanguageCached()
+
+Check if a specific language traineddata file is cached.
+
+**Signature:**
+
+```java
+public boolean isLanguageCached(String lang)
+```
+
+
+---
+
+#### TesseractBackend
+
+Native Tesseract OCR backend.
+
+This backend wraps the OcrProcessor and implements the OcrBackend trait,
+allowing it to be used through the plugin system.
+
+# Thread Safety
+
+Uses Arc for shared ownership and is thread-safe (Send + Sync).
+
+##### Methods
+
+###### new()
+
+Create a new Tesseract backend with default cache directory.
+
+**Signature:**
+
+```java
+public static TesseractBackend new() throws Error
+```
+
+###### withCacheDir()
+
+Create a new Tesseract backend with custom cache directory.
+
+**Signature:**
+
+```java
+public static TesseractBackend withCacheDir(String cacheDir) throws Error
+```
+
+###### defaultOptions()
+
+**Signature:**
+
+```java
+public static TesseractBackend defaultOptions()
+```
+
+###### name()
+
+**Signature:**
+
+```java
+public String name()
+```
+
+###### version()
+
+**Signature:**
+
+```java
+public String version()
+```
+
+###### initialize()
+
+**Signature:**
+
+```java
+public void initialize() throws Error
+```
+
+###### shutdown()
+
+**Signature:**
+
+```java
+public void shutdown() throws Error
+```
+
+###### processImage()
+
+**Signature:**
+
+```java
+public ExtractionResult processImage(byte[] imageBytes, OcrConfig config) throws Error
+```
+
+###### processImageFile()
+
+**Signature:**
+
+```java
+public ExtractionResult processImageFile(String path, OcrConfig config) throws Error
+```
+
+###### supportsLanguage()
+
+**Signature:**
+
+```java
+public boolean supportsLanguage(String lang)
+```
+
+###### backendType()
+
+**Signature:**
+
+```java
+public OcrBackendType backendType()
+```
+
+###### supportedLanguages()
+
+**Signature:**
+
+```java
+public List<String> supportedLanguages()
+```
+
+###### supportsTableDetection()
+
+**Signature:**
+
+```java
+public boolean supportsTableDetection()
+```
+
+
+---
+
+#### TesseractConfig
+
+Tesseract OCR configuration.
+
+Provides fine-grained control over Tesseract OCR engine parameters.
+Most users can use the defaults, but these settings allow optimization
+for specific document types (invoices, handwriting, etc.).
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `language` | `String` | `"eng"` | Language code (e.g., "eng", "deu", "fra") |
+| `psm` | `int` | `3` | Page Segmentation Mode (0-13). Common values: - 3: Fully automatic page segmentation (default) - 6: Assume a single uniform block of text - 11: Sparse text with no particular order |
+| `outputFormat` | `String` | `"markdown"` | Output format ("text" or "markdown") |
+| `oem` | `int` | `3` | OCR Engine Mode (0-3). - 0: Legacy engine only - 1: Neural nets (LSTM) only (usually best) - 2: Legacy + LSTM - 3: Default (based on what's available) |
+| `minConfidence` | `double` | `0` | Minimum confidence threshold (0.0-100.0). Words with confidence below this threshold may be rejected or flagged. |
+| `preprocessing` | `Optional<ImagePreprocessingConfig>` | `null` | Image preprocessing configuration. Controls how images are preprocessed before OCR. Can significantly improve quality for scanned documents or low-quality images. |
+| `enableTableDetection` | `boolean` | `true` | Enable automatic table detection and reconstruction |
+| `tableMinConfidence` | `double` | `0` | Minimum confidence threshold for table detection (0.0-1.0) |
+| `tableColumnThreshold` | `int` | `50` | Column threshold for table detection (pixels) |
+| `tableRowThresholdRatio` | `double` | `0.5` | Row threshold ratio for table detection (0.0-1.0) |
+| `useCache` | `boolean` | `true` | Enable OCR result caching |
+| `classifyUsePreAdaptedTemplates` | `boolean` | `true` | Use pre-adapted templates for character classification |
+| `languageModelNgramOn` | `boolean` | `false` | Enable N-gram language model |
+| `tesseditDontBlkrejGoodWds` | `boolean` | `true` | Don't reject good words during block-level processing |
+| `tesseditDontRowrejGoodWds` | `boolean` | `true` | Don't reject good words during row-level processing |
+| `tesseditEnableDictCorrection` | `boolean` | `true` | Enable dictionary correction |
+| `tesseditCharWhitelist` | `String` | `""` | Whitelist of allowed characters (empty = all allowed) |
+| `tesseditCharBlacklist` | `String` | `""` | Blacklist of forbidden characters (empty = none forbidden) |
+| `tesseditUsePrimaryParamsModel` | `boolean` | `true` | Use primary language params model |
+| `textordSpaceSizeIsVariable` | `boolean` | `true` | Variable-width space detection |
+| `thresholdingMethod` | `boolean` | `false` | Use adaptive thresholding method |
+
+##### Methods
+
+###### defaultOptions()
+
+**Signature:**
+
+```java
+public static TesseractConfig defaultOptions()
+```
+
+
+---
+
+#### TextAnnotation
+
+Inline text annotation — byte-range based formatting and links.
+
+Annotations reference byte offsets into the node's text content,
+enabling precise identification of formatted regions.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `start` | `int` | — | Start byte offset in the node's text content (inclusive). |
+| `end` | `int` | — | End byte offset in the node's text content (exclusive). |
+| `kind` | `AnnotationKind` | — | Annotation type. |
+
+
+---
+
+#### TextBlock
+
+A block of text with spatial and semantic information.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `text` | `String` | — | The text content |
+| `bbox` | `BoundingBox` | — | The bounding box of the block |
+| `fontSize` | `float` | — | The font size of the text in this block |
+
+
+---
+
+#### TextExtractionResult
+
+Plain text and Markdown extraction result.
+
+Contains the extracted text along with statistics and,
+for Markdown files, structural elements like headers and links.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `content` | `String` | — | Extracted text content |
+| `lineCount` | `long` | — | Number of lines |
+| `wordCount` | `long` | — | Number of words |
+| `characterCount` | `long` | — | Number of characters |
+| `headers` | `Optional<List<String>>` | `null` | Markdown headers (text only, Markdown files only) |
+| `links` | `Optional<List<StringString>>` | `null` | Markdown links as (text, URL) tuples (Markdown files only) |
+| `codeBlocks` | `Optional<List<StringString>>` | `null` | Code blocks as (language, code) tuples (Markdown files only) |
+
+
+---
+
+#### TextMetadata
+
+Text/Markdown metadata.
+
+Extracted from plain text and Markdown files. Includes word counts and,
+for Markdown, structural elements like headers and links.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `lineCount` | `long` | — | Number of lines in the document |
+| `wordCount` | `long` | — | Number of words |
+| `characterCount` | `long` | — | Number of characters |
+| `headers` | `Optional<List<String>>` | `Collections.emptyList()` | Markdown headers (headings text only, for Markdown files) |
+| `links` | `Optional<List<StringString>>` | `Collections.emptyList()` | Markdown links as (text, url) tuples (for Markdown files) |
+| `codeBlocks` | `Optional<List<StringString>>` | `Collections.emptyList()` | Code blocks as (language, code) tuples (for Markdown files) |
+
+
+---
+
+#### Theme
+
+Complete theme with color scheme and font scheme.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `name` | `String` | — | Theme name (e.g., "Office Theme"). |
+| `colorScheme` | `Optional<ColorScheme>` | `null` | Color scheme (12 standard colors). |
+| `fontScheme` | `Optional<FontScheme>` | `null` | Font scheme (major and minor fonts). |
+
+
+---
+
+#### TokenReducer
+
+##### Methods
+
+###### new()
+
+**Signature:**
+
+```java
+public static TokenReducer new(TokenReductionConfig config, String languageHint) throws Error
+```
+
+###### language()
+
+Get the language code being used for stopwords and semantic analysis.
+
+**Signature:**
+
+```java
+public String language()
+```
+
+###### reduce()
+
+**Signature:**
+
+```java
+public String reduce(String text)
+```
+
+###### batchReduce()
+
+**Signature:**
+
+```java
+public List<String> batchReduce(List<String> texts)
+```
+
+
+---
+
+#### TokenReductionConfig
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `level` | `ReductionLevel` | `ReductionLevel.MODERATE` | Level (reduction level) |
+| `languageHint` | `Optional<String>` | `null` | Language hint |
+| `preserveMarkdown` | `boolean` | `false` | Preserve markdown |
+| `preserveCode` | `boolean` | `true` | Preserve code |
+| `semanticThreshold` | `float` | `0.3` | Semantic threshold |
+| `enableParallel` | `boolean` | `true` | Enable parallel |
+| `useSimd` | `boolean` | `true` | Use simd |
+| `customStopwords` | `Optional<Map<String, List<String>>>` | `null` | Custom stopwords |
+| `preservePatterns` | `List<String>` | `Collections.emptyList()` | Preserve patterns |
+| `targetReduction` | `Optional<float>` | `null` | Target reduction |
+| `enableSemanticClustering` | `boolean` | `false` | Enable semantic clustering |
+
+##### Methods
+
+###### defaultOptions()
+
+**Signature:**
+
+```java
+public static TokenReductionConfig defaultOptions()
+```
+
+
+---
+
+#### TokenReductionOptions
+
+Token reduction configuration.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `mode` | `String` | — | Reduction mode: "off", "light", "moderate", "aggressive", "maximum" |
+| `preserveImportantWords` | `boolean` | — | Preserve important words (capitalized, technical terms) |
+
+
+---
+
+#### TracingLayer
+
+A `tower.Layer` that wraps each extraction in a semantic tracing span.
+
+##### Methods
+
+###### layer()
+
+**Signature:**
+
+```java
+public Service layer(S inner)
+```
+
+
+---
+
+#### TreeSitterConfig
+
+Configuration for tree-sitter language pack integration.
+
+Controls grammar download behavior and code analysis options.
+
+# Example (TOML)
+
+```toml
+[tree_sitter]
+languages = ["python", "rust"]
+groups = ["web"]
+
+[tree_sitter.process]
+structure = true
+comments = true
+docstrings = true
+```
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `enabled` | `boolean` | `true` | Enable code intelligence processing (default: true). When `False`, tree-sitter analysis is completely skipped even if the config section is present. |
+| `cacheDir` | `Optional<String>` | `null` | Custom cache directory for downloaded grammars. When `None`, uses the default: `~/.cache/tree-sitter-language-pack/v{version}/libs/`. |
+| `languages` | `Optional<List<String>>` | `null` | Languages to pre-download on init (e.g., `["python", "rust"]`). |
+| `groups` | `Optional<List<String>>` | `null` | Language groups to pre-download (e.g., `["web", "systems", "scripting"]`). |
+| `process` | `TreeSitterProcessConfig` | — | Processing options for code analysis. |
+
+##### Methods
+
+###### defaultOptions()
+
+**Signature:**
+
+```java
+public static TreeSitterConfig defaultOptions()
+```
+
+
+---
+
+#### TreeSitterProcessConfig
+
+Processing options for tree-sitter code analysis.
+
+Controls which analysis features are enabled when extracting code files.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `structure` | `boolean` | `true` | Extract structural items (functions, classes, structs, etc.). Default: true. |
+| `imports` | `boolean` | `true` | Extract import statements. Default: true. |
+| `exports` | `boolean` | `true` | Extract export statements. Default: true. |
+| `comments` | `boolean` | `false` | Extract comments. Default: false. |
+| `docstrings` | `boolean` | `false` | Extract docstrings. Default: false. |
+| `symbols` | `boolean` | `false` | Extract symbol definitions. Default: false. |
+| `diagnostics` | `boolean` | `false` | Include parse diagnostics. Default: false. |
+| `chunkMaxSize` | `Optional<long>` | `null` | Maximum chunk size in bytes. `None` disables chunking. |
+| `contentMode` | `CodeContentMode` | `CodeContentMode.CHUNKS` | Content rendering mode for code extraction. |
+
+##### Methods
+
+###### defaultOptions()
+
+**Signature:**
+
+```java
+public static TreeSitterProcessConfig defaultOptions()
+```
+
+
+---
+
+#### TsvRow
+
+Tesseract TSV row data for conversion.
+
+This struct represents a single row from Tesseract's TSV output format.
+TSV format includes hierarchical information (block, paragraph, line, word)
+along with bounding boxes and confidence scores.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `level` | `int` | — | Hierarchical level (1=block, 2=para, 3=line, 4=word, 5=symbol) |
+| `pageNum` | `int` | — | Page number (1-indexed) |
+| `blockNum` | `int` | — | Block number within page |
+| `parNum` | `int` | — | Paragraph number within block |
+| `lineNum` | `int` | — | Line number within paragraph |
+| `wordNum` | `int` | — | Word number within line |
+| `left` | `int` | — | Left x-coordinate in pixels |
+| `top` | `int` | — | Top y-coordinate in pixels |
+| `width` | `int` | — | Width in pixels |
+| `height` | `int` | — | Height in pixels |
+| `conf` | `double` | — | Confidence score (0-100) |
+| `text` | `String` | — | Recognized text |
+
+
+---
+
+#### TypstExtractor
+
+Typst document extractor
+
+##### Methods
+
+###### defaultOptions()
+
+**Signature:**
+
+```java
+public static TypstExtractor defaultOptions()
+```
+
+###### name()
+
+**Signature:**
+
+```java
+public String name()
+```
+
+###### version()
+
+**Signature:**
+
+```java
+public String version()
+```
+
+###### initialize()
+
+**Signature:**
+
+```java
+public void initialize() throws Error
+```
+
+###### shutdown()
+
+**Signature:**
+
+```java
+public void shutdown() throws Error
+```
+
+###### description()
+
+**Signature:**
+
+```java
+public String description()
+```
+
+###### author()
+
+**Signature:**
+
+```java
+public String author()
+```
+
+###### extractBytes()
+
+**Signature:**
+
+```java
+public InternalDocument extractBytes(byte[] content, String mimeType, ExtractionConfig config) throws Error
+```
+
+###### extractFile()
+
+**Signature:**
+
+```java
+public InternalDocument extractFile(String path, String mimeType, ExtractionConfig config) throws Error
+```
+
+###### supportedMimeTypes()
+
+**Signature:**
+
+```java
+public List<String> supportedMimeTypes()
+```
+
+###### priority()
+
+**Signature:**
+
+```java
+public int priority()
+```
+
+
+---
+
+#### Uri
+
+A URI extracted from a document.
+
+Represents any link, reference, or resource pointer found during extraction.
+The `kind` field classifies the URI semantically, while `label` carries
+optional human-readable display text.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `url` | `String` | — | The URL or path string. |
+| `label` | `Optional<String>` | `null` | Optional display text / label for the link. |
+| `page` | `Optional<int>` | `null` | Optional page number where the URI was found (1-indexed). |
+| `kind` | `UriKind` | — | Semantic classification of the URI. |
+
+##### Methods
+
+###### hyperlink()
+
+Create a new hyperlink URI, auto-classifying `mailto:` as Email and `#` as Anchor.
+
+**Signature:**
+
+```java
+public static Uri hyperlink(String url, String label)
+```
+
+###### image()
+
+Create a new image URI.
+
+**Signature:**
+
+```java
+public static Uri image(String url, String label)
+```
+
+###### citation()
+
+Create a new citation URI (for DOIs, academic references).
+
+**Signature:**
+
+```java
+public static Uri citation(String url, String label)
+```
+
+###### anchor()
+
+Create a new anchor/cross-reference URI.
+
+**Signature:**
+
+```java
+public static Uri anchor(String url, String label)
+```
+
+###### email()
+
+Create a new email URI.
+
+**Signature:**
+
+```java
+public static Uri email(String url, String label)
+```
+
+###### reference()
+
+Create a new reference URI.
+
+**Signature:**
+
+```java
+public static Uri reference(String url, String label)
+```
+
+###### withPage()
+
+Set the page number.
+
+**Signature:**
+
+```java
+public Uri withPage(int page)
+```
+
+
+---
+
+#### ValidatorRegistry
+
+Registry for validator plugins.
+
+Manages validators with priority-based execution order.
+
+##### Methods
+
+###### register()
+
+Register a validator.
+
+**Signature:**
+
+```java
+public void register(Validator validator) throws Error
+```
+
+###### getAll()
+
+Get all validators in priority order.
+
+**Returns:**
+
+Vector of validators in priority order (highest first).
+
+**Signature:**
+
+```java
+public List<Validator> getAll()
+```
+
+###### list()
+
+List all registered validator names.
+
+**Signature:**
+
+```java
+public List<String> list()
+```
+
+###### remove()
+
+Remove a validator from the registry.
+
+**Signature:**
+
+```java
+public void remove(String name) throws Error
+```
+
+###### shutdownAll()
+
+Shutdown all validators and clear the registry.
+
+**Signature:**
+
+```java
+public void shutdownAll() throws Error
+```
+
+###### defaultOptions()
+
+**Signature:**
+
+```java
+public static ValidatorRegistry defaultOptions()
+```
+
+
+---
+
+#### VersionResponse
+
+Version response.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `version` | `String` | — | Kreuzberg version string |
+
+
+---
+
+#### VlmOcrBackend
+
+VLM-based OCR backend using liter-llm vision models.
+
+This backend sends images to a vision language model (e.g., GPT-4o, Claude)
+for text extraction, as an alternative to traditional OCR backends.
+
+##### Methods
+
+###### name()
+
+**Signature:**
+
+```java
+public String name()
+```
+
+###### version()
+
+**Signature:**
+
+```java
+public String version()
+```
+
+###### initialize()
+
+**Signature:**
+
+```java
+public void initialize() throws Error
+```
+
+###### shutdown()
+
+**Signature:**
+
+```java
+public void shutdown() throws Error
+```
+
+###### processImage()
+
+**Signature:**
+
+```java
+public ExtractionResult processImage(byte[] imageBytes, OcrConfig config) throws Error
+```
+
+###### supportsLanguage()
+
+**Signature:**
+
+```java
+public boolean supportsLanguage(String lang)
+```
+
+###### backendType()
+
+**Signature:**
+
+```java
+public OcrBackendType backendType()
+```
+
+
+---
+
+#### WarmRequest
+
+Cache warm request.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `allEmbeddings` | `boolean` | — | Download all embedding model presets |
+| `embeddingModel` | `Optional<String>` | `null` | Specific embedding model preset to download |
+
+
+---
+
+#### WarmResponse
+
+Cache warm response.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `cacheDir` | `String` | — | Cache directory used |
+| `downloaded` | `List<String>` | — | Models that were downloaded |
+| `alreadyCached` | `List<String>` | — | Models that were already cached |
+
+
+---
+
+#### XlsxAppProperties
+
+Application properties from docProps/app.xml for XLSX
+
+Contains Excel-specific document metadata.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `application` | `Optional<String>` | `null` | Application name (e.g., "Microsoft Excel") |
+| `appVersion` | `Optional<String>` | `null` | Application version |
+| `docSecurity` | `Optional<int>` | `null` | Document security level |
+| `scaleCrop` | `Optional<boolean>` | `null` | Scale crop flag |
+| `linksUpToDate` | `Optional<boolean>` | `null` | Links up to date flag |
+| `sharedDoc` | `Optional<boolean>` | `null` | Shared document flag |
+| `hyperlinksChanged` | `Optional<boolean>` | `null` | Hyperlinks changed flag |
+| `company` | `Optional<String>` | `null` | Company name |
+| `worksheetNames` | `List<String>` | `Collections.emptyList()` | Worksheet names |
+
+
+---
+
+#### XmlExtractionResult
+
+XML extraction result.
+
+Contains extracted text content from XML files along with
+structural statistics about the XML document.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `content` | `String` | — | Extracted text content (XML structure filtered out) |
+| `elementCount` | `long` | — | Total number of XML elements processed |
+| `uniqueElements` | `List<String>` | — | List of unique element names found (sorted) |
+
+
+---
+
+#### XmlExtractor
+
+XML extractor.
+
+Extracts text content from XML files, preserving element structure information.
+
+##### Methods
+
+###### defaultOptions()
+
+**Signature:**
+
+```java
+public static XmlExtractor defaultOptions()
+```
+
+###### name()
+
+**Signature:**
+
+```java
+public String name()
+```
+
+###### version()
+
+**Signature:**
+
+```java
+public String version()
+```
+
+###### initialize()
+
+**Signature:**
+
+```java
+public void initialize() throws Error
+```
+
+###### shutdown()
+
+**Signature:**
+
+```java
+public void shutdown() throws Error
+```
+
+###### description()
+
+**Signature:**
+
+```java
+public String description()
+```
+
+###### author()
+
+**Signature:**
+
+```java
+public String author()
+```
+
+###### extractSync()
+
+**Signature:**
+
+```java
+public InternalDocument extractSync(byte[] content, String mimeType, ExtractionConfig config) throws Error
+```
+
+###### extractBytes()
+
+**Signature:**
+
+```java
+public InternalDocument extractBytes(byte[] content, String mimeType, ExtractionConfig config) throws Error
+```
+
+###### supportedMimeTypes()
+
+**Signature:**
+
+```java
+public List<String> supportedMimeTypes()
+```
+
+###### priority()
+
+**Signature:**
+
+```java
+public int priority()
+```
+
+###### asSyncExtractor()
+
+**Signature:**
+
+```java
+public Optional<SyncExtractor> asSyncExtractor()
+```
+
+
+---
+
+#### XmlMetadata
+
+XML metadata extracted during XML parsing.
+
+Provides statistics about XML document structure.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `elementCount` | `long` | — | Total number of XML elements processed |
+| `uniqueElements` | `List<String>` | `Collections.emptyList()` | List of unique element tag names (sorted) |
+
+
+---
+
+#### YakeParams
+
+YAKE-specific parameters.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `windowSize` | `long` | `2` | Window size for co-occurrence analysis (default: 2). Controls the context window for computing co-occurrence statistics. |
+
+##### Methods
+
+###### defaultOptions()
+
+**Signature:**
+
+```java
+public static YakeParams defaultOptions()
+```
+
+
+---
+
+#### YearRange
+
+Year range for bibliographic metadata.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `min` | `Optional<int>` | `null` | Min |
+| `max` | `Optional<int>` | `null` | Max |
+| `years` | `List<Integer>` | — | Years |
+
+
+---
+
+#### YoloModel
+
+YOLO-family layout detection model (YOLOv10, DocLayout-YOLO, YOLOX).
+
+##### Methods
+
+###### fromFile()
+
+Load a YOLO ONNX model from a file.
+
+For square-input models (YOLOv10, DocLayout-YOLO), pass the same value for both dimensions.
+For YOLOX (unstructuredio), use width=768, height=1024.
+
+**Signature:**
+
+```java
+public static YoloModel fromFile(String path, YoloVariant variant, int inputWidth, int inputHeight, String modelName, AccelerationConfig accel) throws LayoutError
+```
+
+###### detect()
+
+**Signature:**
+
+```java
+public List<LayoutDetection> detect(RgbImage img) throws LayoutError
+```
+
+###### detectWithThreshold()
+
+**Signature:**
+
+```java
+public List<LayoutDetection> detectWithThreshold(RgbImage img, float threshold) throws LayoutError
+```
+
+###### name()
+
+**Signature:**
+
+```java
+public String name()
+```
+
+
+---
+
+#### ZipBombValidator
+
+Helper struct for validating ZIP archives for security issues.
+
+
+---
+
+#### ZipExtractor
+
+ZIP archive extractor.
+
+Extracts file lists and text content from ZIP archives.
+
+##### Methods
+
+###### defaultOptions()
+
+**Signature:**
+
+```java
+public static ZipExtractor defaultOptions()
+```
+
+###### name()
+
+**Signature:**
+
+```java
+public String name()
+```
+
+###### version()
+
+**Signature:**
+
+```java
+public String version()
+```
+
+###### initialize()
+
+**Signature:**
+
+```java
+public void initialize() throws Error
+```
+
+###### shutdown()
+
+**Signature:**
+
+```java
+public void shutdown() throws Error
+```
+
+###### description()
+
+**Signature:**
+
+```java
+public String description()
+```
+
+###### author()
+
+**Signature:**
+
+```java
+public String author()
+```
+
+###### extractBytes()
+
+**Signature:**
+
+```java
+public InternalDocument extractBytes(byte[] content, String mimeType, ExtractionConfig config) throws Error
+```
+
+###### supportedMimeTypes()
+
+**Signature:**
+
+```java
+public List<String> supportedMimeTypes()
+```
+
+###### priority()
+
+**Signature:**
+
+```java
+public int priority()
+```
+
+###### asSyncExtractor()
+
+**Signature:**
+
+```java
+public Optional<SyncExtractor> asSyncExtractor()
+```
+
+###### extractSync()
+
+**Signature:**
+
+```java
+public InternalDocument extractSync(byte[] content, String mimeType, ExtractionConfig config) throws Error
+```
+
+
+---
+
+### Enums
+
+#### ExecutionProviderType
+
+ONNX Runtime execution provider type.
+
+Determines which hardware backend is used for model inference.
+`Auto` (default) selects the best available provider per platform.
+
+| Value | Description |
+|-------|-------------|
+| `AUTO` | Auto-select: CoreML on macOS, CUDA on Linux, CPU elsewhere. |
+| `CPU` | CPU execution provider (always available). |
+| `CORE_ML` | Apple CoreML (macOS/iOS Neural Engine + GPU). |
+| `CUDA` | NVIDIA CUDA GPU acceleration. |
+| `TENSOR_RT` | NVIDIA TensorRT (optimized CUDA inference). |
+
+
+---
+
+#### OutputFormat
+
+Output format for extraction results.
+
+Controls the format of the `content` field in `ExtractionResult`.
+When set to `Markdown`, `Djot`, or `Html`, the output will be formatted
+accordingly. `Plain` returns the raw extracted text.
+`Structured` returns JSON with full OCR element data including bounding
+boxes and confidence scores.
+
+| Value | Description |
+|-------|-------------|
+| `PLAIN` | Plain text content only (default) |
+| `MARKDOWN` | Markdown format |
+| `DJOT` | Djot markup format |
+| `HTML` | HTML format |
+| `JSON` | JSON tree format with heading-driven sections. |
+| `STRUCTURED` | Structured JSON format with full OCR element metadata. |
+| `CUSTOM` | Custom renderer registered via the RendererRegistry. The string is the renderer name (e.g., "docx", "latex"). — Fields: `0`: `String` |
+
+
+---
+
+#### HtmlTheme
+
+Built-in HTML theme selection.
+
+| Value | Description |
+|-------|-------------|
+| `DEFAULT` | Sensible defaults: system font stack, neutral colours, readable line measure. CSS custom properties (`--kb-*`) are all defined so user CSS can override individual values. |
+| `GIT_HUB` | GitHub Markdown-inspired palette and spacing. |
+| `DARK` | Dark background, light text. |
+| `LIGHT` | Minimal light theme with generous whitespace. |
+| `UNSTYLED` | No built-in stylesheet emitted. CSS custom properties are still defined on `:root` so user stylesheets can reference `var(--kb-*)` tokens. |
+
+
+---
+
+#### TableModel
+
+Which table structure recognition model to use.
+
+Controls the model used for table cell detection within layout-detected
+table regions.
+
+| Value | Description |
+|-------|-------------|
+| `TATR` | TATR (Table Transformer) -- default, 30MB, DETR-based row/column detection. |
+| `SLANET_WIRED` | SLANeXT wired variant -- 365MB, optimized for bordered tables. |
+| `SLANET_WIRELESS` | SLANeXT wireless variant -- 365MB, optimized for borderless tables. |
+| `SLANET_PLUS` | SLANet-plus -- 7.78MB, lightweight general-purpose. |
+| `SLANET_AUTO` | Classifier-routed SLANeXT: auto-select wired/wireless per table. Uses PP-LCNet classifier (6.78MB) + both SLANeXT variants (730MB total). |
+| `DISABLED` | Disable table structure model inference entirely; use heuristic path only. |
+
+
+---
+
+#### PdfBackend
+
+PDF extraction backend selection.
+
+Controls which PDF library is used for text extraction:
+- `Pdfium`: pdfium-render (default, C++ based, mature)
+- `PdfOxide`: pdf_oxide (pure Rust, faster, requires `pdf-oxide` feature)
+- `Auto`: automatically select based on available features
+
+| Value | Description |
+|-------|-------------|
+| `PDFIUM` | Use pdfium-render backend (default). |
+| `PDF_OXIDE` | Use pdf_oxide backend (pure Rust). Requires `pdf-oxide` feature. |
+| `AUTO` | Automatically select the best available backend. |
+
+
+---
+
+#### ChunkerType
+
+Type of text chunker to use.
+
+# Variants
+
+* `Text` - Generic text splitter, splits on whitespace and punctuation
+* `Markdown` - Markdown-aware splitter, preserves formatting and structure
+* `Yaml` - YAML-aware splitter, creates one chunk per top-level key
+* `Semantic` - Topic-aware chunker that splits at natural document boundaries
+  (headers, paragraph breaks, topic shifts). Works out of the box with no extra
+  configuration. Optionally add an `EmbeddingConfig` for embedding-based topic
+  detection; `topic_threshold` (default 0.75) and `max_characters` (default 1000)
+  are automatically applied when not specified.
+
+| Value | Description |
+|-------|-------------|
+| `TEXT` | Text format |
+| `MARKDOWN` | Markdown format |
+| `YAML` | Yaml format |
+| `SEMANTIC` | Semantic |
+
+
+---
+
+#### ChunkSizing
+
+How chunk size is measured.
+
+Defaults to `Characters` (Unicode character count). When using token-based sizing,
+chunks are sized by token count according to the specified tokenizer.
+
+Token-based sizing uses HuggingFace tokenizers loaded at runtime. Any tokenizer
+available on HuggingFace Hub can be used, including OpenAI-compatible tokenizers
+(e.g., `Xenova/gpt-4o`, `Xenova/cl100k_base`).
+
+| Value | Description |
+|-------|-------------|
+| `CHARACTERS` | Size measured in Unicode characters (default). |
+| `TOKENIZER` | Size measured in tokens from a HuggingFace tokenizer. — Fields: `model`: `String`, `cacheDir`: `String` |
+
+
+---
+
+#### EmbeddingModelType
+
+Embedding model types supported by Kreuzberg.
+
+| Value | Description |
+|-------|-------------|
+| `PRESET` | Use a preset model configuration (recommended) — Fields: `name`: `String` |
+| `CUSTOM` | Use a custom ONNX model from HuggingFace — Fields: `modelId`: `String`, `dimensions`: `long` |
+| `LLM` | Provider-hosted embedding model via liter-llm. Uses the model specified in the nested `LlmConfig` (e.g., `"openai/text-embedding-3-small"`). — Fields: `llm`: `LlmConfig` |
+
+
+---
+
+#### CodeContentMode
+
+Content rendering mode for code extraction.
+
+Controls how extracted code content is represented in the `content` field
+of `ExtractionResult`.
+
+| Value | Description |
+|-------|-------------|
+| `CHUNKS` | Use TSLP semantic chunks as content (default). |
+| `RAW` | Use raw source code as content. |
+| `STRUCTURE` | Emit function/class headings + docstrings (no code bodies). |
+
+
+---
+
+#### ListType
+
+Type of list detection.
+
+| Value | Description |
+|-------|-------------|
+| `BULLET` | Bullet points (-, *, •, etc.) |
+| `NUMBERED` | Numbered lists (1., 2., etc.) |
+| `LETTERED` | Lettered lists (a., b., A., B., etc.) |
+| `INDENTED` | Indented items |
+
+
+---
+
+#### HwpError
+
+Error type for HWP parsing.
+
+| Value | Description |
+|-------|-------------|
+| `INVALID_FORMAT` | The file does not match the HWP 5.0 format. — Fields: `0`: `String` |
+| `UNSUPPORTED_VERSION` | The HWP version or a feature is not supported (e.g. password-encrypted docs). — Fields: `0`: `String` |
+| `IO` | An underlying I/O error occurred. — Fields: `0`: `Error` |
+| `CFB` | A CFB compound-file error (stream not found, corrupt container, etc.). — Fields: `0`: `String` |
+| `COMPRESSION_ERROR` | Decompression of a zlib/deflate stream failed. — Fields: `0`: `String` |
+| `PARSE_ERROR` | The binary record stream could not be parsed. — Fields: `0`: `String` |
+| `ENCODING_ERROR` | A UTF-16LE string contained invalid data. — Fields: `0`: `String` |
+| `NOT_FOUND` | A requested stream was not present in the compound file. — Fields: `0`: `String` |
+
+
+---
+
+#### DrawingType
+
+Whether the drawing is inline or anchored.
+
+| Value | Description |
+|-------|-------------|
+| `INLINE` | Inline |
+| `ANCHORED` | Anchored — Fields: `0`: `AnchorProperties` |
+
+
+---
+
+#### WrapType
+
+Text wrapping type.
+
+| Value | Description |
+|-------|-------------|
+| `NONE` | None |
+| `SQUARE` | Square |
+| `TIGHT` | Tight |
+| `TOP_AND_BOTTOM` | Top and bottom |
+| `THROUGH` | Through |
+
+
+---
+
+#### FracType
+
+| Value | Description |
+|-------|-------------|
+| `BAR` | Bar |
+| `NO_BAR` | No bar |
+| `LINEAR` | Linear |
+| `SKEWED` | Skewed |
+
+
+---
+
+#### MathNode
+
+| Value | Description |
+|-------|-------------|
+| `RUN` | Plain text from m:r/m:t — Fields: `0`: `String` |
+| `S_SUP` | Superscript: base^{sup} — Fields: `base`: `List<MathNode>`, `sup`: `List<MathNode>` |
+| `S_SUB` | Subscript: base_{sub} — Fields: `base`: `List<MathNode>`, `sub`: `List<MathNode>` |
+| `S_SUB_SUP` | Sub-superscript: base_{sub}^{sup} — Fields: `base`: `List<MathNode>`, `sub`: `List<MathNode>`, `sup`: `List<MathNode>` |
+| `FRAC` | Fraction: \frac{num}{den} — Fields: `num`: `List<MathNode>`, `den`: `List<MathNode>`, `fracType`: `FracType` |
+| `RAD` | Radical: \sqrt{body} or \sqrt[deg]{body} — Fields: `deg`: `List<MathNode>`, `body`: `List<MathNode>`, `degHide`: `boolean` |
+| `NARY` | N-ary operator: \sum_{sub}^{sup}{body} — Fields: `chr`: `String`, `sub`: `List<MathNode>`, `sup`: `List<MathNode>`, `body`: `List<MathNode>`, `subHide`: `boolean`, `supHide`: `boolean` |
+| `DELIM` | Delimiter: \left( ... \right) — Fields: `beginChr`: `String`, `endChr`: `String`, `sepChr`: `String`, `elements`: `List<List<MathNode>>` |
+| `FUNC` | Function: \funcname{body} — Fields: `name`: `List<MathNode>`, `body`: `List<MathNode>` |
+| `ACC` | Accent: \hat{body} — Fields: `chr`: `String`, `body`: `List<MathNode>` |
+| `EQ_ARR` | Equation array: \begin{aligned}...\end{aligned} — Fields: `rows`: `List<List<MathNode>>` |
+| `LIM_LOW` | Lower limit: \underset{lim}{body} — Fields: `body`: `List<MathNode>`, `lim`: `List<MathNode>` |
+| `LIM_UPP` | Upper limit: \overset{lim}{body} — Fields: `body`: `List<MathNode>`, `lim`: `List<MathNode>` |
+| `BAR` | Bar (overline/underline) — Fields: `body`: `List<MathNode>`, `top`: `boolean` |
+| `BORDER_BOX` | Border box: \boxed{body} — Fields: `body`: `List<MathNode>` |
+| `MATRIX` | Matrix: \begin{matrix}...\end{matrix} — Fields: `rows`: `List<List<List<MathNode>>>` |
+| `GROUP` | Grouping container (m:box, m:phant, etc.) — passes through children — Fields: `children`: `List<MathNode>` |
+| `S_PRE` | Pre-sub-superscript: {}_{sub}^{sup}{base} — Fields: `base`: `List<MathNode>`, `sub`: `List<MathNode>`, `sup`: `List<MathNode>` |
+
+
+---
+
+#### DocumentElement
+
+Tracks document element ordering (paragraphs, tables, and drawings interleaved).
+
+| Value | Description |
+|-------|-------------|
+| `PARAGRAPH` | Paragraph element — Fields: `0`: `long` |
+| `TABLE` | Table element — Fields: `0`: `long` |
+| `DRAWING` | Drawing — Fields: `0`: `long` |
+
+
+---
+
+#### HeaderFooterType
+
+| Value | Description |
+|-------|-------------|
+| `DEFAULT` | Default |
+| `FIRST` | First |
+| `EVEN` | Even |
+| `ODD` | Odd |
+
+
+---
+
+#### NoteType
+
+| Value | Description |
+|-------|-------------|
+| `FOOTNOTE` | Footnote element |
+| `ENDNOTE` | Endnote |
+
+
+---
+
+#### Orientation
+
+Page orientation.
+
+| Value | Description |
+|-------|-------------|
+| `PORTRAIT` | Portrait |
+| `LANDSCAPE` | Landscape |
+
+
+---
+
+#### StyleType
+
+The type of a style definition in DOCX.
+
+| Value | Description |
+|-------|-------------|
+| `PARAGRAPH` | Paragraph element |
+| `CHARACTER` | Character |
+| `TABLE` | Table element |
+| `NUMBERING` | Numbering |
+
+
+---
+
+#### VerticalMerge
+
+Vertical merge state.
+
+| Value | Description |
+|-------|-------------|
+| `RESTART` | Restart |
+| `CONTINUE` | Continue |
+
+
+---
+
+#### ThemeColor
+
+A theme color definition, either direct RGB or a system color with fallback.
+
+| Value | Description |
+|-------|-------------|
+| `RGB` | Direct hex RGB color (e.g., "156082"). — Fields: `0`: `String` |
+| `SYSTEM` | System color with fallback RGB (e.g., "windowText" with lastClr "000000"). — Fields: `name`: `String`, `lastColor`: `String` |
+
+
+---
+
+#### SecurityError
+
+Security validation errors.
+
+| Value | Description |
+|-------|-------------|
+| `ZIP_BOMB_DETECTED` | Potential ZIP bomb detected — Fields: `compressedSize`: `long`, `uncompressedSize`: `long`, `ratio`: `double` |
+| `ARCHIVE_TOO_LARGE` | Archive exceeds maximum size — Fields: `size`: `long`, `max`: `long` |
+| `TOO_MANY_FILES` | Archive contains too many files — Fields: `count`: `long`, `max`: `long` |
+| `NESTING_TOO_DEEP` | Nesting too deep — Fields: `depth`: `long`, `max`: `long` |
+| `CONTENT_TOO_LARGE` | Content exceeds maximum size — Fields: `size`: `long`, `max`: `long` |
+| `ENTITY_TOO_LONG` | Entity/string too long — Fields: `length`: `long`, `max`: `long` |
+| `TOO_MANY_ITERATIONS` | Too many iterations — Fields: `count`: `long`, `max`: `long` |
+| `XML_DEPTH_EXCEEDED` | XML depth exceeded — Fields: `depth`: `long`, `max`: `long` |
+| `TOO_MANY_CELLS` | Too many table cells — Fields: `cells`: `long`, `max`: `long` |
+
+
+---
+
+#### OcrBackendType
+
+OCR backend types.
+
+| Value | Description |
+|-------|-------------|
+| `TESSERACT` | Tesseract OCR (native Rust binding) |
+| `EASY_OCR` | EasyOCR (Python-based, via FFI) |
+| `PADDLE_OCR` | PaddleOCR (Python-based, via FFI) |
+| `CUSTOM` | Custom/third-party OCR backend |
+
+
+---
+
+#### ReductionLevel
+
+| Value | Description |
+|-------|-------------|
+| `OFF` | Off |
+| `LIGHT` | Light |
+| `MODERATE` | Moderate |
+| `AGGRESSIVE` | Aggressive |
+| `MAXIMUM` | Maximum |
+
+
+---
+
+#### PdfAnnotationType
+
+Type of PDF annotation.
+
+| Value | Description |
+|-------|-------------|
+| `TEXT` | Sticky note / text annotation |
+| `HIGHLIGHT` | Highlighted text region |
+| `LINK` | Hyperlink annotation |
+| `STAMP` | Rubber stamp annotation |
+| `UNDERLINE` | Underline text markup |
+| `STRIKE_OUT` | Strikeout text markup |
+| `OTHER` | Any other annotation type |
+
+
+---
+
+#### BlockType
+
+Types of block-level elements in Djot.
+
+| Value | Description |
+|-------|-------------|
+| `PARAGRAPH` | Paragraph element |
+| `HEADING` | Heading element |
+| `BLOCKQUOTE` | Blockquote element |
+| `CODE_BLOCK` | Code block |
+| `LIST_ITEM` | List item |
+| `ORDERED_LIST` | Ordered list |
+| `BULLET_LIST` | Bullet list |
+| `TASK_LIST` | Task list |
+| `DEFINITION_LIST` | Definition list |
+| `DEFINITION_TERM` | Definition term |
+| `DEFINITION_DESCRIPTION` | Definition description |
+| `DIV` | Div |
+| `SECTION` | Section element |
+| `THEMATIC_BREAK` | Thematic break |
+| `RAW_BLOCK` | Raw block |
+| `MATH_DISPLAY` | Math display |
+
+
+---
+
+#### InlineType
+
+Types of inline elements in Djot.
+
+| Value | Description |
+|-------|-------------|
+| `TEXT` | Text format |
+| `STRONG` | Strong |
+| `EMPHASIS` | Emphasis |
+| `HIGHLIGHT` | Highlight |
+| `SUBSCRIPT` | Subscript |
+| `SUPERSCRIPT` | Superscript |
+| `INSERT` | Insert |
+| `DELETE` | Delete |
+| `CODE` | Code |
+| `LINK` | Link |
+| `IMAGE` | Image element |
+| `SPAN` | Span |
+| `MATH` | Math |
+| `RAW_INLINE` | Raw inline |
+| `FOOTNOTE_REF` | Footnote ref |
+| `SYMBOL` | Symbol |
+
+
+---
+
+#### RelationshipKind
+
+Semantic kind of a relationship between document elements.
+
+| Value | Description |
+|-------|-------------|
+| `FOOTNOTE_REFERENCE` | Footnote marker -> footnote definition. |
+| `CITATION_REFERENCE` | Citation marker -> bibliography entry. |
+| `INTERNAL_LINK` | Internal anchor link (`#id`) -> target heading/element. |
+| `CAPTION` | Caption paragraph -> figure/table it describes. |
+| `LABEL` | Label -> labeled element (HTML `<label for>`, LaTeX `\label{}`). |
+| `TOC_ENTRY` | TOC entry -> target section. |
+| `CROSS_REFERENCE` | Cross-reference (LaTeX `\ref{}`, DOCX cross-reference field). |
+
+
+---
+
+#### ContentLayer
+
+Content layer classification for document nodes.
+
+Replaces separate body/furniture arrays with per-node granularity.
+
+| Value | Description |
+|-------|-------------|
+| `BODY` | Main document body content. |
+| `HEADER` | Page/section header (running header). |
+| `FOOTER` | Page/section footer (running footer). |
+| `FOOTNOTE` | Footnote content. |
+
+
+---
+
+#### NodeContent
+
+Tagged enum for node content. Each variant carries only type-specific data.
+
+Uses `#[serde(tag = "node_type")]` to avoid "type" keyword collision in
+Go/Java/TypeScript bindings.
+
+| Value | Description |
+|-------|-------------|
+| `TITLE` | Document title. — Fields: `text`: `String` |
+| `HEADING` | Section heading with level (1-6). — Fields: `level`: `byte`, `text`: `String` |
+| `PARAGRAPH` | Body text paragraph. — Fields: `text`: `String` |
+| `LIST` | List container — children are `ListItem` nodes. — Fields: `ordered`: `boolean` |
+| `LIST_ITEM` | Individual list item. — Fields: `text`: `String` |
+| `TABLE` | Table with structured cell grid. — Fields: `grid`: `TableGrid` |
+| `IMAGE` | Image reference. — Fields: `description`: `String`, `imageIndex`: `int`, `src`: `String` |
+| `CODE` | Code block. — Fields: `text`: `String`, `language`: `String` |
+| `QUOTE` | Block quote — container, children carry the quoted content. |
+| `FORMULA` | Mathematical formula / equation. — Fields: `text`: `String` |
+| `FOOTNOTE` | Footnote reference content. — Fields: `text`: `String` |
+| `GROUP` | Logical grouping container (section, key-value area). `heading_level` + `heading_text` capture the section heading directly rather than relying on a first-child positional convention. — Fields: `label`: `String`, `headingLevel`: `byte`, `headingText`: `String` |
+| `PAGE_BREAK` | Page break marker. |
+| `SLIDE` | Presentation slide container — children are the slide's content nodes. — Fields: `number`: `int`, `title`: `String` |
+| `DEFINITION_LIST` | Definition list container — children are `DefinitionItem` nodes. |
+| `DEFINITION_ITEM` | Individual definition list entry with term and definition. — Fields: `term`: `String`, `definition`: `String` |
+| `CITATION` | Citation or bibliographic reference. — Fields: `key`: `String`, `text`: `String` |
+| `ADMONITION` | Admonition / callout container (note, warning, tip, etc.). Children carry the admonition body content. — Fields: `kind`: `String`, `title`: `String` |
+| `RAW_BLOCK` | Raw block preserved verbatim from the source format. Used for content that cannot be mapped to a semantic node type (e.g. JSX in MDX, raw LaTeX in markdown, embedded HTML). — Fields: `format`: `String`, `content`: `String` |
+| `METADATA_BLOCK` | Structured metadata block (email headers, YAML frontmatter, etc.). — Fields: `entries`: `List<StringString>` |
+
+
+---
+
+#### AnnotationKind
+
+Types of inline text annotations.
+
+| Value | Description |
+|-------|-------------|
+| `BOLD` | Bold |
+| `ITALIC` | Italic |
+| `UNDERLINE` | Underline |
+| `STRIKETHROUGH` | Strikethrough |
+| `CODE` | Code |
+| `SUBSCRIPT` | Subscript |
+| `SUPERSCRIPT` | Superscript |
+| `LINK` | Link — Fields: `url`: `String`, `title`: `String` |
+| `HIGHLIGHT` | Highlighted text (PDF highlights, HTML `<mark>`). |
+| `COLOR` | Text color (CSS-compatible value, e.g. "#ff0000", "red"). — Fields: `value`: `String` |
+| `FONT_SIZE` | Font size with units (e.g. "12pt", "1.2em", "16px"). — Fields: `value`: `String` |
+| `CUSTOM` | Extensible annotation for format-specific styling. — Fields: `name`: `String`, `value`: `String` |
+
+
+---
+
+#### ChunkType
+
+Semantic structural classification of a text chunk.
+
+Assigned by the heuristic classifier in `chunking.classifier`.
+Defaults to `Unknown` when no rule matches.
+Designed to be extended in future versions without breaking changes.
+
+| Value | Description |
+|-------|-------------|
+| `HEADING` | Section heading or document title. |
+| `PARTY_LIST` | Party list: names, addresses, and signatories. |
+| `DEFINITIONS` | Definition clause ("X means…", "X shall mean…"). |
+| `OPERATIVE_CLAUSE` | Operative clause containing legal/contractual action verbs. |
+| `SIGNATURE_BLOCK` | Signature block with signatures, names, and dates. |
+| `SCHEDULE` | Schedule, annex, appendix, or exhibit section. |
+| `TABLE_LIKE` | Table-like content with aligned columns or repeated patterns. |
+| `FORMULA` | Mathematical formula or equation. |
+| `CODE_BLOCK` | Code block or preformatted content. |
+| `IMAGE` | Embedded or referenced image content. |
+| `ORG_CHART` | Organizational chart or hierarchy diagram. |
+| `DIAGRAM` | Diagram, figure, or visual illustration. |
+| `UNKNOWN` | Unclassified or mixed content. |
+
+
+---
+
+#### ElementType
+
+Semantic element type classification.
+
+Categorizes text content into semantic units for downstream processing.
+Supports the element types commonly found in Unstructured documents.
+
+| Value | Description |
+|-------|-------------|
+| `TITLE` | Document title |
+| `NARRATIVE_TEXT` | Main narrative text body |
+| `HEADING` | Section heading |
+| `LIST_ITEM` | List item (bullet, numbered, etc.) |
+| `TABLE` | Table element |
+| `IMAGE` | Image element |
+| `PAGE_BREAK` | Page break marker |
+| `CODE_BLOCK` | Code block |
+| `BLOCK_QUOTE` | Block quote |
+| `FOOTER` | Footer text |
+| `HEADER` | Header text |
+
+
+---
+
+#### ElementKind
+
+Semantic role of an internal element.
+
+Superset of `NodeContent` variants
+plus OCR and container markers.
+
+| Value | Description |
+|-------|-------------|
+| `TITLE` | Document title. |
+| `HEADING` | Section heading with level (1-6). — Fields: `level`: `byte` |
+| `PARAGRAPH` | Body text paragraph. |
+| `LIST_ITEM` | List item. `ordered` indicates numbered vs bulleted. — Fields: `ordered`: `boolean` |
+| `CODE` | Code block. Language stored in element attributes. |
+| `FORMULA` | Mathematical formula / equation. |
+| `FOOTNOTE_DEFINITION` | Footnote content (the definition, not the reference marker). |
+| `FOOTNOTE_REF` | Footnote reference marker in body text. |
+| `CITATION` | Citation or bibliographic reference. |
+| `SLIDE` | Presentation slide container. — Fields: `number`: `int` |
+| `DEFINITION_TERM` | Definition list term. |
+| `DEFINITION_DESCRIPTION` | Definition list description. |
+| `ADMONITION` | Admonition / callout (note, warning, tip, etc.). Kind stored in attributes. |
+| `RAW_BLOCK` | Raw block preserved verbatim. Format stored in attributes. |
+| `METADATA_BLOCK` | Structured metadata block (frontmatter, email headers). |
+| `LIST_START` | Start of a list container. — Fields: `ordered`: `boolean` |
+| `LIST_END` | End of a list container. |
+| `QUOTE_START` | Start of a block quote. |
+| `QUOTE_END` | End of a block quote. |
+| `GROUP_START` | Start of a generic group/section. |
+| `GROUP_END` | End of a generic group/section. |
+| `TABLE` | Table reference. `table_index` is an index into `InternalDocument.tables`. — Fields: `tableIndex`: `int` |
+| `IMAGE` | Image reference. `image_index` is an index into `InternalDocument.images`. — Fields: `imageIndex`: `int` |
+| `PAGE_BREAK` | Page break marker. |
+| `OCR_TEXT` | OCR-detected text at a given hierarchical level. — Fields: `level`: `OcrElementLevel` |
+
+
+---
+
+#### RelationshipTarget
+
+Target of a relationship — either a resolved element index or an unresolved key.
+
+| Value | Description |
+|-------|-------------|
+| `INDEX` | Resolved: index into `InternalDocument.elements`. — Fields: `0`: `int` |
+| `KEY` | Unresolved: key to be matched against element anchors during derivation. — Fields: `0`: `String` |
+
+
+---
+
+#### FormatMetadata
+
+Format-specific metadata (discriminated union).
+
+Only one format type can exist per extraction result. This provides
+type-safe, clean metadata without nested optionals.
+
+| Value | Description |
+|-------|-------------|
+| `PDF` | Pdf format — Fields: `0`: `PdfMetadata` |
+| `DOCX` | Docx format — Fields: `0`: `DocxMetadata` |
+| `EXCEL` | Excel — Fields: `0`: `ExcelMetadata` |
+| `EMAIL` | Email — Fields: `0`: `EmailMetadata` |
+| `PPTX` | Pptx format — Fields: `0`: `PptxMetadata` |
+| `ARCHIVE` | Archive — Fields: `0`: `ArchiveMetadata` |
+| `IMAGE` | Image element — Fields: `0`: `ImageMetadata` |
+| `XML` | Xml format — Fields: `0`: `XmlMetadata` |
+| `TEXT` | Text format — Fields: `0`: `TextMetadata` |
+| `HTML` | Preserve as HTML `<mark>` tags — Fields: `0`: `HtmlMetadata` |
+| `OCR` | Ocr — Fields: `0`: `OcrMetadata` |
+| `CSV` | Csv format — Fields: `0`: `CsvMetadata` |
+| `BIBTEX` | Bibtex — Fields: `0`: `BibtexMetadata` |
+| `CITATION` | Citation — Fields: `0`: `CitationMetadata` |
+| `FICTION_BOOK` | Fiction book — Fields: `0`: `FictionBookMetadata` |
+| `DBF` | Dbf — Fields: `0`: `DbfMetadata` |
+| `JATS` | Jats — Fields: `0`: `JatsMetadata` |
+| `EPUB` | Epub format — Fields: `0`: `EpubMetadata` |
+| `PST` | Pst — Fields: `0`: `PstMetadata` |
+| `CODE` | Code — Fields: `0`: `ProcessResult` |
+
+
+---
+
+#### TextDirection
+
+Text direction enumeration for HTML documents.
+
+| Value | Description |
+|-------|-------------|
+| `LEFT_TO_RIGHT` | Left-to-right text direction |
+| `RIGHT_TO_LEFT` | Right-to-left text direction |
+| `AUTO` | Automatic text direction detection |
+
+
+---
+
+#### LinkType
+
+Link type classification.
+
+| Value | Description |
+|-------|-------------|
+| `ANCHOR` | Anchor link (#section) |
+| `INTERNAL` | Internal link (same domain) |
+| `EXTERNAL` | External link (different domain) |
+| `EMAIL` | Email link (mailto:) |
+| `PHONE` | Phone link (tel:) |
+| `OTHER` | Other link type |
+
+
+---
+
+#### ImageType
+
+Image type classification.
+
+| Value | Description |
+|-------|-------------|
+| `DATA_URI` | Data URI image |
+| `INLINE_SVG` | Inline SVG |
+| `EXTERNAL` | External image URL |
+| `RELATIVE` | Relative path image |
+
+
+---
+
+#### StructuredDataType
+
+Structured data type classification.
+
+| Value | Description |
+|-------|-------------|
+| `JSON_LD` | JSON-LD structured data |
+| `MICRODATA` | Microdata |
+| `RDFA` | RDFa |
+
+
+---
+
+#### OcrBoundingGeometry
+
+Bounding geometry for an OCR element.
+
+Supports both axis-aligned rectangles (from Tesseract) and 4-point quadrilaterals
+(from PaddleOCR and rotated text detection).
+
+| Value | Description |
+|-------|-------------|
+| `RECTANGLE` | Axis-aligned bounding box (typical for Tesseract output). — Fields: `left`: `int`, `top`: `int`, `width`: `int`, `height`: `int` |
+| `QUADRILATERAL` | 4-point quadrilateral for rotated/skewed text (PaddleOCR). Points are in clockwise order starting from top-left: `[top_left, top_right, bottom_right, bottom_left]` — Fields: `points`: `U32U324` |
+
+
+---
+
+#### OcrElementLevel
+
+Hierarchical level of an OCR element.
+
+Maps to Tesseract's page segmentation hierarchy and provides
+equivalent semantics for PaddleOCR.
+
+| Value | Description |
+|-------|-------------|
+| `WORD` | Individual word |
+| `LINE` | Line of text (default for PaddleOCR) |
+| `BLOCK` | Paragraph or text block |
+| `PAGE` | Page-level element |
+
+
+---
+
+#### PageUnitType
+
+Type of paginated unit in a document.
+
+Distinguishes between different types of "pages" (PDF pages, presentation slides, spreadsheet sheets).
+
+| Value | Description |
+|-------|-------------|
+| `PAGE` | Standard document pages (PDF, DOCX, images) |
+| `SLIDE` | Presentation slides (PPTX, ODP) |
+| `SHEET` | Spreadsheet sheets (XLSX, ODS) |
+
+
+---
+
+#### UriKind
+
+Semantic classification of an extracted URI.
+
+| Value | Description |
+|-------|-------------|
+| `HYPERLINK` | A clickable hyperlink (web URL, file link). |
+| `IMAGE` | An image or media resource reference. |
+| `ANCHOR` | An internal anchor or cross-reference target. |
+| `CITATION` | A citation or bibliographic reference (DOI, academic ref). |
+| `REFERENCE` | A general reference (e.g. `\ref{}` in LaTeX, `:ref:` in RST). |
+| `EMAIL` | An email address (`mailto:` link or bare email). |
+
+
+---
+
+#### PoolError
+
+Error type for pool operations.
+
+| Value | Description |
+|-------|-------------|
+| `LOCK_POISONED` | The pool's internal mutex was poisoned. This indicates a panic occurred while holding the lock. The pool is in a locked state and cannot be recovered. |
+
+
+---
+
+#### ExtractionSource
+
+The source of a document to extract.
+
+| Value | Description |
+|-------|-------------|
+| `FILE` | Extract from a filesystem path with an optional MIME type hint. — Fields: `path`: `String`, `mimeHint`: `String` |
+| `BYTES` | Extract from in-memory bytes with a known MIME type. — Fields: `data`: `byte[]`, `mimeType`: `String` |
+
+
+---
+
+#### Pooling
+
+Pooling strategy for extracting a single vector from token embeddings.
+
+| Value | Description |
+|-------|-------------|
+| `CLS` | Use the [CLS] token embedding (first token). |
+| `MEAN` | Mean of all token embeddings, weighted by attention mask. |
+
+
+---
+
+#### EmbedError
+
+Embedding engine errors.
+
+| Value | Description |
+|-------|-------------|
+| `TOKENIZER` | Tokenizer — Fields: `0`: `String` |
+| `ORT` | Ort — Fields: `0`: `Error` |
+| `SHAPE` | Shape — Fields: `0`: `String` |
+| `NO_OUTPUT` | No output |
+
+
+---
+
+#### KeywordAlgorithm
+
+Keyword algorithm selection.
+
+| Value | Description |
+|-------|-------------|
+| `YAKE` | YAKE (Yet Another Keyword Extractor) - statistical approach |
+| `RAKE` | RAKE (Rapid Automatic Keyword Extraction) - co-occurrence based |
+
+
+---
+
+#### OcrError
+
+OCR-specific errors (pure Rust, no PyO3)
+
+| Value | Description |
+|-------|-------------|
+| `TESSERACT_INITIALIZATION_FAILED` | Tesseract initialization failed — Fields: `0`: `String` |
+| `UNSUPPORTED_VERSION` | Unsupported version — Fields: `0`: `String` |
+| `INVALID_CONFIGURATION` | Invalid configuration — Fields: `0`: `String` |
+| `INVALID_LANGUAGE_CODE` | Invalid language code — Fields: `0`: `String` |
+| `IMAGE_PROCESSING_FAILED` | Image processing failed — Fields: `0`: `String` |
+| `PROCESSING_FAILED` | Processing failed — Fields: `0`: `String` |
+| `CACHE_ERROR` | Cache error — Fields: `0`: `String` |
+| `IO_ERROR` | I o error — Fields: `0`: `String` |
+
+
+---
+
+#### PsmMode
+
+Page Segmentation Mode for Tesseract OCR
+
+| Value | Description |
+|-------|-------------|
+| `OSD_ONLY` | Osd only |
+| `AUTO_OSD` | Auto osd |
+| `AUTO_ONLY` | Auto only |
+| `AUTO` | Auto |
+| `SINGLE_COLUMN` | Single column |
+| `SINGLE_BLOCK_VERTICAL` | Single block vertical |
+| `SINGLE_BLOCK` | Single block |
+| `SINGLE_LINE` | Single line |
+| `SINGLE_WORD` | Single word |
+| `CIRCLE_WORD` | Circle word |
+| `SINGLE_CHAR` | Single char |
+
+
+---
+
+#### PaddleLanguage
+
+Supported languages in PaddleOCR.
+
+Maps user-friendly language codes to paddle-ocr-rs language identifiers.
+
+| Value | Description |
+|-------|-------------|
+| `ENGLISH` | English |
+| `CHINESE` | Simplified Chinese |
+| `JAPANESE` | Japanese |
+| `KOREAN` | Korean |
+| `GERMAN` | German |
+| `FRENCH` | French |
+| `LATIN` | Latin script (covers most European languages) |
+| `CYRILLIC` | Cyrillic (Russian and related) |
+| `TRADITIONAL_CHINESE` | Traditional Chinese |
+| `THAI` | Thai |
+| `GREEK` | Greek |
+| `EAST_SLAVIC` | East Slavic (Russian, Ukrainian, Belarusian) |
+| `ARABIC` | Arabic (Arabic, Persian, Urdu) |
+| `DEVANAGARI` | Devanagari (Hindi, Marathi, Sanskrit, Nepali) |
+| `TAMIL` | Tamil |
+| `TELUGU` | Telugu |
+
+
+---
+
+#### ModelBackend
+
+Which underlying model architecture to use.
+
+| Value | Description |
+|-------|-------------|
+| `YOLO_DOC_LAY_NET` | YOLO trained on DocLayNet (11 classes, 640x640 input). |
+| `RT_DETR` | RT-DETR v2 (17 classes, 640x640 input, NMS-free). |
+| `CUSTOM` | Custom model from a local file path. — Fields: `path`: `String`, `variant`: `CustomModelVariant` |
+
+
+---
+
+#### CustomModelVariant
+
+Variant selection for custom model paths.
+
+| Value | Description |
+|-------|-------------|
+| `RT_DETR` | Rt detr |
+| `YOLO_DOC_LAY_NET` | Yolo doc lay net |
+| `YOLO_DOC_STRUCT_BENCH` | Yolo doc struct bench |
+| `YOLOX` | Yolox — Fields: `inputWidth`: `int`, `inputHeight`: `int` |
+
+
+---
+
+#### TableType
+
+Table type classification result.
+
+| Value | Description |
+|-------|-------------|
+| `WIRED` | Bordered table with visible gridlines. |
+| `WIRELESS` | Borderless table without visible gridlines. |
+
+
+---
+
+#### TatrClass
+
+TATR object detection class labels.
+
+The 7 classes output by the Table Transformer model. `NoObject` (class 6)
+is the background/padding class and is filtered out during post-processing.
+
+| Value | Description |
+|-------|-------------|
+| `TABLE` | Full table bounding box (class 0). |
+| `COLUMN` | Table column (class 1). |
+| `ROW` | Table row (class 2). |
+| `COLUMN_HEADER` | Column header row (class 3). |
+| `PROJECTED_ROW_HEADER` | Projected row header column (class 4). |
+| `SPANNING_CELL` | Spanning cell covering multiple rows/columns (class 5). |
+
+
+---
+
+#### YoloVariant
+
+Which YOLO variant this model represents.
+
+| Value | Description |
+|-------|-------------|
+| `DOC_LAY_NET` | YOLOv10/v8 trained on DocLayNet (11 classes). Output: [batch, num_dets, 6] = [x1, y1, x2, y2, score, class_id] |
+| `DOC_STRUCT_BENCH` | DocLayout-YOLO trained on DocStructBench (10 classes). Output: [batch, num_dets, 4+num_classes] center-format, or [batch, num_dets, 6] decoded. |
+| `YOLOX` | YOLOX with letterbox preprocessing and grid decoding. Output: [batch, num_anchors, 5+num_classes] — needs grid decoding + NMS. Strides: [8, 16, 32], anchors decoded via (raw + grid_offset) * stride. |
+
+
+---
+
+#### LayoutClass
+
+The 17 canonical document layout classes.
+
+All model backends (RT-DETR, YOLO, etc.) map their native class IDs
+to this shared set. Models with fewer classes (DocLayNet: 11, PubLayNet: 5)
+map to the closest equivalent.
+
+| Value | Description |
+|-------|-------------|
+| `CAPTION` | Caption element |
+| `FOOTNOTE` | Footnote element |
+| `FORMULA` | Formula |
+| `LIST_ITEM` | List item |
+| `PAGE_FOOTER` | Page footer |
+| `PAGE_HEADER` | Page header |
+| `PICTURE` | Picture |
+| `SECTION_HEADER` | Section header |
+| `TABLE` | Table element |
+| `TEXT` | Text format |
+| `TITLE` | Title element |
+| `DOCUMENT_INDEX` | Document index |
+| `CODE` | Code |
+| `CHECKBOX_SELECTED` | Checkbox selected |
+| `CHECKBOX_UNSELECTED` | Checkbox unselected |
+| `FORM` | Form |
+| `KEY_VALUE_REGION` | Key value region |
+
+
+---
+
+#### PdfError
+
+| Value | Description |
+|-------|-------------|
+| `INVALID_PDF` | Invalid pdf — Fields: `0`: `String` |
+| `PASSWORD_REQUIRED` | Password required |
+| `INVALID_PASSWORD` | Invalid password |
+| `ENCRYPTION_NOT_SUPPORTED` | Encryption not supported — Fields: `0`: `String` |
+| `PAGE_NOT_FOUND` | Page not found — Fields: `0`: `long` |
+| `TEXT_EXTRACTION_FAILED` | Text extraction failed — Fields: `0`: `String` |
+| `RENDERING_FAILED` | Rendering failed — Fields: `0`: `String` |
+| `METADATA_EXTRACTION_FAILED` | Metadata extraction failed — Fields: `0`: `String` |
+| `EXTRACTION_FAILED` | Extraction failed — Fields: `0`: `String` |
+| `FONT_LOADING_FAILED` | Font loading failed — Fields: `0`: `String` |
+| `IO_ERROR` | I o error — Fields: `0`: `String` |
+| `CANCELLED` | The operation was cancelled via a `CancellationToken`. |
+
+
+---
+
+#### HierarchyLevel
+
+Hierarchy level assignment result.
+
+| Value | Description |
+|-------|-------------|
+| `H1` | H1 - Top-level heading |
+| `H2` | H2 - Secondary heading |
+| `H3` | H3 - Tertiary heading |
+| `H4` | H4 - Quaternary heading |
+| `H5` | H5 - Quinary heading |
+| `H6` | H6 - Senary heading |
+| `BODY` | Body text |
+
+
+---
+
+### Errors
+
+#### KreuzbergError
+
+Main error type for all Kreuzberg operations.
+
+All errors in Kreuzberg use this enum, which preserves error chains
+and provides context for debugging.
+
+# Variants
+
+- `Io` - File system and I/O errors (always bubble up)
+- `Parsing` - Document parsing errors (corrupt files, unsupported features)
+- `Ocr` - OCR processing errors
+- `Validation` - Input validation errors (invalid paths, config, parameters)
+- `Cache` - Cache operation errors (non-fatal, can be ignored)
+- `ImageProcessing` - Image manipulation errors
+- `Serialization` - JSON/MessagePack serialization errors
+- `MissingDependency` - Missing optional dependencies (tesseract, etc.)
+- `Plugin` - Plugin-specific errors
+- `LockPoisoned` - Mutex/RwLock poisoning (should not happen in normal operation)
+- `UnsupportedFormat` - Unsupported MIME type or file format
+- `Other` - Catch-all for uncommon errors
+
+| Variant | Description |
+|---------|-------------|
+| `IO` | IO error: {0} |
+| `PARSING` | Parsing error: {message} |
+| `OCR` | OCR error: {message} |
+| `VALIDATION` | Validation error: {message} |
+| `CACHE` | Cache error: {message} |
+| `IMAGE_PROCESSING` | Image processing error: {message} |
+| `SERIALIZATION` | Serialization error: {message} |
+| `MISSING_DEPENDENCY` | Missing dependency: {0} |
+| `PLUGIN` | Plugin error in '{plugin_name}': {message} |
+| `LOCK_POISONED` | Lock poisoned: {0} |
+| `UNSUPPORTED_FORMAT` | Unsupported format: {0} |
+| `EMBEDDING` | Embedding error: {message} |
+| `TIMEOUT` | Extraction timed out after {elapsed_ms}ms (limit: {limit_ms}ms) |
+| `CANCELLED` | Extraction cancelled |
+| `OTHER` | {0} |
+
+
+---
+
+#### LayoutError
+
+| Variant | Description |
+|---------|-------------|
+| `ORT` | ORT error: {0} |
+| `IMAGE` | Image error: {0} |
+| `SESSION_NOT_INITIALIZED` | Session not initialized |
+| `INVALID_OUTPUT` | Invalid model output: {0} |
+| `MODEL_DOWNLOAD` | Model download failed: {0} |
+
+
+---
+

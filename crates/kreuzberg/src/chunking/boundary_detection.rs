@@ -4,6 +4,8 @@
 //! that `text-splitter` cannot identify. Used by the semantic chunker to
 //! force topic boundaries at section headers.
 
+use serde::{Deserialize, Serialize};
+
 /// Maximum line length for ALL CAPS header detection.
 const MAX_ALL_CAPS_LINE_LEN: usize = 80;
 
@@ -18,7 +20,7 @@ const MAX_TITLE_WORD_COUNT: usize = 8;
 const TITLE_UPPERCASE_RATIO: (usize, usize) = (3, 5);
 
 /// A detected structural boundary in the text.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct DetectedBoundary {
     /// Byte offset of the start of the line in the original text.
     pub byte_offset: usize,

@@ -36,7 +36,7 @@ const ORIENTATION_LABELS: [u32; 4] = [0, 90, 180, 270];
 pub const MIN_CONFIDENCE: f32 = 0.35;
 
 /// Document orientation detection result.
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, serde::Serialize, serde::Deserialize)]
 pub struct OrientationResult {
     /// Detected orientation in degrees (0, 90, 180, or 270).
     pub degrees: u32,

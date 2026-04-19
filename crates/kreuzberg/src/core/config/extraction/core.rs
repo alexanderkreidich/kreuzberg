@@ -12,7 +12,7 @@ use super::super::ocr::OcrConfig;
 use super::super::page::PageConfig;
 use super::super::processing::{ChunkingConfig, PostProcessorConfig};
 use super::file_config::FileExtractionConfig;
-use super::types::{ImageExtractionConfig, LanguageDetectionConfig, TokenReductionConfig};
+use super::types::{ImageExtractionConfig, LanguageDetectionConfig, TokenReductionOptions};
 
 /// Main extraction configuration.
 ///
@@ -94,7 +94,7 @@ pub struct ExtractionConfig {
 
     /// Token reduction configuration (None = no token reduction)
     #[serde(default)]
-    pub token_reduction: Option<TokenReductionConfig>,
+    pub token_reduction: Option<TokenReductionOptions>,
 
     /// Language detection configuration (None = no language detection)
     #[serde(default)]

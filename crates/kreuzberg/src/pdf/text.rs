@@ -158,9 +158,10 @@ pub fn extract_text_from_pdf_with_password(pdf_bytes: &[u8], password: &str) -> 
     extractor.extract_text_with_password(pdf_bytes, Some(password))
 }
 
-pub fn extract_text_from_pdf_with_passwords(pdf_bytes: &[u8], passwords: &[&str]) -> Result<String> {
+pub fn extract_text_from_pdf_with_passwords(pdf_bytes: &[u8], passwords: &[String]) -> Result<String> {
     let extractor = PdfTextExtractor::new()?;
-    extractor.extract_text_with_passwords(pdf_bytes, passwords)
+    let pw_refs: Vec<&str> = passwords.iter().map(|s| s.as_str()).collect();
+    extractor.extract_text_with_passwords(pdf_bytes, &pw_refs)
 }
 
 /// Result type for unified PDF text and metadata extraction.

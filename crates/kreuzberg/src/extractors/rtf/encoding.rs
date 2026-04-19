@@ -6,20 +6,20 @@
 ///
 /// Returns None if the character is not a valid hex digit.
 #[inline]
-pub fn hex_digit_to_u8(c: char) -> Option<u8> {
+pub fn hex_digit_to_u8(c: u8) -> Option<u8> {
     match c {
-        '0'..='9' => Some((c as u8) - b'0'),
-        'a'..='f' => Some((c as u8) - b'a' + 10),
-        'A'..='F' => Some((c as u8) - b'A' + 10),
+        b'0'..=b'9' => Some(c - b'0'),
+        b'a'..=b'f' => Some(c - b'a' + 10),
+        b'A'..=b'F' => Some(c - b'A' + 10),
         _ => None,
     }
 }
 
-/// Parse a hex-encoded byte from two characters.
+/// Parse a hex-encoded byte from two bytes.
 ///
-/// Returns the decoded byte if both characters are valid hex digits.
+/// Returns the decoded byte if both bytes are valid hex digits.
 #[inline]
-pub fn parse_hex_byte(h1: char, h2: char) -> Option<u8> {
+pub fn parse_hex_byte(h1: u8, h2: u8) -> Option<u8> {
     let high = hex_digit_to_u8(h1)?;
     let low = hex_digit_to_u8(h2)?;
     Some((high << 4) | low)

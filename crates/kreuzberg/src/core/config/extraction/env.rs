@@ -8,7 +8,7 @@ use crate::{KreuzbergError, Result};
 use super::super::ocr::OcrConfig;
 use super::super::processing::ChunkingConfig;
 use super::core::ExtractionConfig;
-use super::types::TokenReductionConfig;
+use super::types::TokenReductionOptions;
 
 impl ExtractionConfig {
     /// Apply environment variable overrides to configuration.
@@ -154,7 +154,7 @@ impl ExtractionConfig {
         if let Ok(mode) = std::env::var("KREUZBERG_TOKEN_REDUCTION_MODE") {
             validate_token_reduction_level(&mode)?;
             if self.token_reduction.is_none() {
-                self.token_reduction = Some(TokenReductionConfig {
+                self.token_reduction = Some(TokenReductionOptions {
                     mode: "off".to_string(),
                     preserve_important_words: true,
                 });

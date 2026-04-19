@@ -1,5 +1,5 @@
 use crate::error::{KreuzbergError, Result};
-use crate::types::{ExtractionConfig, ImagePreprocessingMetadata};
+use crate::types::{ImageDpiConfig as ExtractionConfig, ImagePreprocessingMetadata};
 use image::{DynamicImage, ImageBuffer, Rgb};
 
 use super::dpi::calculate_smart_dpi;

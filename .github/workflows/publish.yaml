@@ -1334,7 +1334,7 @@ jobs:
       - name: Stage PDFium runtime artifacts
         uses: ./.github/actions/stage-pdfium-runtime
         with:
-          destination: packages/ruby/ext/kreuzberg_rb/native
+          destination: packages/ruby/ext/kreuzberg_rb
           additional-destinations: |
             packages/ruby
             packages/ruby/lib

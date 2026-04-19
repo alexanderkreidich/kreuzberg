@@ -9,7 +9,7 @@ use quick_xml::events::{BytesStart, Event};
 use serde::{Deserialize, Serialize};
 
 /// A drawing object extracted from `<w:drawing>`.
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq)]
 pub struct Drawing {
     pub drawing_type: DrawingType,
     pub extent: Option<Extent>,
@@ -18,8 +18,9 @@ pub struct Drawing {
 }
 
 /// Whether the drawing is inline or anchored.
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq)]
 pub enum DrawingType {
+    #[default]
     Inline,
     Anchored(AnchorProperties),
 }
@@ -63,7 +64,7 @@ pub struct AnchorProperties {
 }
 
 /// Horizontal or vertical position.
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq)]
 pub struct Position {
     pub relative_from: String, // "page", "margin", "column", "paragraph", "character"
     pub offset: Option<i64>,   // EMUs

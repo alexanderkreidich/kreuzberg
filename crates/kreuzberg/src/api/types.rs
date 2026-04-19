@@ -152,7 +152,7 @@ pub struct InfoResponse {
 pub type ExtractResponse = Vec<ExtractionResult>;
 
 /// Error response.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 #[cfg_attr(feature = "api", derive(utoipa::ToSchema))]
 pub struct ErrorResponse {
     /// Error type name

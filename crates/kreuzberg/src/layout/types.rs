@@ -1,7 +1,8 @@
+use serde::{Deserialize, Serialize};
 use std::fmt;
 
 /// Bounding box in original image coordinates (x1, y1) top-left, (x2, y2) bottom-right.
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
 pub struct BBox {
     pub x1: f32,
     pub y1: f32,
@@ -77,7 +78,7 @@ impl fmt::Display for BBox {
 /// All model backends (RT-DETR, YOLO, etc.) map their native class IDs
 /// to this shared set. Models with fewer classes (DocLayNet: 11, PubLayNet: 5)
 /// map to the closest equivalent.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum LayoutClass {
     Caption,
     Footnote,
@@ -216,7 +217,7 @@ impl fmt::Display for LayoutClass {
 }
 
 /// A single layout detection result.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct LayoutDetection {
     pub class: LayoutClass,
     pub confidence: f32,
@@ -225,8 +226,9 @@ pub struct LayoutDetection {
 
 impl LayoutDetection {
     /// Sort detections by confidence in descending order.
-    pub fn sort_by_confidence_desc(detections: &mut [LayoutDetection]) {
+    pub fn sort_by_confidence_desc(mut detections: Vec<LayoutDetection>) -> Vec<LayoutDetection> {
         detections.sort_by(|a, b| b.confidence.total_cmp(&a.confidence));
+        detections
     }
 
     pub fn new(class: LayoutClass, confidence: f32, bbox: BBox) -> Self {
@@ -251,7 +253,7 @@ impl fmt::Display for LayoutDetection {
 }
 
 /// Page-level detection result containing all detections and page metadata.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DetectionResult {
     pub page_width: u32,
     pub page_height: u32,

@@ -4,6 +4,8 @@
 //! merging characters into text blocks, and assigning hierarchy levels based on
 //! font size analysis.
 
+use serde::{Deserialize, Serialize};
+
 use super::bounding_box::BoundingBox;
 use super::clustering::FontSizeCluster;
 use crate::core::config::ExtractionConfig;
@@ -61,7 +63,8 @@ pub struct KMeansResult {
 }
 
 /// Hierarchy level assignment result.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
 pub enum HierarchyLevel {
     /// H1 - Top-level heading
     H1 = 1,
@@ -76,6 +79,7 @@ pub enum HierarchyLevel {
     /// H6 - Senary heading
     H6 = 6,
     /// Body text
+    #[default]
     Body = 0,
 }
 

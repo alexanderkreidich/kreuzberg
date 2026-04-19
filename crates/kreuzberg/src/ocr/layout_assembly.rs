@@ -31,6 +31,7 @@ struct OcrRegion<'a> {
 }
 
 /// Pre-computed table markdown for a table detection region.
+#[derive(serde::Serialize, serde::Deserialize)]
 pub struct RecognizedTable {
     /// Detection bbox that this table corresponds to (for matching).
     pub detection_bbox: BBox,

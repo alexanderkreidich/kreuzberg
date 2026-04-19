@@ -194,3 +194,14 @@ docker-compose.yaml
 tools/benchmark-harness/datasets/
 tools/benchmark-harness/vendored/docling/md/iso_21111_10.md
 visualizations/
+.alef/
+*.pyd
+.gems/
+vendor/bundle/
+*.h.bak
+*.test
+*.class
+bin/
+obj/
+*.nupkg
+pkg/

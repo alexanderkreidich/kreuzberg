@@ -1191,7 +1191,7 @@ pub fn extract_text_from_rtf(
                             // Capture hex-encoded chars in footnote buffer even when skipping
                             if in_footnote
                                 && let (Some(h1), Some(h2)) = (hex1, hex2)
-                                && let Some(byte) = parse_hex_byte(h1, h2)
+                                && let Some(byte) = parse_hex_byte(h1 as u8, h2 as u8)
                             {
                                 footnote_buf.push(decode_windows_1252(byte));
                             }
@@ -1203,7 +1203,7 @@ pub fn extract_text_from_rtf(
                                 continue;
                             }
                             if let (Some(h1), Some(h2)) = (hex1, hex2)
-                                && let Some(byte) = parse_hex_byte(h1, h2)
+                                && let Some(byte) = parse_hex_byte(h1 as u8, h2 as u8)
                             {
                                 let decoded = decode_windows_1252(byte);
                                 if let Some(state) = table_state.as_mut()

@@ -240,7 +240,7 @@ fn read_varint(data: &[u8], pos: usize) -> Option<(u64, usize)> {
 ///
 /// `iwa_paths` should list the IWA file paths to read (e.g. `["Index/Document.iwa"]`).
 /// Returns a flat joined string of all text found across all IWA files.
-pub fn extract_text_from_iwa_files(content: &[u8], iwa_paths: &[&str]) -> Result<String> {
+pub fn extract_text_from_iwa_files(content: &[u8], iwa_paths: &[String]) -> Result<String> {
     let cursor = Cursor::new(content);
     let mut archive =
         zip::ZipArchive::new(cursor).map_err(|e| KreuzbergError::parsing(format!("Failed to open iWork ZIP: {e}")))?;

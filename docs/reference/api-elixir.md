@@ -1,2157 +1,26394 @@
-# Elixir API Reference <span class="version-badge">v4.0.0</span>
+---
+title: "Elixir API Reference"
+---
 
-Complete reference for the Kreuzberg Elixir API.
+## Elixir API Reference <span class="version-badge">v4.9.1</span>
 
-## Installation
+### Functions
 
-Add to your `mix.exs`:
-
-```elixir title="mix.exs"
-def deps do
-  [
-    {:kreuzberg, "~> 4.9.2"}
-  ]
-end
-```
-
-Or install from Git:
-
-```elixir title="mix.exs"
-def deps do
-  [
-    {:kreuzberg, git: "https://github.com/kreuzberg-dev/kreuzberg.git"}
-  ]
-end
-```
-
-## Core Functions
-
-### Kreuzberg.extract/3
-
-Extract content from binary document data.
+#### get_cache_metadata()
 
 **Signature:**
 
-```elixir title="Elixir"
-@spec extract(
-  binary(),
-  String.t(),
-  ExtractionConfig.t() | map() | keyword() | nil
-) :: {:ok, ExtractionResult.t()} | {:error, String.t()}
+```elixir
+@spec get_cache_metadata(cache_dir) :: {:ok, term()} | {:error, term()}
+def get_cache_metadata(cache_dir)
 ```
 
 **Parameters:**
 
-- `input` (binary): Binary document data to extract from
-- `mime_type` (String): MIME type of the document (for example, "application/pdf", "text/plain")
-- `config` (ExtractionConfig | map | keyword | nil): Extraction configuration. Uses defaults if nil
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `cache_dir` | `String.t()` | Yes | The cache dir |
 
-**Returns:**
+**Returns:** `CacheStats`
 
-- `{:ok, ExtractionResult.t()}`: Successfully extracted content with metadata
-- `{:error, reason}`: Extraction failed with error message
+**Errors:** Returns `{:error, reason}`
 
-**Example - Basic usage:**
-
-```elixir title="basic_extraction.exs"
-{:ok, pdf_binary} = File.read("document.pdf")
-{:ok, result} = Kreuzberg.extract(pdf_binary, "application/pdf")
-IO.puts(result.content)
-IO.puts("Pages: #{result.metadata["page_count"]}")
-```
-
-**Example - With configuration struct:**
-
-```elixir title="with_config.exs"
-config = %Kreuzberg.ExtractionConfig{
-  ocr: %{"enabled" => true, "language" => "eng"}
-}
-{:ok, result} = Kreuzberg.extract(pdf_binary, "application/pdf", config)
-```
-
-**Example - With keyword list configuration:**
-
-```elixir title="keyword_config.exs"
-{:ok, result} = Kreuzberg.extract(
-  pdf_binary,
-  "application/pdf",
-  ocr: %{"enabled" => true, "language" => "eng"}
-)
-```
 
 ---
 
-### Kreuzberg.extract!/3
-
-Extract content from binary data, raising on error.
+#### cleanup_cache()
 
 **Signature:**
 
-```elixir title="Elixir"
-@spec extract!(
-  binary(),
-  String.t(),
-  ExtractionConfig.t() | map() | keyword() | nil
-) :: ExtractionResult.t()
+```elixir
+@spec cleanup_cache(cache_dir, max_age_days, max_size_mb, target_size_ratio) :: {:ok, term()} | {:error, term()}
+def cleanup_cache(cache_dir, max_age_days, max_size_mb, target_size_ratio)
 ```
 
 **Parameters:**
 
-Same as [`extract/3`](#kreuzbergextract3).
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `cache_dir` | `String.t()` | Yes | The cache dir |
+| `max_age_days` | `float()` | Yes | The max age days |
+| `max_size_mb` | `float()` | Yes | The max size mb |
+| `target_size_ratio` | `float()` | Yes | The target size ratio |
 
-**Returns:**
+**Returns:** `UsizeF64`
 
-- `ExtractionResult.t()`: Successfully extracted content
+**Errors:** Returns `{:error, reason}`
 
-**Raises:**
-
-- `Kreuzberg.Error`: If extraction fails
-
-**Example:**
-
-```elixir title="basic_extraction.exs"
-result = Kreuzberg.extract!(pdf_binary, "application/pdf")
-IO.puts(result.content)
-```
 
 ---
 
-### Kreuzberg.extract_file/3
-
-Extract content from a file at the given path.
+#### smart_cleanup_cache()
 
 **Signature:**
 
-```elixir title="Elixir"
-@spec extract_file(
-  String.t() | Path.t(),
-  String.t() | nil,
-  ExtractionConfig.t() | map() | keyword() | nil
-) :: {:ok, ExtractionResult.t()} | {:error, String.t()}
+```elixir
+@spec smart_cleanup_cache(cache_dir, max_age_days, max_size_mb, min_free_space_mb) :: {:ok, term()} | {:error, term()}
+def smart_cleanup_cache(cache_dir, max_age_days, max_size_mb, min_free_space_mb)
 ```
 
 **Parameters:**
 
-- `path` (String | Path): File path to extract
-- `mime_type` (String | nil): Optional MIME type hint. If nil, MIME type is auto-detected
-- `config` (ExtractionConfig | map | keyword | nil): Extraction configuration
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `cache_dir` | `String.t()` | Yes | The cache dir |
+| `max_age_days` | `float()` | Yes | The max age days |
+| `max_size_mb` | `float()` | Yes | The max size mb |
+| `min_free_space_mb` | `float()` | Yes | The min free space mb |
 
-**Returns:**
+**Returns:** `UsizeF64`
 
-- `{:ok, ExtractionResult.t()}`: Successfully extracted content
-- `{:error, reason}`: Extraction failed with error message
+**Errors:** Returns `{:error, reason}`
 
-**Example - Basic usage:**
-
-```elixir title="basic_extraction.exs"
-{:ok, result} = Kreuzberg.extract_file("document.pdf")
-IO.puts(result.content)
-```
-
-**Example - With explicit MIME type:**
-
-```elixir title="with_mime.exs"
-{:ok, result} = Kreuzberg.extract_file("document.pdf", "application/pdf")
-```
-
-**Example - With configuration:**
-
-```elixir title="with_config.exs"
-config = %Kreuzberg.ExtractionConfig{
-  ocr: %{"language" => "eng"}
-}
-{:ok, result} = Kreuzberg.extract_file("scanned.pdf", nil, config)
-```
 
 ---
 
-### Kreuzberg.extract_file!/3
-
-Extract content from a file, raising on error.
+#### is_cache_valid()
 
 **Signature:**
 
-```elixir title="Elixir"
-@spec extract_file!(
-  String.t() | Path.t(),
-  String.t() | nil,
-  ExtractionConfig.t() | map() | keyword() | nil
-) :: ExtractionResult.t()
+```elixir
+@spec is_cache_valid(cache_path, max_age_days) :: {:ok, term()} | {:error, term()}
+def is_cache_valid(cache_path, max_age_days)
 ```
 
 **Parameters:**
 
-Same as [`extract_file/3`](#kreuzbergextract_file3).
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `cache_path` | `String.t()` | Yes | The cache path |
+| `max_age_days` | `float()` | Yes | The max age days |
 
-**Returns:**
+**Returns:** `boolean()`
 
-- `ExtractionResult.t()`: Successfully extracted content
-
-**Raises:**
-
-- `Kreuzberg.Error`: If extraction fails
-
-**Example:**
-
-```elixir title="basic_extraction.exs"
-result = Kreuzberg.extract_file!("document.pdf")
-IO.puts("Content: #{String.length(result.content)} characters")
-```
 
 ---
 
-## Batch Operations
-
-### Kreuzberg.batch_extract_files/3
-
-Extract content from multiple files in a batch operation.
+#### clear_cache_directory()
 
 **Signature:**
 
-```elixir title="Elixir"
-@spec batch_extract_files(
-  [String.t() | Path.t()],
-  String.t() | nil,
-  ExtractionConfig.t() | map() | keyword() | nil
-) :: {:ok, [ExtractionResult.t()]} | {:error, String.t()}
+```elixir
+@spec clear_cache_directory(cache_dir) :: {:ok, term()} | {:error, term()}
+def clear_cache_directory(cache_dir)
 ```
 
 **Parameters:**
 
-- `paths` (list): List of file paths to extract
-- `mime_type` (String | nil): MIME type for all files (optional, defaults to nil for auto-detection)
-- `config` (ExtractionConfig | map | keyword | nil): Extraction configuration applied to all files
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `cache_dir` | `String.t()` | Yes | The cache dir |
 
-**Returns:**
+**Returns:** `UsizeF64`
 
-- `{:ok, results}`: List of ExtractionResult structs
-- `{:error, reason}`: Error message if batch extraction fails
+**Errors:** Returns `{:error, reason}`
 
-**Example:**
-
-```elixir title="batch_extraction.exs"
-paths = ["doc1.pdf", "doc2.pdf", "doc3.pdf"]
-{:ok, results} = Kreuzberg.batch_extract_files(paths)
-
-Enum.each(results, fn result ->
-  IO.puts("Content: #{String.length(result.content)} characters")
-end)
-```
-
-**Example - With configuration:**
-
-```elixir title="batch_with_config.exs"
-config = %Kreuzberg.ExtractionConfig{
-  images: %{"enabled" => true}
-}
-{:ok, results} = Kreuzberg.batch_extract_files(paths, "application/pdf", config)
-```
 
 ---
 
-### Kreuzberg.batch_extract_files!/3
-
-Extract content from multiple files, raising on error.
+#### batch_cleanup_caches()
 
 **Signature:**
 
-```elixir title="Elixir"
-@spec batch_extract_files!(
-  [String.t() | Path.t()],
-  String.t() | nil,
-  ExtractionConfig.t() | map() | keyword() | nil
-) :: [ExtractionResult.t()]
+```elixir
+@spec batch_cleanup_caches(cache_dirs, max_age_days, max_size_mb, min_free_space_mb) :: {:ok, term()} | {:error, term()}
+def batch_cleanup_caches(cache_dirs, max_age_days, max_size_mb, min_free_space_mb)
 ```
 
 **Parameters:**
 
-Same as [`batch_extract_files/3`](#kreuzbergbatch_extract_files3).
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `cache_dirs` | `list(String.t())` | Yes | The cache dirs |
+| `max_age_days` | `float()` | Yes | The max age days |
+| `max_size_mb` | `float()` | Yes | The max size mb |
+| `min_free_space_mb` | `float()` | Yes | The min free space mb |
 
-**Returns:**
+**Returns:** `list(UsizeF64)`
 
-- List of ExtractionResult structs
+**Errors:** Returns `{:error, reason}`
 
-**Raises:**
-
-- `Kreuzberg.Error`: If batch extraction fails
 
 ---
 
-### Kreuzberg.batch_extract_bytes/3
+#### generate_cache_key()
 
-Extract content from multiple binary inputs in a batch operation.
+Generate a deterministic cache key from configuration parameters.
+
+# Algorithm
+
+Uses blake3 (cryptographic, SIMD-accelerated) for collision-resistant cache keys.
+Cache keys are generated by:
+1. Sorting key-value pairs by key (for determinism)
+2. Concatenating as "key1=val1&key2=val2&..."
+3. Hashing with blake3 and formatting as 32-character hex (first 128 bits)
 
 **Signature:**
 
-```elixir title="Elixir"
-@spec batch_extract_bytes(
-  [binary()],
-  String.t() | [String.t()],
-  ExtractionConfig.t() | map() | keyword() | nil
-) :: {:ok, [ExtractionResult.t()]} | {:error, String.t()}
+```elixir
+@spec generate_cache_key(parts) :: {:ok, term()} | {:error, term()}
+def generate_cache_key(parts)
 ```
 
 **Parameters:**
 
-- `data_list` (list): List of binary data inputs
-- `mime_types` (String | list): List of MIME types (one per input) or single MIME type for all
-- `config` (ExtractionConfig | map | keyword | nil): Extraction configuration applied to all items
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `parts` | `list(StrStr)` | Yes | The parts |
 
-**Returns:**
+**Returns:** `String.t()`
 
-- `{:ok, results}`: List of ExtractionResult structs
-- `{:error, reason}`: Error message if batch extraction fails
-
-**Example - Single MIME type:**
-
-```elixir title="batch_bytes.exs"
-data_list = [pdf_binary1, pdf_binary2, pdf_binary3]
-{:ok, results} = Kreuzberg.batch_extract_bytes(data_list, "application/pdf")
-```
-
-**Example - Multiple MIME types:**
-
-```elixir title="batch_mixed.exs"
-data_list = [pdf_binary, docx_binary, txt_binary]
-mime_types = [
-  "application/pdf",
-  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-  "text/plain"
-]
-{:ok, results} = Kreuzberg.batch_extract_bytes(data_list, mime_types)
-```
 
 ---
 
-### Kreuzberg.batch_extract_bytes!/3
+#### blake3_hash_bytes()
 
-Extract content from multiple binary inputs, raising on error.
+Hash arbitrary bytes with blake3, returning a 32-char hex string.
 
 **Signature:**
 
-```elixir title="Elixir"
-@spec batch_extract_bytes!(
-  [binary()],
-  String.t() | [String.t()],
-  ExtractionConfig.t() | map() | keyword() | nil
-) :: [ExtractionResult.t()]
+```elixir
+@spec blake3_hash_bytes(data) :: {:ok, term()} | {:error, term()}
+def blake3_hash_bytes(data)
 ```
 
 **Parameters:**
 
-Same as [`batch_extract_bytes/3`](#kreuzbergbatch_extract_bytes3).
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `data` | `binary()` | Yes | The data |
 
-**Returns:**
+**Returns:** `String.t()`
 
-- List of ExtractionResult structs
-
-**Raises:**
-
-- `Kreuzberg.Error`: If batch extraction fails
 
 ---
 
-## Async Operations
+#### blake3_hash_file()
 
-### Kreuzberg.extract_async/3
+Hash a file's content with blake3 using streaming 64 KiB reads.
 
-Extract content from binary data asynchronously using Tasks.
+Returns a 32-char hex string (128 bits of blake3 output).
 
 **Signature:**
 
-```elixir title="Elixir"
-@spec extract_async(
-  binary(),
-  String.t(),
-  ExtractionConfig.t() | map() | keyword() | nil
-) :: Task.t({:ok, ExtractionResult.t()} | {:error, String.t()})
+```elixir
+@spec blake3_hash_file(path) :: {:ok, term()} | {:error, term()}
+def blake3_hash_file(path)
 ```
 
 **Parameters:**
 
-- `input` (binary): Binary data to extract from
-- `mime_type` (String): MIME type of the data
-- `config` (ExtractionConfig | map | keyword | nil): Optional extraction configuration
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `path` | `String.t()` | Yes | Path to the file |
 
-**Returns:**
+**Returns:** `String.t()`
 
-- A Task that will resolve to `{:ok, ExtractionResult.t()}` or `{:error, String.t()}`
+**Errors:** Returns `{:error, reason}`
 
-**Example:**
-
-```elixir title="async_extraction.exs"
-task = Kreuzberg.extract_async(pdf_binary, "application/pdf")
-{:ok, result} = Task.await(task)
-IO.puts(result.content)
-```
-
-**Example - Multiple concurrent extractions:**
-
-```elixir title="concurrent.exs"
-tasks = [
-  Kreuzberg.extract_async(pdf1, "application/pdf"),
-  Kreuzberg.extract_async(pdf2, "application/pdf"),
-  Kreuzberg.extract_async(pdf3, "application/pdf")
-]
-
-results = Task.await_many(tasks)
-```
 
 ---
 
-### Kreuzberg.extract_file_async/3
-
-Extract content from a file asynchronously using Tasks.
+#### get_available_disk_space()
 
 **Signature:**
 
-```elixir title="Elixir"
-@spec extract_file_async(
-  String.t() | Path.t(),
-  String.t() | nil,
-  ExtractionConfig.t() | map() | keyword() | nil
-) :: Task.t({:ok, ExtractionResult.t()} | {:error, String.t()})
+```elixir
+@spec get_available_disk_space(path) :: {:ok, term()} | {:error, term()}
+def get_available_disk_space(path)
 ```
 
 **Parameters:**
 
-- `path` (String | Path): File path as String or Path.t()
-- `mime_type` (String | nil): Optional MIME type (defaults to nil for auto-detection)
-- `config` (ExtractionConfig | map | keyword | nil): Optional extraction configuration
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `path` | `String.t()` | Yes | Path to the file |
 
-**Returns:**
+**Returns:** `float()`
 
-- A Task that will resolve to `{:ok, ExtractionResult.t()}` or `{:error, String.t()}`
+**Errors:** Returns `{:error, reason}`
 
-**Example:**
-
-```elixir title="async_file.exs"
-task = Kreuzberg.extract_file_async("document.pdf")
-{:ok, result} = Task.await(task)
-```
-
-**Example - Process multiple files concurrently:**
-
-```elixir title="concurrent_files.exs"
-tasks = ["doc1.pdf", "doc2.pdf", "doc3.pdf"]
-  |> Enum.map(&Kreuzberg.extract_file_async/1)
-
-results = Task.await_many(tasks)
-```
 
 ---
 
-### Kreuzberg.batch_extract_files_async/3
-
-Batch extract content from multiple files asynchronously.
+#### fast_hash()
 
 **Signature:**
 
-```elixir title="Elixir"
-@spec batch_extract_files_async(
-  [String.t() | Path.t()],
-  String.t() | nil,
-  ExtractionConfig.t() | map() | keyword() | nil
-) :: Task.t({:ok, [ExtractionResult.t()]} | {:error, String.t()})
+```elixir
+@spec fast_hash(data) :: {:ok, term()} | {:error, term()}
+def fast_hash(data)
 ```
 
 **Parameters:**
 
-- `paths` (list): List of file paths
-- `mime_type` (String | nil): Optional MIME type for all files
-- `config` (ExtractionConfig | map | keyword | nil): Optional extraction configuration
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `data` | `binary()` | Yes | The data |
 
-**Returns:**
+**Returns:** `integer()`
 
-- A Task that will resolve to `{:ok, [ExtractionResult.t()]}` or `{:error, String.t()}`
-
-**Example:**
-
-```elixir title="batch_async.exs"
-paths = ["doc1.pdf", "doc2.pdf", "doc3.pdf"]
-task = Kreuzberg.batch_extract_files_async(paths)
-{:ok, results} = Task.await(task)
-```
 
 ---
 
-### Kreuzberg.batch_extract_bytes_async/3
-
-Batch extract content from multiple binary inputs asynchronously.
+#### validate_cache_key()
 
 **Signature:**
 
-```elixir title="Elixir"
-@spec batch_extract_bytes_async(
-  [binary()],
-  String.t() | [String.t()],
-  ExtractionConfig.t() | map() | keyword() | nil
-) :: Task.t({:ok, [ExtractionResult.t()]} | {:error, String.t()})
+```elixir
+@spec validate_cache_key(key) :: {:ok, term()} | {:error, term()}
+def validate_cache_key(key)
 ```
 
 **Parameters:**
 
-- `data_list` (list): List of binary data inputs
-- `mime_types` (String | list): Single MIME type string or list of MIME types
-- `config` (ExtractionConfig | map | keyword | nil): Optional extraction configuration
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `key` | `String.t()` | Yes | The key |
 
-**Returns:**
+**Returns:** `boolean()`
 
-- A Task that will resolve to `{:ok, [ExtractionResult.t()]}` or `{:error, String.t()}`
-
-**Example:**
-
-```elixir title="batch_bytes_async.exs"
-data_list = [pdf1_binary, pdf2_binary, pdf3_binary]
-task = Kreuzberg.batch_extract_bytes_async(data_list, "application/pdf")
-{:ok, results} = Task.await(task)
-```
 
 ---
 
-## Cache Management
-
-### Kreuzberg.cache_stats/0
-
-Retrieve statistics about the extraction cache.
+#### filter_old_cache_entries()
 
 **Signature:**
 
-```elixir title="Elixir"
-@spec cache_stats() :: {:ok, map()} | {:error, String.t()}
-```
-
-**Returns:**
-
-- `{:ok, stats}`: Map with cache statistics
-  - `"total_files"` - Number of cached extraction results
-  - `"total_size_mb"` - Total size of cache in megabytes
-  - `"available_space_mb"` - Available disk space in megabytes
-  - `"oldest_file_age_days"` - Age of oldest cached file in days
-  - `"newest_file_age_days"` - Age of newest cached file in days
-- `{:error, reason}`: Error message if retrieval fails
-
-**Example:**
-
-```elixir title="cache_stats.exs"
-{:ok, stats} = Kreuzberg.cache_stats()
-IO.puts("Cache entries: #{stats["total_files"]}")
-IO.puts("Cache size: #{stats["total_size_mb"]} MB")
-```
-
----
-
-### Kreuzberg.cache_stats!/0
-
-Retrieve cache statistics, raising on error.
-
-**Signature:**
-
-```elixir title="Elixir"
-@spec cache_stats!() :: map()
-```
-
-**Returns:**
-
-- Map with cache statistics
-
-**Raises:**
-
-- `Kreuzberg.Error`: If cache statistics retrieval fails
-
-**Example:**
-
-```elixir title="cache_stats.exs"
-stats = Kreuzberg.cache_stats!()
-IO.puts("Total cached files: #{stats["total_files"]}")
-```
-
----
-
-### Kreuzberg.clear_cache/0
-
-Clear the extraction cache, removing all cached results.
-
-**Signature:**
-
-```elixir title="Elixir"
-@spec clear_cache() :: :ok | {:error, String.t()}
-```
-
-**Returns:**
-
-- `:ok`: Cache cleared successfully
-- `{:error, reason}`: Error message if clearing fails
-
-**Example:**
-
-```elixir title="clear_cache.exs"
-:ok = Kreuzberg.clear_cache()
-{:ok, stats} = Kreuzberg.cache_stats()
-IO.puts("Files after clear: #{stats["total_files"]}")
-```
-
----
-
-### Kreuzberg.clear_cache!/0
-
-Clear the cache, raising on error.
-
-**Signature:**
-
-```elixir title="Elixir"
-@spec clear_cache!() :: :ok
-```
-
-**Raises:**
-
-- `Kreuzberg.Error`: If cache clearing fails
-
-**Example:**
-
-```elixir title="clear_cache.exs"
-Kreuzberg.clear_cache!()
-```
-
----
-
-## Utility Functions
-
-### Kreuzberg.detect_mime_type/1
-
-Detect the MIME type of binary data using content inspection.
-
-**Signature:**
-
-```elixir title="Elixir"
-@spec detect_mime_type(binary()) :: {:ok, String.t()} | {:error, String.t()}
+```elixir
+@spec filter_old_cache_entries(cache_times, current_time, max_age_seconds) :: {:ok, term()} | {:error, term()}
+def filter_old_cache_entries(cache_times, current_time, max_age_seconds)
 ```
 
 **Parameters:**
 
-- `data` (binary): Binary data to analyze
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `cache_times` | `list(float())` | Yes | The cache times |
+| `current_time` | `float()` | Yes | The current time |
+| `max_age_seconds` | `float()` | Yes | The max age seconds |
+
+**Returns:** `list(integer())`
+
+
+---
+
+#### sort_cache_by_access_time()
+
+**Signature:**
+
+```elixir
+@spec sort_cache_by_access_time(entries) :: {:ok, term()} | {:error, term()}
+def sort_cache_by_access_time(entries)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `entries` | `list(StringF64)` | Yes | The entries |
+
+**Returns:** `list(String.t())`
+
+
+---
+
+#### sanitize_namespace()
+
+Validate and sanitize a cache namespace string.
+
+Namespace must be alphanumeric, hyphens, or underscores only, max 64 chars.
+Returns `nil` if the input is invalid.
+
+**Signature:**
+
+```elixir
+@spec sanitize_namespace(namespace) :: {:ok, term()} | {:error, term()}
+def sanitize_namespace(namespace)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `namespace` | `String.t()` | Yes | The namespace |
+
+**Returns:** `String.t() | nil`
+
+
+---
+
+#### is_batch_mode()
+
+Check if we're currently in batch processing mode.
+
+Returns `false` if the task-local is not set (single-file mode).
+
+**Signature:**
+
+```elixir
+@spec is_batch_mode() :: {:ok, term()} | {:error, term()}
+def is_batch_mode()
+```
+
+**Returns:** `boolean()`
+
+
+---
+
+#### resolve_thread_budget()
+
+Resolve the effective thread budget from config or auto-detection.
+
+User-set `max_threads` takes priority. Otherwise auto-detects from `num_cpus`,
+capped at 8 for sane defaults in serverless environments.
+
+**Signature:**
+
+```elixir
+@spec resolve_thread_budget(config) :: {:ok, term()} | {:error, term()}
+def resolve_thread_budget(config)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `config` | `ConcurrencyConfig | nil` | No | The configuration options |
+
+**Returns:** `integer()`
+
+
+---
+
+#### init_thread_pools()
+
+Initialize the global Rayon thread pool with the given budget.
+
+Safe to call multiple times — only the first call takes effect (subsequent
+calls are silently ignored).
+
+**Signature:**
+
+```elixir
+@spec init_thread_pools(budget) :: {:ok, term()} | {:error, term()}
+def init_thread_pools(budget)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `budget` | `integer()` | Yes | The budget |
+
+**Returns:** `:ok`
+
+
+---
+
+#### merge_config_json()
+
+Merge extraction configuration using JSON-level field override.
+
+Serializes the base config to JSON, merges each field from the override JSON
+(top-level only), and deserializes back. This correctly handles boolean fields
+explicitly set to their default values — the override always wins for any field
+present in `override_json`.
+
+Fields **not** present in `override_json` are preserved from `base`.
+
+**Errors:**
+
+Returns `Err` if the base config cannot be serialized, or if the merged JSON
+cannot be deserialized back into `ExtractionConfig` (e.g., wrong field types).
+
+**Signature:**
+
+```elixir
+@spec merge_config_json(base, override_json) :: {:ok, term()} | {:error, term()}
+def merge_config_json(base, override_json)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `base` | `ExtractionConfig` | Yes | The extraction config |
+| `override_json` | `String.t()` | Yes | The override json |
+
+**Returns:** `ExtractionConfig`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### build_config_from_json()
+
+Build extraction config by optionally merging JSON overrides into a base config.
+
+If `override_json` is `nil`, returns a clone of `base`. Otherwise delegates
+to `merge_config_json`.
+
+**Signature:**
+
+```elixir
+@spec build_config_from_json(base, override_json) :: {:ok, term()} | {:error, term()}
+def build_config_from_json(base, override_json)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `base` | `ExtractionConfig` | Yes | The extraction config |
+| `override_json` | `String.t() | nil` | No | The override json |
+
+**Returns:** `ExtractionConfig`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### validate_port()
+
+Validate a port number for server configuration.
+
+Port must be in the range 1-65535. While ports 1-1023 are privileged and may require
+special permissions on some systems, they are still valid port numbers.
 
 **Returns:**
 
-- `{:ok, mime_type}`: Detected MIME type as a string
-- `{:error, reason}`: Error if detection fails
-
-**Example:**
-
-```elixir title="mime_detection.exs"
-{:ok, pdf_binary} = File.read("document.pdf")
-{:ok, mime_type} = Kreuzberg.detect_mime_type(pdf_binary)
-IO.puts("Detected MIME type: #{mime_type}")
-# => "application/pdf"
-```
-
----
-
-### Kreuzberg.detect_mime_type_from_path/1
-
-Detect the MIME type of a file using its path and extension.
+`Ok(())` if the port is valid, or a `ValidationError` with details about valid ranges.
 
 **Signature:**
 
-```elixir title="Elixir"
-@spec detect_mime_type_from_path(String.t() | Path.t()) ::
-  {:ok, String.t()} | {:error, String.t()}
+```elixir
+@spec validate_port(port) :: {:ok, term()} | {:error, term()}
+def validate_port(port)
 ```
 
 **Parameters:**
 
-- `path` (String | Path): File path to analyze
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `port` | `integer()` | Yes | The port number to validate |
+
+**Returns:** `:ok`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### validate_host()
+
+Validate a host/IP address string for server configuration.
+
+Accepts valid IPv4 addresses (e.g., "127.0.0.1", "0.0.0.0"), valid IPv6 addresses
+(e.g., ".1", "."), and hostnames (e.g., "localhost", "example.com").
 
 **Returns:**
 
-- `{:ok, mime_type}`: Detected MIME type as a string
-- `{:error, reason}`: Error if detection fails
-
-**Example:**
-
-```elixir title="mime_from_path.exs"
-{:ok, mime_type} = Kreuzberg.detect_mime_type_from_path("document.pdf")
-IO.puts("MIME type: #{mime_type}")
-# => "application/pdf"
-```
-
----
-
-### Kreuzberg.validate_mime_type/1
-
-Validate that a MIME type string is supported by Kreuzberg.
+`Ok(())` if the host is valid, or a `ValidationError` with details about valid formats.
 
 **Signature:**
 
-```elixir title="Elixir"
-@spec validate_mime_type(String.t()) :: {:ok, String.t()} | {:error, String.t()}
+```elixir
+@spec validate_host(host) :: {:ok, term()} | {:error, term()}
+def validate_host(host)
 ```
 
 **Parameters:**
 
-- `mime_type` (String): MIME type string to validate
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `host` | `String.t()` | Yes | The host/IP address string to validate |
+
+**Returns:** `:ok`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### validate_cors_origin()
+
+Validate a CORS (Cross-Origin Resource Sharing) origin URL.
+
+Accepts valid HTTP/HTTPS URLs (e.g., "<https://example.com">) or the wildcard "*"
+to allow all origins. URLs must start with "<http://"> or "<https://",> or be exactly "*".
 
 **Returns:**
 
-- `{:ok, mime_type}`: Returns the MIME type if valid
-- `{:error, reason}`: Error if MIME type is not supported
-
-**Example:**
-
-```elixir title="validate_mime.exs"
-{:ok, _} = Kreuzberg.validate_mime_type("application/pdf")
-{:error, reason} = Kreuzberg.validate_mime_type("application/invalid")
-```
-
----
-
-### Kreuzberg.get_extensions_for_mime/1
-
-Get all file extensions associated with a given MIME type.
+`Ok(())` if the origin is valid, or a `ValidationError` with details about valid formats.
 
 **Signature:**
 
-```elixir title="Elixir"
-@spec get_extensions_for_mime(String.t()) :: {:ok, [String.t()]} | {:error, String.t()}
+```elixir
+@spec validate_cors_origin(origin) :: {:ok, term()} | {:error, term()}
+def validate_cors_origin(origin)
 ```
 
 **Parameters:**
 
-- `mime_type` (String): MIME type string
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `origin` | `String.t()` | Yes | The CORS origin URL to validate |
+
+**Returns:** `:ok`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### validate_upload_size()
+
+Validate an upload size limit for server configuration.
+
+Upload size must be greater than 0 (measured in bytes).
 
 **Returns:**
 
-- `{:ok, extensions}`: List of file extensions (without dot)
-- `{:error, reason}`: Error if MIME type is not found
-
-**Example:**
-
-```elixir title="extensions.exs"
-{:ok, exts} = Kreuzberg.get_extensions_for_mime("application/pdf")
-IO.inspect(exts)
-# => ["pdf"]
-
-{:ok, exts} = Kreuzberg.get_extensions_for_mime("image/jpeg")
-IO.inspect(exts)
-# => ["jpg", "jpeg"]
-```
-
----
-
-### Kreuzberg.list_embedding_presets/0
-
-List all available embedding model presets.
+`Ok(())` if the size is valid, or a `ValidationError` with details about constraints.
 
 **Signature:**
 
-```elixir title="Elixir"
-@spec list_embedding_presets() :: {:ok, [String.t()]} | {:error, String.t()}
+```elixir
+@spec validate_upload_size(size) :: {:ok, term()} | {:error, term()}
+def validate_upload_size(size)
 ```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `size` | `integer()` | Yes | The maximum upload size in bytes to validate |
+
+**Returns:** `:ok`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### validate_binarization_method()
+
+Validate a binarization method string.
 
 **Returns:**
 
-- `{:ok, presets}`: List of preset names as strings
-- `{:error, reason}`: Error if retrieval fails
-
-**Example:**
-
-```elixir title="presets.exs"
-{:ok, presets} = Kreuzberg.list_embedding_presets()
-IO.inspect(presets)
-# => ["balanced", "fast", "quality", "multilingual"]
-```
-
----
-
-### Kreuzberg.get_embedding_preset/1
-
-Get detailed information about a specific embedding preset.
+`Ok(())` if the method is valid, or a `ValidationError` with details about valid options.
 
 **Signature:**
 
-```elixir title="Elixir"
-@spec get_embedding_preset(String.t()) :: {:ok, map()} | {:error, String.t()}
+```elixir
+@spec validate_binarization_method(method) :: {:ok, term()} | {:error, term()}
+def validate_binarization_method(method)
 ```
 
 **Parameters:**
 
-- `preset_name` (String): Name of the embedding preset
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `method` | `String.t()` | Yes | The binarization method to validate (e.g., "otsu", "adaptive", "sauvola") |
+
+**Returns:** `:ok`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### validate_token_reduction_level()
+
+Validate a token reduction level string.
 
 **Returns:**
 
-- `{:ok, preset_info}`: Map containing preset details
-  - `"name"` - Preset name
-  - `"chunk_size"` - Chunk size in tokens
-  - `"overlap"` - Chunk overlap in tokens
-  - `"dimensions"` - Embedding vector dimension
-  - `"description"` - Human-readable description
-- `{:error, reason}`: Error if preset not found
-
-**Example:**
-
-```elixir title="preset_info.exs"
-{:ok, preset} = Kreuzberg.get_embedding_preset("fast")
-IO.puts("Preset: #{preset["name"]}")
-IO.puts("Dimensions: #{preset["dimensions"]}")
-```
-
----
-
-### Kreuzberg.classify_error/1
-
-Classify an error message into a semantic error category.
+`Ok(())` if the level is valid, or a `ValidationError` with details about valid options.
 
 **Signature:**
 
-```elixir title="Elixir"
-@spec classify_error(String.t()) :: atom()
+```elixir
+@spec validate_token_reduction_level(level) :: {:ok, term()} | {:error, term()}
+def validate_token_reduction_level(level)
 ```
 
 **Parameters:**
 
-- `error_message` (String): Error message string to classify
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `level` | `String.t()` | Yes | The token reduction level to validate (e.g., "off", "light", "moderate") |
+
+**Returns:** `:ok`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### validate_ocr_backend()
+
+Validate an OCR backend string.
 
 **Returns:**
 
-- Error category atom:
-  - `:io_error` - File I/O related errors
-  - `:invalid_format` - File format errors
-  - `:invalid_config` - Configuration or parameter errors
-  - `:ocr_error` - OCR engine or processing errors
-  - `:extraction_error` - General extraction failures
-  - `:unknown_error` - Errors that don't match other categories
-
-**Example:**
-
-```elixir title="error_classification.exs"
-atom = Kreuzberg.classify_error("File not found: /path/to/file.pdf")
-IO.inspect(atom)
-# => :io_error
-
-atom = Kreuzberg.classify_error("Invalid PDF format")
-IO.inspect(atom)
-# => :invalid_format
-```
-
----
-
-## Configuration
-
-!!! Warning "Deprecated API"
-    The `force_ocr` parameter has been deprecated in favor of the new `ocr` configuration object.
-
-    **Old pattern (no longer supported):**
-    ```elixir
-    config = %Kreuzberg.ExtractionConfig{force_ocr: true}
-    ```
-
-    **New pattern:**
-    ```elixir
-    config = %Kreuzberg.ExtractionConfig{
-      ocr: %Kreuzberg.OcrConfig{backend: "tesseract"}
-    }
-    ```
-
-    The new approach provides more granular control over OCR behavior through the OcrConfig struct.
-
-### ExtractionConfig
-
-Main configuration struct for extraction operations.
-
-**Type:**
-
-```elixir title="Elixir"
-@type t :: %Kreuzberg.ExtractionConfig{
-  chunking: map() | nil,
-  concurrency: map() | nil,
-  enable_quality_processing: boolean(),
-  force_ocr: boolean(),
-  html_options: map() | nil,
-  images: map() | nil,
-  include_document_structure: boolean(),
-  keywords: map() | nil,
-  language_detection: map() | nil,
-  layout: map() | nil,
-  max_concurrent_extractions: non_neg_integer() | nil,
-  ocr: map() | nil,
-  output_format: String.t(),
-  pages: map() | nil,
-  pdf_options: map() | nil,
-  postprocessor: map() | nil,
-  result_format: String.t(),
-  security_limits: map() | nil,
-  token_reduction: map() | nil,
-  use_cache: boolean(),
-}
-```
-
-**Fields:**
-
-- `chunking` (map | nil): Text chunking configuration.
-- `concurrency` (map | nil): Concurrency configuration for extraction parallelization.
-- `enable_quality_processing` (boolean): Enable quality post-processing (default: true).
-- `force_ocr` (boolean): Force OCR even for searchable PDFs (default: false).
-- `html_options` (map | nil): HTML to Markdown conversion options.
-- `images` (map | nil): Image extraction configuration.
-- `include_document_structure` (boolean): Include hierarchical document structure in results (default: false).
-- `keywords` (map | nil): Keyword extraction configuration.
-- `language_detection` (map | nil): Language detection settings.
-- `layout` (map | nil): Layout detection configuration.
-- `max_concurrent_extractions` (non_neg_integer | nil): Maximum concurrent extractions in batch operations.
-- `ocr` (map | nil): OCR configuration.
-- `output_format` (String): Content text format — `"plain"`, `"markdown"`, `"djot"`, `"html"` (default: `"plain"`).
-- `pages` (map | nil): Page-level extraction configuration.
-- `pdf_options` (map | nil): PDF-specific options.
-- `postprocessor` (map | nil): Post-processor configuration.
-- `result_format` (String): Result structure format — `"unified"`, `"element_based"` (default: `"unified"`).
-- `security_limits` (map | nil): Security limits for extraction.
-- `token_reduction` (map | nil): Token reduction settings.
-- `use_cache` (boolean): Enable result caching (default: true).
-
-**Example - Basic configuration:**
-
-```elixir title="basic_config.exs"
-config = %Kreuzberg.ExtractionConfig{
-  use_cache: true,
-  ocr: %Kreuzberg.OcrConfig{backend: "tesseract"}
-}
-
-{:ok, result} = Kreuzberg.extract_file("document.pdf", nil, config)
-```
-
-**Example - OCR configuration:**
-
-```elixir title="ocr_config.exs"
-config = %Kreuzberg.ExtractionConfig{
-  ocr: %{
-    "enabled" => true,
-    "language" => "eng",
-    "backend" => "tesseract"
-  }
-}
-
-{:ok, result} = Kreuzberg.extract_file("scanned.pdf", nil, config)
-```
-
-**PaddleOCR-specific fields:** <span class="version-badge">v4.5.0</span>
-
-When using PaddleOCR, the `ocr` map supports:
-
-- `"model_tier"` (String): Model tier: "mobile" (lightweight, ~21MB total, fast) or "server" (high accuracy, ~172MB, best with GPU). Default: "mobile"
-- `"padding"` (Integer): Padding in pixels (0-100) added around the image before detection. Default: 10
-
-```elixir title="paddle_ocr_config.exs"
-config = %Kreuzberg.ExtractionConfig{
-  ocr: %{
-    "backend" => "paddle-ocr",
-    "language" => "en",
-    "model_tier" => "server",
-    "padding" => 10
-  }
-}
-```
-
-**Example - Chunking configuration:**
-
-```elixir title="chunking_config.exs"
-config = %Kreuzberg.ExtractionConfig{
-  chunking: %{
-    "enabled" => true,
-    "chunk_size" => 1024,
-    "chunk_overlap" => 200,
-    "chunking_strategy" => "semantic"
-  }
-}
-
-{:ok, result} = Kreuzberg.extract_file("document.pdf", nil, config)
-```
-
-**Example - Page extraction:**
-
-```elixir title="page_config.exs"
-config = %Kreuzberg.ExtractionConfig{
-  pages: %{
-    "extract_pages" => true,
-    "insert_page_markers" => true,
-    "marker_format" => "\n\n--- Page {page_num} ---\n\n"
-  }
-}
-
-{:ok, result} = Kreuzberg.extract_file("document.pdf", nil, config)
-
-if result.pages do
-  Enum.each(result.pages, fn page ->
-    IO.puts("Page #{page["page_number"]}: #{String.length(page["content"])} chars")
-  end)
-end
-```
-
-**Example - Image extraction:**
-
-```elixir title="image_config.exs"
-config = %Kreuzberg.ExtractionConfig{
-  images: %{
-    "enabled" => true,
-    "min_width" => 100,
-    "min_height" => 100,
-    "format" => "png"
-  }
-}
-
-{:ok, result} = Kreuzberg.extract_file("document.pdf", nil, config)
-
-if result.images do
-  IO.puts("Extracted #{length(result.images)} images")
-end
-```
-
-**Example - PDF options with concurrency:**
-
-```elixir title="pdf_config.exs"
-config = %Kreuzberg.ExtractionConfig{
-  pdf_options: %{
-    "extract_images" => true,
-    "extract_annotations" => true,
-    "allow_single_column_tables" => true
-  },
-  concurrency: %{
-    "max_threads" => 4
-  }
-}
-
-{:ok, result} = Kreuzberg.extract_file("document.pdf", nil, config)
-```
-
-**PDF Options Fields:**
-
-When configuring `pdf_options` map:
-
-- `"allow_single_column_tables"` (Boolean): <span class="version-badge">v4.5.0</span> Allow extraction of single-column tables. Default: false
-- `"extract_annotations"` (Boolean): Extract PDF annotations. Default: false
-- `"extract_images"` (Boolean): Extract images from PDF. Default: false
-- `"extract_metadata"` (Boolean): Extract PDF metadata. Default: true
-- `"passwords"` (List<String>): Passwords to try for encrypted PDFs. Default: nil
-
-**Concurrency Configuration:** <span class="version-badge">v4.5.0</span>
-
-When configuring `concurrency` map:
-
-- `"max_threads"` (Integer): Maximum number of threads for parallel extraction. Default: nil (system default)
-
----
-
-### LayoutDetectionConfig <span class="version-badge">v4.5.0</span>
-
-Configure layout detection for document structure analysis.
-
-**Fields:**
-
-| Field | Type | Default | Description |
-|-------|------|---------|-------------|
-| `"confidence_threshold"` | Float\|nil | nil | Minimum confidence score (0.0-1.0) for layout detection results. If nil, no filtering applied |
-| `"apply_heuristics"` | Boolean | true | Apply post-processing heuristics to refine layout results |
-| `"table_model"` | String\|nil | nil | Table structure recognition model: `"tatr"` (default), `"slanet_wired"`, `"slanet_wireless"`, `"slanet_plus"`, `"slanet_auto"` |
-
-**Example:**
-
-```elixir title="layout_detection.exs"
-config = %Kreuzberg.ExtractionConfig{
-  layout: %{
-    "confidence_threshold" => 0.5,
-    "apply_heuristics" => true
-  }
-}
-
-{:ok, result} = Kreuzberg.extract_file("document.pdf", nil, config)
-
-if result.document do
-  IO.puts("Document structure detected")
-  IO.puts("Sections: #{length(result.document["sections"])}")
-end
-```
-
----
-
-## Results & Types
-
-### ExtractionResult
-
-Result struct returned by all extraction functions.
-
-**Type:**
-
-```elixir title="Elixir"
-@type t :: %Kreuzberg.ExtractionResult{
-  annotations: [Kreuzberg.DocumentTextAnnotation.t()] | nil,
-  chunks: [Kreuzberg.Chunk.t()] | nil,
-  content: String.t(),
-  detected_languages: [String.t()] | nil,
-  djot_content: Kreuzberg.DjotContent.t() | nil,
-  document: Kreuzberg.DocumentStructure.t() | nil,
-  elements: [Kreuzberg.Element.t()] | nil,
-  extracted_keywords: [Kreuzberg.Keyword.t()] | nil,
-  images: [Kreuzberg.Image.t()] | nil,
-  metadata: Kreuzberg.Metadata.t(),
-  mime_type: String.t(),
-  ocr_elements: [Kreuzberg.OcrElement.t()] | nil,
-  pages: [Kreuzberg.Page.t()] | nil,
-  processing_warnings: [Kreuzberg.ProcessingWarning.t()],
-  quality_score: float() | nil,
-  tables: [Kreuzberg.Table.t()],
-}
-```
-
-**Fields:**
-
-- `annotations` (list | nil): PDF annotations (text notes, highlights, links, stamps) as `Kreuzberg.DocumentTextAnnotation` structs.
-- `chunks` (list | nil): List of text chunks with embeddings (`Kreuzberg.Chunk`) when chunking is enabled.
-- `content` (String): Extracted text content.
-- `detected_languages` (list | nil): List of detected language codes (ISO 639-1) if language detection is enabled.
-- `djot_content` (Kreuzberg.DjotContent | nil): Rich Djot content structure.
-- `document` (Kreuzberg.DocumentStructure | nil): Hierarchical document structure when `include_document_structure` is true.
-- `elements` (list | nil): Semantic elements (`Kreuzberg.Element`) when `result_format` is `"element_based"`.
-- `extracted_keywords` (list | nil): Extracted keywords with scores (`Kreuzberg.Keyword`).
-- `images` (list | nil): List of extracted images (`Kreuzberg.Image`).
-- `metadata` (Kreuzberg.Metadata): Document metadata.
-- `mime_type` (String): MIME type of the processed document.
-- `ocr_elements` (list | nil): OCR elements (`Kreuzberg.OcrElement`) with bounding geometry and confidence.
-- `pages` (list | nil): Per-page extracted content (`Kreuzberg.Page`).
-- `processing_warnings` (list): Non-fatal warnings (`Kreuzberg.ProcessingWarning`) from processing pipeline stages.
-- `quality_score` (float | nil): Document quality score between 0.0 and 1.0.
-- `tables` (list): List of extracted tables (`Kreuzberg.Table`).
-
-**Example - Basic result access:**
-
-```elixir title="result_access.exs"
-{:ok, result} = Kreuzberg.extract_file("document.pdf")
-
-IO.puts("Content: #{result.content}")
-IO.puts("MIME type: #{result.mime_type}")
-IO.puts("Page count: #{result.metadata["page_count"]}")
-IO.puts("Tables: #{length(result.tables)}")
-
-if result.detected_languages do
-  IO.puts("Languages: #{Enum.join(result.detected_languages, ", ")}")
-end
-```
-
-**Example - Processing tables:**
-
-```elixir title="tables.exs"
-{:ok, result} = Kreuzberg.extract_file("invoice.pdf")
-
-Enum.each(result.tables, fn table ->
-  IO.puts("Table on page #{table["page_number"]}:")
-  IO.puts(table["markdown"])
-  IO.puts("")
-end)
-```
-
-**Example - Page iteration:**
-
-```elixir title="pages.exs"
-config = %Kreuzberg.ExtractionConfig{
-  pages: %{"extract_pages" => true}
-}
-
-{:ok, result} = Kreuzberg.extract_file("document.pdf", nil, config)
-
-if result.pages do
-  Enum.each(result.pages, fn page ->
-    IO.puts("Page #{page["page_number"]}:")
-    IO.puts("  Content: #{String.length(page["content"])} chars")
-    IO.puts("  Tables: #{length(page["tables"])}")
-    IO.puts("  Images: #{length(page["images"])}")
-  end)
-end
-```
-
----
-
-### Metadata
-
-Document metadata dictionary. Fields vary by document format.
-
-**Common Fields:**
-
-- `title` (String | nil): Document title.
-- `subject` (String | nil): Document subject or description.
-- `authors` (list(String) | nil): List of author names.
-- `keywords` (list(String) | nil): List of keywords.
-- `language` (String | nil): Primary language (ISO 639-1 code).
-- `created_at` (String | nil): Creation date (ISO 8601).
-- `modified_at` (String | nil): Last modification date (ISO 8601).
-- `created_by` (String | nil): Application that created the document.
-- `modified_by` (String | nil): Application that last modified the document.
-- `pages` (Kreuzberg.PageStructure | nil): Page structure information.
-- `format` (map | nil): Format-specific metadata (flattened fields).
-- `image_preprocessing` (Kreuzberg.ImagePreprocessingMetadata | nil): Image preprocessing metadata.
-- `json_schema` (map | nil): JSON schema if applicable.
-- `error` (Kreuzberg.ErrorMetadata | nil): Error metadata if extraction partially failed.
-- `category` (String | nil): Document category classification.
-- `tags` (list(String) | nil): List of document tags.
-- `document_version` (String | nil): Version of the document.
-- `abstract_text` (String | nil): Abstract or summary of the document.
-- `output_format` (String | nil): Output format used for extraction.
-- `extraction_duration_ms` (non_neg_integer | nil): Time taken for extraction in milliseconds.
-- `additional` (map): Additional metadata fields.
-
-**Example:**
-
-```elixir title="metadata.exs"
-{:ok, result} = Kreuzberg.extract_file("document.pdf")
-metadata = result.metadata
-
-if metadata["format_type"] == "pdf" do
-  IO.puts("Title: #{metadata["title"]}")
-  IO.puts("Author: #{metadata["author"]}")
-  IO.puts("Pages: #{metadata["page_count"]}")
-end
-```
-
----
-
-### Table
-
-Extracted table structure.
-
-**Fields:**
-
-- `cells` (list(list(String))): 2D array of table cells (rows x columns).
-- `markdown` (String): Table rendered as markdown.
-- `page_number` (non_neg_integer): Page number where table was found (0-indexed).
-- `bounding_box` (Kreuzberg.BoundingBox | nil): Bounding box coordinates if available.
-
-**Example:**
-
-```elixir title="tables.exs"
-{:ok, result} = Kreuzberg.extract_file("invoice.pdf")
-
-Enum.each(result.tables, fn table ->
-  IO.puts("Table on page #{table.page_number}:")
-  IO.puts(table.markdown)
-
-  # Access raw cell data
-  Enum.each(table.cells, fn row ->
-    IO.inspect(row)
-  end)
-end)
-```
-
----
-
-## Plugin System
-
-### Kreuzberg.extract_with_plugins/4
-
-Extract content with plugin processing support.
+`Ok(())` if the backend is valid, or a `ValidationError` with details about valid options.
 
 **Signature:**
 
-```elixir title="Elixir"
-@spec extract_with_plugins(
-  binary(),
-  String.t(),
-  ExtractionConfig.t() | map() | keyword() | nil,
-  keyword()
-) :: {:ok, ExtractionResult.t()} | {:error, String.t()}
+```elixir
+@spec validate_ocr_backend(backend) :: {:ok, term()} | {:error, term()}
+def validate_ocr_backend(backend)
 ```
 
 **Parameters:**
 
-- `input` (binary): Binary document data to extract from
-- `mime_type` (String): MIME type of the document
-- `config` (ExtractionConfig | map | keyword | nil): Extraction configuration (optional)
-- `plugin_opts` (keyword): Plugin options (optional):
-  - `:validators` - List of validator modules to run before extraction
-  - `:post_processors` - Map of stage atoms to lists of post-processor modules
-    - `:early` - Applied first to extraction result
-    - `:middle` - Applied after early processors
-    - `:late` - Applied last before final validators
-  - `:final_validators` - List of validator modules to run after post-processing
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `backend` | `String.t()` | Yes | The OCR backend to validate (e.g., "tesseract", "easyocr", "paddleocr") |
+
+**Returns:** `:ok`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### validate_language_code()
+
+Validate a language code (ISO 639-1 or 639-3 format).
+
+Accepts both 2-letter ISO 639-1 codes (e.g., "en", "de") and
+3-letter ISO 639-3 codes (e.g., "eng", "deu") for broader compatibility.
 
 **Returns:**
 
-- `{:ok, ExtractionResult.t()}`: Successfully extracted and processed content
-- `{:error, reason}`: Extraction or processing failed
-
-**Example - With validators and post-processors:**
-
-```elixir title="with_plugins.exs"
-{:ok, result} = Kreuzberg.extract_with_plugins(
-  pdf_binary,
-  "application/pdf",
-  nil,
-  validators: [MyApp.InputValidator],
-  post_processors: %{
-    early: [MyApp.EarlyProcessor],
-    middle: [MyApp.MiddleProcessor],
-    late: [MyApp.FinalProcessor]
-  },
-  final_validators: [MyApp.ResultValidator]
-)
-```
-
-**Example - With only post-processors:**
-
-```elixir title="post_processors.exs"
-{:ok, result} = Kreuzberg.extract_with_plugins(
-  pdf_binary,
-  "application/pdf",
-  %{use_cache: true},
-  post_processors: %{
-    early: [MyApp.Processor1, MyApp.Processor2]
-  }
-)
-```
-
----
-
-### Kreuzberg.Plugin.register_post_processor/2
-
-Register a custom post-processor plugin.
+`Ok(())` if the code is valid, or a `ValidationError` indicating an invalid language code.
 
 **Signature:**
 
-```elixir title="Elixir"
-@spec register_post_processor(atom(), module()) :: :ok | {:error, String.t()}
+```elixir
+@spec validate_language_code(code) :: {:ok, term()} | {:error, term()}
+def validate_language_code(code)
 ```
 
 **Parameters:**
 
-- `name` (atom): Unique identifier for the post-processor
-- `module` (module): Module implementing the post-processor interface
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `code` | `String.t()` | Yes | The language code to validate |
 
-**Module Interface:**
+**Returns:** `:ok`
 
-The post-processor module should implement:
+**Errors:** Returns `{:error, reason}`
 
-- `process(data)` - Applies custom processing to extraction result data
-
-**Example:**
-
-```elixir title="post_processor.exs"
-defmodule MyApp.TextNormalizer do
-  def process(result) do
-    normalized_content = result.content
-      |> String.trim()
-      |> String.downcase()
-
-    {:ok, %{result | content: normalized_content}}
-  end
-end
-
-:ok = Kreuzberg.Plugin.register_post_processor(:normalizer, MyApp.TextNormalizer)
-```
 
 ---
 
-### Kreuzberg.Plugin.register_validator/1
+#### validate_tesseract_psm()
 
-Register a custom validator plugin.
-
-**Signature:**
-
-```elixir title="Elixir"
-@spec register_validator(module()) :: :ok | {:error, String.t()}
-```
-
-**Parameters:**
-
-- `module` (module): Module implementing the validator interface
-
-**Module Interface:**
-
-The validator module should implement:
-
-- `validate(data)` - Validates data and returns `:ok` or `{:error, reason}`
-
-**Example:**
-
-```elixir title="validator.exs"
-defmodule MyApp.StrictValidator do
-  def validate(data) do
-    if data && data != "" do
-      :ok
-    else
-      {:error, "Data is empty"}
-    end
-  end
-end
-
-:ok = Kreuzberg.Plugin.register_validator(MyApp.StrictValidator)
-```
-
----
-
-### Kreuzberg.Plugin.register_ocr_backend/1
-
-Register a custom OCR backend plugin.
-
-**Signature:**
-
-```elixir title="Elixir"
-@spec register_ocr_backend(module()) :: :ok | {:error, String.t()}
-```
-
-**Parameters:**
-
-- `module` (module): Module implementing the OCR backend interface
-
-**Module Interface:**
-
-The OCR backend module should implement:
-
-- `recognize(image_data, language)` - Performs OCR on image data
-- `supported_languages()` - Returns list of supported language codes
-
-**Example:**
-
-```elixir title="ocr_backend.exs"
-defmodule MyApp.CustomOCRBackend do
-  def recognize(image_data, language) do
-    # Custom OCR logic
-    {:ok, "Extracted text"}
-  end
-
-  def supported_languages do
-    ["en", "de", "fr"]
-  end
-end
-
-:ok = Kreuzberg.Plugin.register_ocr_backend(MyApp.CustomOCRBackend)
-```
-
----
-
-## Validation
-
-### Kreuzberg.validate_chunking_params/1
-
-Validate chunking configuration parameters.
-
-**Signature:**
-
-```elixir title="Elixir"
-@spec validate_chunking_params(map()) :: :ok | {:error, String.t()}
-```
-
-**Parameters:**
-
-- `params` (map): Map with keys:
-  - `"max_chars"` or `:max_chars` - Maximum characters per chunk (required)
-  - `"max_overlap"` or `:max_overlap` - Overlap between chunks (required)
+Validate a tesseract Page Segmentation Mode (PSM).
 
 **Returns:**
 
-- `:ok`: Parameters are valid
-- `{:error, reason}`: Parameters are invalid
-
-**Example:**
-
-```elixir title="validate_chunking.exs"
-:ok = Kreuzberg.validate_chunking_params(%{
-  "max_chars" => 1000,
-  "max_overlap" => 200
-})
-```
-
----
-
-### Kreuzberg.validate_language_code/1
-
-Validate an ISO 639 language code.
+`Ok(())` if the PSM is valid, or a `ValidationError` with details about valid ranges.
 
 **Signature:**
 
-```elixir title="Elixir"
-@spec validate_language_code(String.t()) :: :ok | {:error, String.t()}
+```elixir
+@spec validate_tesseract_psm(psm) :: {:ok, term()} | {:error, term()}
+def validate_tesseract_psm(psm)
 ```
 
 **Parameters:**
 
-- `code` (String): Language code string (for example, "en", "eng", "de", "deu")
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `psm` | `integer()` | Yes | The PSM value to validate (0-13) |
 
-**Returns:**
+**Returns:** `:ok`
 
-- `:ok`: Language code is valid
-- `{:error, reason}`: Language code is invalid
+**Errors:** Returns `{:error, reason}`
 
-**Example:**
-
-```elixir title="validate_language.exs"
-:ok = Kreuzberg.validate_language_code("en")
-:ok = Kreuzberg.validate_language_code("eng")
-{:error, _} = Kreuzberg.validate_language_code("invalid")
-```
 
 ---
 
-### Kreuzberg.validate_dpi/1
+#### validate_tesseract_oem()
 
-Validate a DPI (dots per inch) value.
+Validate a tesseract OCR Engine Mode (OEM).
+
+**Returns:**
+
+`Ok(())` if the OEM is valid, or a `ValidationError` with details about valid options.
 
 **Signature:**
 
-```elixir title="Elixir"
-@spec validate_dpi(integer()) :: :ok | {:error, String.t()}
+```elixir
+@spec validate_tesseract_oem(oem) :: {:ok, term()} | {:error, term()}
+def validate_tesseract_oem(oem)
 ```
 
 **Parameters:**
 
-- `dpi` (integer): Positive integer representing DPI
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `oem` | `integer()` | Yes | The OEM value to validate (0-3) |
 
-**Returns:**
+**Returns:** `:ok`
 
-- `:ok`: DPI value is valid
-- `{:error, reason}`: DPI value is invalid
+**Errors:** Returns `{:error, reason}`
 
-**Example:**
-
-```elixir title="validate_dpi.exs"
-:ok = Kreuzberg.validate_dpi(300)
-{:error, _} = Kreuzberg.validate_dpi(0)
-```
 
 ---
 
-### Kreuzberg.validate_confidence/1
+#### validate_output_format()
+
+Validate a document extraction output format.
+
+Accepts the following formats and aliases:
+- "plain" or "text" for plain text output
+- "markdown" or "md" for Markdown output
+- "djot" for Djot markup format
+- "html" for HTML output
+
+**Returns:**
+
+`Ok(())` if the format is valid, or a `ValidationError` with details about valid options.
+
+**Signature:**
+
+```elixir
+@spec validate_output_format(format) :: {:ok, term()} | {:error, term()}
+def validate_output_format(format)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `format` | `String.t()` | Yes | The output format to validate |
+
+**Returns:** `:ok`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### validate_confidence()
 
 Validate a confidence threshold value.
 
-**Signature:**
-
-```elixir title="Elixir"
-@spec validate_confidence(float()) :: :ok | {:error, String.t()}
-```
-
-**Parameters:**
-
-- `confidence` (float): Confidence threshold between 0.0 and 1.0
+Confidence thresholds should be between 0.0 and 1.0 inclusive.
 
 **Returns:**
 
-- `:ok`: Confidence value is valid
-- `{:error, reason}`: Confidence value is invalid
-
-**Example:**
-
-```elixir title="validate_confidence.exs"
-:ok = Kreuzberg.validate_confidence(0.5)
-{:error, _} = Kreuzberg.validate_confidence(1.5)
-```
-
----
-
-### Kreuzberg.validate_ocr_backend/1
-
-Validate an OCR backend name.
+`Ok(())` if the confidence is valid, or a `ValidationError` with details about valid ranges.
 
 **Signature:**
 
-```elixir title="Elixir"
-@spec validate_ocr_backend(String.t()) :: :ok | {:error, String.t()}
+```elixir
+@spec validate_confidence(confidence) :: {:ok, term()} | {:error, term()}
+def validate_confidence(confidence)
 ```
 
 **Parameters:**
 
-- `backend` (String): OCR backend name
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `confidence` | `float()` | Yes | The confidence threshold to validate |
 
-**Valid Backends:**
+**Returns:** `:ok`
 
-- "tesseract"
-- "easyocr"
-- "paddleocr"
+**Errors:** Returns `{:error, reason}`
 
-**Example:**
-
-```elixir title="validate_ocr.exs"
-:ok = Kreuzberg.validate_ocr_backend("tesseract")
-{:error, _} = Kreuzberg.validate_ocr_backend("invalid_backend")
-```
 
 ---
 
-## PDF Rendering
+#### validate_dpi()
 
-!!! Info "Added in v4.6.2"
+Validate a DPI (dots per inch) value.
 
-### Kreuzberg.render_pdf_page/3
-
-Render a single page of a PDF as a PNG image.
-
-**Signature:**
-
-```elixir title="Elixir"
-@spec render_pdf_page(String.t(), non_neg_integer(), keyword()) :: {:ok, binary()} | {:error, term()}
-def render_pdf_page(path, page_index, opts \\ [])
-```
-
-**Parameters:**
-
-- `path` (String.t()): Path to the PDF file
-- `page_index` (non_neg_integer()): Zero-based page index to render
-
-**Options:**
-
-- `:dpi` (integer): Resolution for rendering (default 150)
+DPI should be a positive integer, typically 72-600.
 
 **Returns:**
 
-- `{:ok, binary()}`: PNG-encoded binary for the requested page
-- `{:error, reason}`: Error tuple if file cannot be read, rendered, or page index is out of bounds
+`Ok(())` if the DPI is valid, or a `ValidationError` with details about valid ranges.
 
-**Example:**
+**Signature:**
 
-```elixir title="render_single_page.exs"
-{:ok, png} = Kreuzberg.render_pdf_page("document.pdf", 0)
-File.write!("first_page.png", png)
+```elixir
+@spec validate_dpi(dpi) :: {:ok, term()} | {:error, term()}
+def validate_dpi(dpi)
 ```
 
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `dpi` | `integer()` | Yes | The DPI value to validate |
+
+**Returns:** `:ok`
+
+**Errors:** Returns `{:error, reason}`
+
+
 ---
 
-## Error Handling
+#### validate_chunking_params()
 
-### Kreuzberg.Error
+Validate chunk size parameters.
 
-Exception struct for Kreuzberg extraction errors.
+Checks that max_chars > 0 and max_overlap < max_chars.
 
-**Type:**
+**Returns:**
 
-```elixir title="Elixir"
-@type t :: %Kreuzberg.Error{
-  message: String.t() | nil,
-  reason: atom() | nil,
-  context: map() | nil
-}
+`Ok(())` if the parameters are valid, or a `ValidationError` with details about constraints.
+
+**Signature:**
+
+```elixir
+@spec validate_chunking_params(max_chars, max_overlap) :: {:ok, term()} | {:error, term()}
+def validate_chunking_params(max_chars, max_overlap)
 ```
 
-**Error Reasons:**
+**Parameters:**
 
-- `:invalid_format` - File format errors
-- `:invalid_config` - Configuration or parameter errors
-- `:ocr_error` - OCR engine or processing errors
-- `:extraction_error` - General extraction failures
-- `:io_error` - File I/O related errors
-- `:nif_error` - NIF-related errors
-- `:unknown_error` - Errors that don't match other categories
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `max_chars` | `integer()` | Yes | The maximum characters per chunk |
+| `max_overlap` | `integer()` | Yes | The maximum overlap between chunks |
 
-**Example - Basic error handling:**
+**Returns:** `:ok`
 
-```elixir title="error_handling.exs"
-try do
-  result = Kreuzberg.extract_file!("document.pdf")
-  IO.puts(result.content)
-rescue
-  e in Kreuzberg.Error ->
-    IO.puts("Extraction failed: #{e.message}")
-    IO.puts("Error type: #{e.reason}")
-end
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### validate_llm_config_model()
+
+Validate that an `LlmConfig` has a non-empty model string.
+
+**Returns:**
+
+`Ok(())` if the model is non-empty, or a `ValidationError` otherwise.
+
+**Signature:**
+
+```elixir
+@spec validate_llm_config_model(model) :: {:ok, term()} | {:error, term()}
+def validate_llm_config_model(model)
 ```
 
-**Example - Pattern matching:**
+**Parameters:**
 
-```elixir title="error_matching.exs"
-case Kreuzberg.extract_file("document.pdf") do
-  {:ok, result} ->
-    IO.puts(result.content)
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `model` | `String.t()` | Yes | The model string to validate |
 
-  {:error, reason} ->
-    error_type = Kreuzberg.classify_error(reason)
+**Returns:** `:ok`
 
-    case error_type do
-      :io_error ->
-        IO.puts("File not found or cannot be read")
+**Errors:** Returns `{:error, reason}`
 
-      :invalid_format ->
-        IO.puts("Unsupported or corrupted file format")
 
-      :ocr_error ->
-        IO.puts("OCR processing failed")
+---
 
-      _ ->
-        IO.puts("Extraction failed: #{reason}")
-    end
-end
+#### validate_vlm_backend_config()
+
+Validate that a VLM OCR backend has the required `vlm_config`.
+
+When the OCR backend is set to `"vlm"`, the `vlm_config` field must be present
+to provide the model endpoint configuration, and the model string must be non-empty.
+
+**Returns:**
+
+`Ok(())` if the backend is not `"vlm"` or `vlm_config` is present with a valid model,
+or a `ValidationError` if `"vlm"` backend is used without `vlm_config` or with an empty model.
+
+**Signature:**
+
+```elixir
+@spec validate_vlm_backend_config(backend, vlm_config) :: {:ok, term()} | {:error, term()}
+def validate_vlm_backend_config(backend, vlm_config)
 ```
 
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `backend` | `String.t()` | Yes | The OCR backend name |
+| `vlm_config` | `LlmConfig | nil` | No | The optional VLM config to validate |
+
+**Returns:** `:ok`
+
+**Errors:** Returns `{:error, reason}`
+
+
 ---
 
-## Advanced Usage
+#### validate_structured_extraction_schema()
 
-### Concurrent Processing with Tasks
+Validate structured extraction configuration.
 
-Process multiple documents concurrently using Elixir's Task module:
+When structured extraction is enabled, the JSON schema must not be null or empty,
+and the LLM config must have a non-empty model string.
 
-```elixir title="concurrent_processing.exs"
-files = ["doc1.pdf", "doc2.pdf", "doc3.pdf", "doc4.pdf"]
+**Returns:**
 
-# Create tasks for concurrent processing
-tasks = Enum.map(files, fn file ->
-  Task.async(fn ->
-    case Kreuzberg.extract_file(file) do
-      {:ok, result} -> {file, :ok, result}
-      {:error, reason} -> {file, :error, reason}
-    end
-  end)
-end)
+`Ok(())` if the schema is a non-empty object or array and the model is valid,
+or a `ValidationError` if the schema is null/empty or the model is empty.
 
-# Wait for all tasks to complete
-results = Task.await_many(tasks, :timer.minutes(5))
+**Signature:**
 
-# Process results
-Enum.each(results, fn
-  {file, :ok, result} ->
-    IO.puts("#{file}: #{String.length(result.content)} characters")
-
-  {file, :error, reason} ->
-    IO.puts("#{file}: Failed - #{reason}")
-end)
+```elixir
+@spec validate_structured_extraction_schema(schema, llm_model) :: {:ok, term()} | {:error, term()}
+def validate_structured_extraction_schema(schema, llm_model)
 ```
 
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `schema` | `term()` | Yes | The JSON schema value to validate |
+| `llm_model` | `String.t()` | Yes | The LLM model string from the nested `LlmConfig` |
+
+**Returns:** `:ok`
+
+**Errors:** Returns `{:error, reason}`
+
+
 ---
 
-### Streaming Large Documents
+#### extract_bytes()
 
-For very large documents, consider processing in chunks:
+Extract content from a byte array.
 
-```elixir title="streaming.exs"
-config = %Kreuzberg.ExtractionConfig{
-  chunking: %{
-    "enabled" => true,
-    "chunk_size" => 1024,
-    "chunk_overlap" => 200
-  }
-}
+This is the main entry point for in-memory extraction. It performs the following steps:
+1. Validate MIME type
+2. Handle legacy format conversion if needed
+3. Select appropriate extractor from registry
+4. Extract content
+5. Run post-processing pipeline
 
-{:ok, result} = Kreuzberg.extract_file("large_document.pdf", nil, config)
+**Returns:**
 
-# Process chunks individually
-if result.chunks do
-  result.chunks
-  |> Stream.each(fn chunk ->
-    # Process each chunk
-    content = chunk["content"]
-    metadata = chunk["metadata"]
+An `ExtractionResult` containing the extracted content and metadata.
 
-    IO.puts("Chunk: #{String.length(content)} chars")
-    IO.puts("Byte range: #{metadata["byte_start"]}-#{metadata["byte_end"]}")
-  end)
-  |> Stream.run()
-end
+**Errors:**
+
+Returns `KreuzbergError.Validation` if MIME type is invalid.
+Returns `KreuzbergError.UnsupportedFormat` if MIME type is not supported.
+
+**Signature:**
+
+```elixir
+@spec extract_bytes(content, mime_type, config) :: {:ok, term()} | {:error, term()}
+def extract_bytes(content, mime_type, config)
 ```
 
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `content` | `binary()` | Yes | The byte array to extract |
+| `mime_type` | `String.t()` | Yes | MIME type of the content |
+| `config` | `ExtractionConfig` | Yes | Extraction configuration |
+
+**Returns:** `ExtractionResult`
+
+**Errors:** Returns `{:error, reason}`
+
+
 ---
 
-### Custom Post-Processing Pipeline
+#### extract_file()
 
-Build a custom processing pipeline using plugins:
+Extract content from a file.
 
-```elixir title="pipeline.exs"
-defmodule MyApp.Pipeline do
-  # Early processor - clean HTML
-  defmodule HTMLCleaner do
-    def process(result) do
-      cleaned_content = result.content
-        |> String.replace(~r/<[^>]+>/, "")
-        |> String.trim()
+This is the main entry point for file-based extraction. It performs the following steps:
+1. Check cache for existing result (if caching enabled)
+2. Detect or validate MIME type
+3. Select appropriate extractor from registry
+4. Extract content
+5. Run post-processing pipeline
+6. Store result in cache (if caching enabled)
 
-      {:ok, %{result | content: cleaned_content}}
-    end
-  end
+**Returns:**
 
-  # Middle processor - normalize whitespace
-  defmodule WhitespaceNormalizer do
-    def process(result) do
-      normalized_content = result.content
-        |> String.replace(~r/\s+/, " ")
-        |> String.trim()
+An `ExtractionResult` containing the extracted content and metadata.
 
-      {:ok, %{result | content: normalized_content}}
-    end
-  end
+**Errors:**
 
-  # Late processor - add metadata
-  defmodule MetadataEnricher do
-    def process(result) do
-      enriched_metadata = Map.merge(result.metadata, %{
-        "processed_at" => DateTime.utc_now() |> DateTime.to_iso8601(),
-        "word_count" => result.content |> String.split() |> length()
-      })
+Returns `KreuzbergError.Io` if the file doesn't exist (NotFound) or for other file I/O errors.
+Returns `KreuzbergError.UnsupportedFormat` if MIME type is not supported.
 
-      {:ok, %{result | metadata: enriched_metadata}}
-    end
-  end
+**Signature:**
 
-  def extract_with_pipeline(path) do
-    Kreuzberg.extract_with_plugins(
-      File.read!(path),
-      "application/pdf",
-      nil,
-      post_processors: %{
-        early: [HTMLCleaner],
-        middle: [WhitespaceNormalizer],
-        late: [MetadataEnricher]
-      }
-    )
-  end
-end
-
-# Use the pipeline
-{:ok, result} = MyApp.Pipeline.extract_with_pipeline("document.pdf")
-IO.puts("Word count: #{result.metadata["word_count"]}")
+```elixir
+@spec extract_file(path, mime_type, config) :: {:ok, term()} | {:error, term()}
+def extract_file(path, mime_type, config)
 ```
 
----
+**Parameters:**
 
-## Type Reference
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `path` | `Path` | Yes | Path to the file to extract |
+| `mime_type` | `String.t() | nil` | No | Optional MIME type override. If None, will be auto-detected |
+| `config` | `ExtractionConfig` | Yes | Extraction configuration |
 
-### BoundingBox
+**Returns:** `ExtractionResult`
 
-Coordinates for element positioning.
+**Errors:** Returns `{:error, reason}`
 
-**Fields:**
-
-- `x0` (float): Left x-coordinate.
-- `y0` (float): Bottom y-coordinate.
-- `x1` (float): Right x-coordinate.
-- `y1` (float): Top y-coordinate.
 
 ---
 
-### Chunk
+#### get_pool_sizing_hint()
 
-A text fragment with embedding.
+**Signature:**
 
-**Fields:**
-
-- `content` (String): Text content.
-- `embedding` (list(float) | nil): Vector embedding.
-- `metadata` (Kreuzberg.ChunkMetadata): Positioning metadata.
-
----
-
-### ChunkMetadata
-
-Positioning and context for a chunk.
-
-**Fields:**
-
-- `byte_start` (non_neg_integer): Start byte offset.
-- `byte_end` (non_neg_integer): End byte offset.
-- `chunk_index` (non_neg_integer): Position index.
-- `first_page` (non_neg_integer | nil): First page number.
-- `heading_context` (map | nil): Hierarchical heading context.
-- `last_page` (non_neg_integer | nil): Last page number.
-- `token_count` (non_neg_integer | nil): Number of tokens.
-- `total_chunks` (non_neg_integer): Total chunk count.
-
----
-
-### DjotContent
-
-Structured Djot document.
-
-**Fields:**
-
-- `attributes` (list): Element attributes.
-- `blocks` (list(Kreuzberg.DjotFormattedBlock)): Block-level elements.
-- `footnotes` (list(Kreuzberg.DjotFootnote)): Footnote definitions.
-- `images` (list(Kreuzberg.DjotImage)): Extracted images.
-- `links` (list(Kreuzberg.DjotLink)): Extracted links.
-- `metadata` (Kreuzberg.Metadata): Document metadata.
-- `plain_text` (String): Plain text fallback.
-- `tables` (list(Kreuzberg.Table)): Extracted tables.
-
----
-
-### DocumentNode
-
-A node in the hierarchical document tree.
-
-**Fields:**
-
-- `annotations` (list(Kreuzberg.DocumentTextAnnotation)): Inline annotations.
-- `bbox` (Kreuzberg.BoundingBox | nil): Node bounding box.
-- `children` (list(non_neg_integer)): Indices of child nodes.
-- `content` (map): Type-specific content data.
-- `content_layer` (String | nil): Layer (body, header, etc.).
-- `id` (String): Unique node identifier.
-- `node_type` (String): Semantic type description.
-- `page_number` (non_neg_integer | nil): Starting page.
-- `page_number_end` (non_neg_integer | nil): Ending page.
-- `parent` (non_neg_integer | nil): Index of parent node.
-
----
-
-### DocumentStructure
-
-Hierarchical representation of the document.
-
-**Fields:**
-
-- `nodes` (list(Kreuzberg.DocumentNode)): Flat list of nodes forming a tree.
-
----
-
-### Element
-
-Semantic element (Unstructured compatibility).
-
-**Fields:**
-
-- `element_id` (String): Deterministic unique ID.
-- `element_type` (atom): Semantic type (for example, `:narrative_text`).
-- `metadata` (Kreuzberg.ElementMetadata): Positioning and source metadata.
-- `text` (String): Text content.
-
----
-
-### Image
-
-Extracted image with metadata.
-
-**Fields:**
-
-- `bits_per_component` (non_neg_integer | nil): Bit depth.
-- `bounding_box` (map | nil): Box coordinates.
-- `colorspace` (String | nil): Color space (for example, "RGB").
-- `data` (binary): Raw image data.
-- `description` (String | nil): Alt text or description.
-- `format` (String): Format ("png", "jpeg", etc.).
-- `height` (non_neg_integer | nil): Pixel height.
-- `image_index` (non_neg_integer): Position in document.
-- `is_mask` (boolean): Whether it's a mask image.
-- `ocr_result` (Kreuzberg.ExtractionResult | nil): Recursive OCR results.
-- `page_number` (non_neg_integer | nil): Page where found.
-- `width` (non_neg_integer | nil): Pixel width.
-
----
-
-### Keyword
-
-Extracted keyword with relevance score.
-
-**Fields:**
-
-- `score` (float): Relevance score (0.0 to 1.0).
-- `text` (String): Keyword text.
-
----
-
-### OcrBoundingGeometry
-
-Geometry for OCR elements.
-
-**Fields:**
-
-- `height` (float): Height in pixels.
-- `left` (float): X-coordinate.
-- `top` (float): Y-coordinate.
-- `type` (String): Geometry type ("rect", etc.).
-- `width` (float): Width in pixels.
-
----
-
-### OcrElement
-
-Detailed OCR element.
-
-**Fields:**
-
-- `backend_metadata` (map | nil): Backend-specific data.
-- `confidence` (Kreuzberg.OcrConfidence | nil): Confidence scores.
-- `geometry` (Kreuzberg.OcrBoundingGeometry | nil): Relative positioning.
-- `level` (String | nil): Hierarchy level ("word", "line", etc.).
-- `page_number` (non_neg_integer | nil): Page where found.
-- `parent_id` (String | nil): ID of parent element.
-- `rotation` (map | nil): Angle and orientation.
-- `text` (String): Recognized text.
-
----
-
-### Page
-
-Single page from a document.
-
-**Fields:**
-
-- `content` (String): Page text.
-- `hierarchy` (map | nil): Structural hierarchy.
-- `images` (list(Kreuzberg.Image)): Page images.
-- `is_blank` (boolean | nil): Blank page detection.
-- `page_number` (non_neg_integer): 0-indexed page number.
-- `tables` (list(Kreuzberg.Table)): Page tables.
-
----
-
-### ProcessingWarning
-
-Warning from the extraction pipeline.
-
-**Fields:**
-
-- `message` (String): Warning description.
-- `source` (String): Component that issued the warning.
-
----
-
-### Complete Type Specifications
-
-```elixir title="types.exs"
-# Core types
-@type extraction_result :: {:ok, ExtractionResult.t()} | {:error, String.t()}
-@type batch_result :: {:ok, [ExtractionResult.t()]} | {:error, String.t()}
-
-# Config & Options
-@type config_option :: ExtractionConfig.t() | map() | keyword() | nil
-
-# Async Task types
-@type async_result :: Task.t(extraction_result())
-@type async_batch_result :: Task.t(batch_result())
-
-# Plugin types
-@type ocr_backend :: module()
-@type post_processor :: module()
-@type validator :: module()
-
-# Status & Stats
-@type cache_stats :: %{
-  required(String.t()) => non_neg_integer() | float()
-}
-
-# Errors
-@type error_reason ::
-  :extraction_error |
-  :invalid_config |
-  :invalid_format |
-  :io_error |
-  :nif_error |
-  :ocr_error |
-  :unknown_error
+```elixir
+@spec get_pool_sizing_hint(file_size, mime_type) :: {:ok, term()} | {:error, term()}
+def get_pool_sizing_hint(file_size, mime_type)
 ```
 
----
+**Parameters:**
 
-## System Requirements
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `file_size` | `integer()` | Yes | The file size |
+| `mime_type` | `String.t()` | Yes | The mime type |
 
-**Elixir:** 1.12 or higher
+**Returns:** `PoolSizeHint`
 
-**Erlang/OTP:** 24 or higher
-
-**Native Dependencies:**
-
-- Tesseract OCR (for OCR support): `brew install tesseract` (macOS) or `apt-get install tesseract-ocr` (Ubuntu)
-
-**Platforms:**
-
-- Linux (x64, arm64)
-- MacOS (x64, arm64)
-- Windows (x64)
 
 ---
 
-## Thread Safety
+#### is_valid_format_field()
 
-All Kreuzberg functions are process-safe and can be called from multiple Elixir processes concurrently. The underlying NIF implementation uses a thread pool for parallel processing.
+Validates whether a field name is in the known formats registry.
 
-**Example - Concurrent extraction:**
+This uses a pre-built hash set for O(1) lookups instead of linear search,
+providing significant performance improvements for repeated validations.
 
-```elixir title="concurrent.exs"
-files = ["doc1.pdf", "doc2.pdf", "doc3.pdf"]
+**Returns:**
 
-tasks = Enum.map(files, fn file ->
-  Task.async(fn ->
-    Kreuzberg.extract_file(file)
-  end)
-end)
+`true` if the field is in KNOWN_FORMATS, `false` otherwise.
 
-results = Task.await_many(tasks)
+**Signature:**
+
+```elixir
+@spec is_valid_format_field(field) :: {:ok, term()} | {:error, term()}
+def is_valid_format_field(field)
 ```
 
-However, for better performance with multiple files, use the batch API:
+**Parameters:**
 
-```elixir title="batch.exs"
-# More efficient approach
-files = ["doc1.pdf", "doc2.pdf", "doc3.pdf"]
-{:ok, results} = Kreuzberg.batch_extract_files(files)
-```
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `field` | `String.t()` | Yes | The field name to validate |
 
----
+**Returns:** `boolean()`
 
-## LLM Integration
-
-Kreuzberg integrates with LLMs via the `liter-llm` crate for structured extraction and VLM-based OCR. The Elixir binding passes LLM configuration as map options through the Rustler NIF layer. See the [LLM Integration Guide](../guides/llm-integration.md) for full details.
-
-### Structured Extraction
-
-Pass `structured_extraction` config to extract structured data from documents using an LLM:
-
-```elixir title="structured_extraction.exs"
-config = %{
-  structured_extraction: %{
-    schema: %{
-      "type" => "object",
-      "properties" => %{
-        "title" => %{"type" => "string"},
-        "authors" => %{"type" => "array", "items" => %{"type" => "string"}},
-        "date" => %{"type" => "string"}
-      },
-      "required" => ["title", "authors", "date"],
-      "additionalProperties" => false
-    },
-    llm: %{model: "openai/gpt-4o-mini"},
-    strict: true
-  }
-}
-
-{:ok, result} = Kreuzberg.extract_file("paper.pdf", config)
-
-case result.structured_output do
-  nil -> IO.puts("No structured output")
-  output -> IO.puts(output)
-end
-```
-
-### VLM OCR
-
-Use a vision-language model as an OCR backend:
-
-```elixir title="vlm_ocr.exs"
-config = %{
-  force_ocr: true,
-  ocr: %{
-    backend: "vlm",
-    vlm_config: %{model: "openai/gpt-4o-mini"}
-  }
-}
-
-{:ok, result} = Kreuzberg.extract_file("scan.pdf", config)
-```
-
-For configuration details including API keys, model selection, and provider setup, see the [LLM Integration Guide](../guides/llm-integration.md).
 
 ---
 
-## Version Information
+#### open_file_bytes()
 
-Check the Kreuzberg version:
+Open a file and return its bytes with zero-copy for large files.
 
-```elixir title="version.exs"
-IO.puts(Application.spec(:kreuzberg, :vsn))
+On non-WASM targets, files larger than `MMAP_THRESHOLD_BYTES` are
+memory-mapped so that the file contents are never copied to the heap.
+The mapping is read-only; the file must not be modified while the returned
+`FileBytes` is alive, which is safe for document extraction.
+
+On WASM or for small files, falls back to a plain `std.fs.read`.
+
+**Errors:**
+
+Returns `KreuzbergError.Io` for any I/O failure.
+
+**Signature:**
+
+```elixir
+@spec open_file_bytes(path) :: {:ok, term()} | {:error, term()}
+def open_file_bytes(path)
 ```
 
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `path` | `String.t()` | Yes | Path to the file |
+
+**Returns:** `FileBytes`
+
+**Errors:** Returns `{:error, reason}`
+
+
 ---
 
-## Additional Resources
+#### read_file_sync()
 
-- [GitHub Repository](https://github.com/kreuzberg-dev/kreuzberg)
-- [Installation Guide](../getting-started/installation.md)
-- [Error Handling Reference](errors.md)
-- [Type Reference](types.md)
+Read a file synchronously.
+
+**Returns:**
+
+The file contents as bytes.
+
+**Errors:**
+
+Returns `KreuzbergError.Io` for I/O errors (these always bubble up).
+
+**Signature:**
+
+```elixir
+@spec read_file_sync(path) :: {:ok, term()} | {:error, term()}
+def read_file_sync(path)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `path` | `Path` | Yes | Path to the file to read |
+
+**Returns:** `binary()`
+
+**Errors:** Returns `{:error, reason}`
+
 
 ---
 
-## License
+#### file_exists()
 
-Kreuzberg Elixir package is released under the same license as the main Kreuzberg project.
+Check if a file exists.
+
+**Returns:**
+
+`true` if the file exists, `false` otherwise.
+
+**Signature:**
+
+```elixir
+@spec file_exists(path) :: {:ok, term()} | {:error, term()}
+def file_exists(path)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `path` | `Path` | Yes | Path to check |
+
+**Returns:** `boolean()`
+
+
+---
+
+#### validate_file_exists()
+
+Validate that a file exists.
+
+**Errors:**
+
+Returns `KreuzbergError.Io` if file doesn't exist.
+
+**Signature:**
+
+```elixir
+@spec validate_file_exists(path) :: {:ok, term()} | {:error, term()}
+def validate_file_exists(path)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `path` | `Path` | Yes | Path to validate |
+
+**Returns:** `:ok`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### find_files_by_extension()
+
+Get all files in a directory with a specific extension.
+
+**Returns:**
+
+Vector of file paths with the specified extension.
+
+**Errors:**
+
+Returns `KreuzbergError.Io` for I/O errors.
+
+**Signature:**
+
+```elixir
+@spec find_files_by_extension(dir, extension, recursive) :: {:ok, term()} | {:error, term()}
+def find_files_by_extension(dir, extension, recursive)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `dir` | `Path` | Yes | Directory to search |
+| `extension` | `String.t()` | Yes | File extension to match (without the dot) |
+| `recursive` | `boolean()` | Yes | Whether to recursively search subdirectories |
+
+**Returns:** `list(String.t())`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### detect_mime_type()
+
+Detect MIME type from a file path.
+
+Uses file extension to determine MIME type. Falls back to `mime_guess` crate
+if extension-based detection fails.
+
+**Returns:**
+
+The detected MIME type string.
+
+**Errors:**
+
+Returns `KreuzbergError.Io` if file doesn't exist (when `check_exists` is true).
+Returns `KreuzbergError.UnsupportedFormat` if MIME type cannot be determined.
+
+**Signature:**
+
+```elixir
+@spec detect_mime_type(path, check_exists) :: {:ok, term()} | {:error, term()}
+def detect_mime_type(path, check_exists)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `path` | `Path` | Yes | Path to the file |
+| `check_exists` | `boolean()` | Yes | Whether to verify file existence |
+
+**Returns:** `String.t()`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### validate_mime_type()
+
+Validate that a MIME type is supported.
+
+**Returns:**
+
+The validated MIME type (may be normalized).
+
+**Errors:**
+
+Returns `KreuzbergError.UnsupportedFormat` if not supported.
+
+**Signature:**
+
+```elixir
+@spec validate_mime_type(mime_type) :: {:ok, term()} | {:error, term()}
+def validate_mime_type(mime_type)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `mime_type` | `String.t()` | Yes | The MIME type to validate |
+
+**Returns:** `String.t()`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### detect_or_validate()
+
+Detect or validate MIME type.
+
+If `mime_type` is provided, validates it. Otherwise, detects from `path`.
+
+**Returns:**
+
+The validated MIME type string.
+
+**Signature:**
+
+```elixir
+@spec detect_or_validate(path, mime_type) :: {:ok, term()} | {:error, term()}
+def detect_or_validate(path, mime_type)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `path` | `String.t() | nil` | No | Optional path to detect MIME type from |
+| `mime_type` | `String.t() | nil` | No | Optional explicit MIME type to validate |
+
+**Returns:** `String.t()`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### detect_mime_type_from_bytes()
+
+Detect MIME type from raw file bytes.
+
+Uses magic byte signatures to detect file type from content.
+Falls back to `infer` crate for comprehensive detection.
+
+For ZIP-based files, inspects contents to distinguish Office Open XML
+formats (DOCX, XLSX, PPTX) from plain ZIP archives.
+
+**Returns:**
+
+The detected MIME type string.
+
+**Errors:**
+
+Returns `KreuzbergError.UnsupportedFormat` if MIME type cannot be determined.
+
+**Signature:**
+
+```elixir
+@spec detect_mime_type_from_bytes(content) :: {:ok, term()} | {:error, term()}
+def detect_mime_type_from_bytes(content)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `content` | `binary()` | Yes | Raw file bytes |
+
+**Returns:** `String.t()`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### get_extensions_for_mime()
+
+Get file extensions for a given MIME type.
+
+Returns all known file extensions that map to the specified MIME type.
+
+**Returns:**
+
+A vector of file extensions (without leading dot) for the MIME type.
+
+**Signature:**
+
+```elixir
+@spec get_extensions_for_mime(mime_type) :: {:ok, term()} | {:error, term()}
+def get_extensions_for_mime(mime_type)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `mime_type` | `String.t()` | Yes | The MIME type to look up |
+
+**Returns:** `list(String.t())`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### list_supported_formats()
+
+List all supported document formats.
+
+Returns a list of all file extensions and their corresponding MIME types
+that Kreuzberg can process. Derived from the centralized `FORMATS` registry.
+
+The list is sorted alphabetically by file extension.
+
+**Signature:**
+
+```elixir
+@spec list_supported_formats() :: {:ok, term()} | {:error, term()}
+def list_supported_formats()
+```
+
+**Returns:** `list(SupportedFormat)`
+
+
+---
+
+#### clear_processor_cache()
+
+Clear the processor cache (primarily for testing when registry changes).
+
+**Signature:**
+
+```elixir
+@spec clear_processor_cache() :: {:ok, term()} | {:error, term()}
+def clear_processor_cache()
+```
+
+**Returns:** `:ok`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### apply_output_format()
+
+Apply output format conversion to the extraction result.
+
+Records the output format in metadata and swaps in pre-rendered content
+(produced during `derive_extraction_result`) if available.
+
+This runs as the final pipeline step, after post-processors have operated
+on the plain-text `content` field.
+
+**Signature:**
+
+```elixir
+@spec apply_output_format(result, output_format) :: {:ok, term()} | {:error, term()}
+def apply_output_format(result, output_format)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `result` | `ExtractionResult` | Yes | The extraction result to modify |
+| `output_format` | `OutputFormat` | Yes | The desired output format |
+
+**Returns:** `ExtractionResult`
+
+
+---
+
+#### run_pipeline()
+
+Run the post-processing pipeline on an `InternalDocument`.
+
+Derives `ExtractionResult` from `InternalDocument` via the derivation pipeline,
+then executes post-processing in the following order:
+1. Post-Processors - Execute by stage (Early, Middle, Late) to modify/enhance the result
+2. Quality Processing - Text cleaning and quality scoring
+3. Chunking - Text splitting if enabled
+4. Validators - Run validation hooks on the processed result (can fail fast)
+
+**Returns:**
+
+The processed extraction result.
+
+**Errors:**
+
+- Validator errors bubble up immediately
+- Post-processor errors are caught and recorded in metadata
+- System errors (IO, RuntimeError equivalents) always bubble up
+
+**Signature:**
+
+```elixir
+@spec run_pipeline(doc, config) :: {:ok, term()} | {:error, term()}
+def run_pipeline(doc, config)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `doc` | `InternalDocument` | Yes | The internal document produced by the extractor |
+| `config` | `ExtractionConfig` | Yes | Extraction configuration |
+
+**Returns:** `ExtractionResult`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### is_page_text_blank()
+
+Determine if a page's text content indicates a blank page.
+
+A page is blank if it has fewer than `MIN_NON_WHITESPACE_CHARS` non-whitespace characters.
+
+**Returns:**
+
+`true` if the page is considered blank, `false` otherwise
+
+**Signature:**
+
+```elixir
+@spec is_page_text_blank(text) :: {:ok, term()} | {:error, term()}
+def is_page_text_blank(text)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `text` | `String.t()` | Yes | The extracted text content of the page |
+
+**Returns:** `boolean()`
+
+
+---
+
+#### resolve_relationships()
+
+Resolve `RelationshipTarget.Key` entries to `RelationshipTarget.Index`.
+
+Builds an anchor index from elements with non-`nil` anchors, then resolves
+each key-based relationship target. Unresolvable keys are logged and skipped
+(the relationship is left as `Key` — it will be excluded from the final
+`DocumentStructure` relationships).
+
+**Signature:**
+
+```elixir
+@spec resolve_relationships(doc) :: {:ok, term()} | {:error, term()}
+def resolve_relationships(doc)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `doc` | `InternalDocument` | Yes | The internal document |
+
+**Returns:** `:ok`
+
+
+---
+
+#### derive_document_structure()
+
+Derive a hierarchical `DocumentStructure` from the flat internal document.
+
+Calls `resolve_relationships` first to resolve any key-based relationship targets,
+then builds the tree.
+
+# Algorithm
+
+1. Walk elements in reading order, maintaining a stack of `(depth, NodeIndex)`.
+2. Container start markers (`ListStart`, `QuoteStart`, `GroupStart`) push
+   onto the stack; their matching end markers pop.
+3. Headings pop the stack to a shallower depth, then create a `Group` node
+   with a `Heading` child and push the group.
+4. All other elements are parented under the current stack top.
+5. Resolved relationships are mapped from element indices to node indices.
+
+**Signature:**
+
+```elixir
+@spec derive_document_structure(doc) :: {:ok, term()} | {:error, term()}
+def derive_document_structure(doc)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `doc` | `InternalDocument` | Yes | The internal document |
+
+**Returns:** `DocumentStructure`
+
+
+---
+
+#### derive_extraction_result()
+
+Derive a complete `ExtractionResult` from an `InternalDocument`.
+
+This is the main entry point for the derivation pipeline. It:
+1. Resolves relationships (needed by renderers for footnotes)
+2. Renders plain-text content (for post-processors)
+3. Pre-renders formatted content if output_format != Plain
+4. Groups elements by page into `PageContent`
+5. Extracts OCR elements for backward compatibility
+6. Optionally derives `DocumentStructure` (assumes relationships resolved)
+7. Assembles the final `ExtractionResult`
+
+**Signature:**
+
+```elixir
+@spec derive_extraction_result(doc, include_document_structure, output_format) :: {:ok, term()} | {:error, term()}
+def derive_extraction_result(doc, include_document_structure, output_format)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `doc` | `InternalDocument` | Yes | The internal document |
+| `include_document_structure` | `boolean()` | Yes | The include document structure |
+| `output_format` | `OutputFormat` | Yes | The output format |
+
+**Returns:** `ExtractionResult`
+
+
+---
+
+#### parse_json()
+
+**Signature:**
+
+```elixir
+@spec parse_json(data, config) :: {:ok, term()} | {:error, term()}
+def parse_json(data, config)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `data` | `binary()` | Yes | The data |
+| `config` | `JsonExtractionConfig | nil` | No | The configuration options |
+
+**Returns:** `StructuredDataResult`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### parse_jsonl()
+
+Parse JSONL (newline-delimited JSON) into a structured data result.
+
+Each non-empty line is parsed as an independent JSON value. Blank lines
+and whitespace-only lines are skipped. The output is a pretty-printed
+JSON array of all parsed objects.
+
+**Errors:**
+
+Returns an error if any line contains invalid JSON (with 1-based line number)
+or if the input is not valid UTF-8.
+
+**Signature:**
+
+```elixir
+@spec parse_jsonl(data, config) :: {:ok, term()} | {:error, term()}
+def parse_jsonl(data, config)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `data` | `binary()` | Yes | The data |
+| `config` | `JsonExtractionConfig | nil` | No | The configuration options |
+
+**Returns:** `StructuredDataResult`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### parse_yaml()
+
+**Signature:**
+
+```elixir
+@spec parse_yaml(data) :: {:ok, term()} | {:error, term()}
+def parse_yaml(data)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `data` | `binary()` | Yes | The data |
+
+**Returns:** `StructuredDataResult`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### parse_toml()
+
+**Signature:**
+
+```elixir
+@spec parse_toml(data) :: {:ok, term()} | {:error, term()}
+def parse_toml(data)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `data` | `binary()` | Yes | The data |
+
+**Returns:** `StructuredDataResult`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### parse_text()
+
+**Signature:**
+
+```elixir
+@spec parse_text(text_bytes, is_markdown) :: {:ok, term()} | {:error, term()}
+def parse_text(text_bytes, is_markdown)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `text_bytes` | `binary()` | Yes | The text bytes |
+| `is_markdown` | `boolean()` | Yes | The is markdown |
+
+**Returns:** `TextExtractionResult`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### transform_to_document_structure()
+
+Transform an `ExtractionResult` into a `DocumentStructure`.
+
+Processes pages (if available) or unified content to build a hierarchical tree:
+- Heading-driven section nesting via `Group` nodes
+- Table conversion from `Vec<Vec<String>>` to `TableGrid`
+- List detection and grouping into `List` containers
+- Image and page break nodes
+- Body/furniture content layer classification
+
+The resulting structure is validated before returning.
+
+**Signature:**
+
+```elixir
+@spec transform_to_document_structure(result) :: {:ok, term()} | {:error, term()}
+def transform_to_document_structure(result)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `result` | `ExtractionResult` | Yes | The extraction result |
+
+**Returns:** `DocumentStructure`
+
+
+---
+
+#### detect_list_items()
+
+Detect list items in text with support for multiple formats.
+
+Identifies bullet points, numbered items, and indented items.
+Supports formats like:
+- `- bullet item`
+- `* bullet item`
+- `• bullet item`
+- `1. numbered item`
+- `a. lettered item`
+- Indented items with leading whitespace
+
+**Returns:**
+
+A vector of ListItemMetadata structs describing detected list items
+
+**Signature:**
+
+```elixir
+@spec detect_list_items(text) :: {:ok, term()} | {:error, term()}
+def detect_list_items(text)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `text` | `String.t()` | Yes | The text to search for list items |
+
+**Returns:** `list(ListItemMetadata)`
+
+
+---
+
+#### generate_element_id()
+
+Generate a unique element ID for semantic content.
+
+Creates a deterministic hash-based ID from the element type, text content,
+and page number. Uses a simple wrapping multiplication algorithm for
+consistent ID generation without external dependencies.
+
+**Returns:**
+
+An ElementId suitable for referencing this semantic element
+
+**Signature:**
+
+```elixir
+@spec generate_element_id(text, element_type, page_number) :: {:ok, term()} | {:error, term()}
+def generate_element_id(text, element_type, page_number)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `text` | `String.t()` | Yes | The element text content |
+| `element_type` | `ElementType` | Yes | The semantic element type |
+| `page_number` | `integer() | nil` | No | Optional page number for multi-page documents |
+
+**Returns:** `ElementId`
+
+
+---
+
+#### transform_extraction_result_to_elements()
+
+Transform an extraction result into semantic elements.
+
+This function takes a reference to an ExtractionResult and generates
+a vector of Element structs representing semantic blocks in the document.
+It detects content sections, list items, page breaks, and other structural
+elements to create an Unstructured-compatible element-based output.
+
+Handles:
+- PDF hierarchy → Title/Heading elements
+- Multi-page documents with correct page numbers
+- Table and Image extraction
+- PageBreak interleaving
+- Bounding box coordinates
+- Paragraph detection for NarrativeText
+
+**Returns:**
+
+A vector of Elements with proper semantic types and metadata.
+
+**Signature:**
+
+```elixir
+@spec transform_extraction_result_to_elements(result) :: {:ok, term()} | {:error, term()}
+def transform_extraction_result_to_elements(result)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `result` | `ExtractionResult` | Yes | Reference to the ExtractionResult to transform |
+
+**Returns:** `list(Element)`
+
+
+---
+
+#### parse_body_text()
+
+Parse a raw (possibly compressed) BodyText/SectionN stream.
+
+Returns the list of sections found. Each section contains zero or more
+paragraphs that carry the plain-text content.
+
+**Signature:**
+
+```elixir
+@spec parse_body_text(data, is_compressed) :: {:ok, term()} | {:error, term()}
+def parse_body_text(data, is_compressed)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `data` | `binary()` | Yes | The data |
+| `is_compressed` | `boolean()` | Yes | The is compressed |
+
+**Returns:** `list(Section)`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### decompress_stream()
+
+Decompress a raw-deflate stream from an HWP section.
+
+HWP 5.0 compresses sections with raw deflate (no zlib header). Falls back
+to zlib if raw deflate fails, and returns the data as-is if both fail.
+
+**Signature:**
+
+```elixir
+@spec decompress_stream(data) :: {:ok, term()} | {:error, term()}
+def decompress_stream(data)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `data` | `binary()` | Yes | The data |
+
+**Returns:** `binary()`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### extract_hwp_text()
+
+Extract all plain text from an HWP 5.0 document given its raw bytes.
+
+**Errors:**
+
+Returns `HwpError` if the bytes do not form a valid HWP 5.0 compound file,
+if the document is password-encrypted, or if a critical parsing step fails.
+
+**Signature:**
+
+```elixir
+@spec extract_hwp_text(bytes) :: {:ok, term()} | {:error, term()}
+def extract_hwp_text(bytes)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `bytes` | `binary()` | Yes | The bytes |
+
+**Returns:** `String.t()`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### extract_image_metadata()
+
+Extract metadata from image bytes.
+
+Extracts dimensions, format, and EXIF data from the image.
+Attempts to decode using the standard image crate first, then falls back to
+pure Rust JP2 box parsing for JPEG 2000 formats if the standard decoder fails.
+
+**Signature:**
+
+```elixir
+@spec extract_image_metadata(bytes) :: {:ok, term()} | {:error, term()}
+def extract_image_metadata(bytes)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `bytes` | `binary()` | Yes | The bytes |
+
+**Returns:** `ImageMetadata`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### estimate_content_capacity()
+
+Estimate the capacity needed for content extracted from a file.
+
+Returns an estimated byte capacity for a string buffer that will accumulate
+extracted content. The estimation is based on:
+- The original file size
+- The content type/format
+- Empirical ratios of final content size to original file size
+
+**Returns:**
+
+An estimated capacity in bytes suitable for `String.with_capacity()`
+
+# Minimum Capacity
+
+All estimates have a minimum of 64 bytes to prevent over-optimization for very
+small files where the overhead of capacity estimation outweighs benefits.
+
+**Signature:**
+
+```elixir
+@spec estimate_content_capacity(file_size, format) :: {:ok, term()} | {:error, term()}
+def estimate_content_capacity(file_size, format)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `file_size` | `integer()` | Yes | The size of the original file in bytes |
+| `format` | `String.t()` | Yes | The file format/extension (e.g., "txt", "html", "docx", "xlsx", "pptx") |
+
+**Returns:** `integer()`
+
+
+---
+
+#### estimate_html_markdown_capacity()
+
+Estimate capacity for HTML to Markdown conversion.
+
+HTML documents typically convert to Markdown with 60-70% of the original size.
+This function estimates capacity specifically for HTML→Markdown conversion.
+
+**Returns:**
+
+An estimated capacity for the Markdown output
+
+**Signature:**
+
+```elixir
+@spec estimate_html_markdown_capacity(html_size) :: {:ok, term()} | {:error, term()}
+def estimate_html_markdown_capacity(html_size)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `html_size` | `integer()` | Yes | The size of the HTML file in bytes |
+
+**Returns:** `integer()`
+
+
+---
+
+#### estimate_spreadsheet_capacity()
+
+Estimate capacity for cell extraction from spreadsheets.
+
+When extracting cell data from Excel/ODS files, the extracted cells are typically
+40% of the compressed file size (since the file is ZIP-compressed).
+
+**Returns:**
+
+An estimated capacity for cell value accumulation
+
+**Signature:**
+
+```elixir
+@spec estimate_spreadsheet_capacity(file_size) :: {:ok, term()} | {:error, term()}
+def estimate_spreadsheet_capacity(file_size)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `file_size` | `integer()` | Yes | Size of the spreadsheet file (XLSX, ODS, etc.) |
+
+**Returns:** `integer()`
+
+
+---
+
+#### estimate_presentation_capacity()
+
+Estimate capacity for slide content extraction from presentations.
+
+PPTX files when extracted have slide content at approximately 35% of the file size.
+This accounts for XML overhead, compression, and embedded assets.
+
+**Returns:**
+
+An estimated capacity for slide content accumulation
+
+**Signature:**
+
+```elixir
+@spec estimate_presentation_capacity(file_size) :: {:ok, term()} | {:error, term()}
+def estimate_presentation_capacity(file_size)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `file_size` | `integer()` | Yes | Size of the PPTX file in bytes |
+
+**Returns:** `integer()`
+
+
+---
+
+#### estimate_table_markdown_capacity()
+
+Estimate capacity for markdown table generation.
+
+Markdown tables have predictable size: ~12 bytes per cell on average
+(accounting for separators, pipes, padding, and cell content).
+
+**Returns:**
+
+An estimated capacity for the markdown table output
+
+**Signature:**
+
+```elixir
+@spec estimate_table_markdown_capacity(row_count, col_count) :: {:ok, term()} | {:error, term()}
+def estimate_table_markdown_capacity(row_count, col_count)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `row_count` | `integer()` | Yes | Number of rows in the table |
+| `col_count` | `integer()` | Yes | Number of columns in the table |
+
+**Returns:** `integer()`
+
+
+---
+
+#### decompress_gzip()
+
+Decompress gzip bytes, returning the raw decompressed data.
+
+**Signature:**
+
+```elixir
+@spec decompress_gzip(bytes, limits) :: {:ok, term()} | {:error, term()}
+def decompress_gzip(bytes, limits)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `bytes` | `binary()` | Yes | The bytes |
+| `limits` | `SecurityLimits` | Yes | The security limits |
+
+**Returns:** `binary()`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### extract_gzip()
+
+Extract both metadata and text content from gzip in a single decompression pass.
+
+This avoids the overhead of decompressing the data multiple times when both
+metadata and text content are needed.
+
+If the decompressed data is a TAR archive, delegates to TAR extraction functions.
+
+**Signature:**
+
+```elixir
+@spec extract_gzip(bytes, limits) :: {:ok, term()} | {:error, term()}
+def extract_gzip(bytes, limits)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `bytes` | `binary()` | Yes | The bytes |
+| `limits` | `SecurityLimits` | Yes | The security limits |
+
+**Returns:** `ArchiveMetadataAHashMapStringString`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### extract_gzip_metadata()
+
+Extract metadata from a gzip-compressed file.
+
+Gzip wraps a single stream, so the metadata contains one entry
+with the original filename (from gzip header) and decompressed size.
+
+If the decompressed data is a TAR archive, delegates to TAR extraction.
+
+**Signature:**
+
+```elixir
+@spec extract_gzip_metadata(bytes, limits) :: {:ok, term()} | {:error, term()}
+def extract_gzip_metadata(bytes, limits)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `bytes` | `binary()` | Yes | The bytes |
+| `limits` | `SecurityLimits` | Yes | The security limits |
+
+**Returns:** `ArchiveMetadata`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### extract_gzip_text_content()
+
+Extract text content from a gzip-compressed file.
+
+Decompresses and attempts to read the result as UTF-8 text.
+
+If the decompressed data is a TAR archive, delegates to TAR extraction.
+
+**Signature:**
+
+```elixir
+@spec extract_gzip_text_content(bytes, limits) :: {:ok, term()} | {:error, term()}
+def extract_gzip_text_content(bytes, limits)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `bytes` | `binary()` | Yes | The bytes |
+| `limits` | `SecurityLimits` | Yes | The security limits |
+
+**Returns:** `AHashMap`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### extract_gzip_with_bytes()
+
+Extract metadata, text content, and raw file bytes from gzip in a single pass.
+
+Similar to `extract_gzip` but also returns the raw file bytes for recursive extraction.
+For TAR-within-GZIP, delegates to TAR file bytes extraction.
+
+**Signature:**
+
+```elixir
+@spec extract_gzip_with_bytes(bytes, limits) :: {:ok, term()} | {:error, term()}
+def extract_gzip_with_bytes(bytes, limits)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `bytes` | `binary()` | Yes | The bytes |
+| `limits` | `SecurityLimits` | Yes | The security limits |
+
+**Returns:** `GzipWithBytesResult`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### extract_7z_metadata()
+
+Extract metadata from a 7z archive.
+
+**Returns:**
+
+Returns `ArchiveMetadata` containing:
+- Format: "7Z"
+- File list with paths, sizes, and directory flags
+- Total file count
+- Total uncompressed size
+
+**Errors:**
+
+Returns an error if the 7z archive cannot be read or parsed,
+or if security limits are exceeded.
+
+**Signature:**
+
+```elixir
+@spec extract_7z_metadata(bytes, limits) :: {:ok, term()} | {:error, term()}
+def extract_7z_metadata(bytes, limits)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `bytes` | `binary()` | Yes | The 7z archive bytes |
+| `limits` | `SecurityLimits` | Yes | Security limits for archive extraction |
+
+**Returns:** `ArchiveMetadata`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### extract_7z_text_content()
+
+Extract text content from files within a 7z archive.
+
+Only extracts files with common text extensions: .txt, .md, .json, .xml, .html, .csv, .log, .yaml, .toml
+
+**Returns:**
+
+Returns a `HashMap` mapping file paths to their text content.
+Binary files and files with non-text extensions are excluded.
+
+**Errors:**
+
+Returns an error if the 7z archive cannot be read or parsed.
+
+**Signature:**
+
+```elixir
+@spec extract_7z_text_content(bytes, limits) :: {:ok, term()} | {:error, term()}
+def extract_7z_text_content(bytes, limits)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `bytes` | `binary()` | Yes | The 7z archive bytes |
+| `limits` | `SecurityLimits` | Yes | The security limits |
+
+**Returns:** `AHashMap`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### extract_7z_file_bytes()
+
+Extract raw file bytes for all non-directory entries in a 7z archive.
+
+Returns a `HashMap` mapping file paths to their raw byte content.
+Respects security limits for file count and total archive size.
+
+**Errors:**
+
+Returns an error if the 7z archive cannot be read or if security limits are exceeded.
+
+**Signature:**
+
+```elixir
+@spec extract_7z_file_bytes(bytes, limits) :: {:ok, term()} | {:error, term()}
+def extract_7z_file_bytes(bytes, limits)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `bytes` | `binary()` | Yes | The 7z archive bytes |
+| `limits` | `SecurityLimits` | Yes | Security limits for archive extraction |
+
+**Returns:** `AHashMap`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### extract_tar_metadata()
+
+Extract metadata from a TAR archive.
+
+**Returns:**
+
+Returns `ArchiveMetadata` containing:
+- Format: "TAR"
+- File list with paths, sizes, and directory flags
+- Total file count
+- Total uncompressed size
+
+**Errors:**
+
+Returns an error if the TAR archive cannot be read or parsed,
+or if security limits are exceeded.
+
+**Signature:**
+
+```elixir
+@spec extract_tar_metadata(bytes, limits) :: {:ok, term()} | {:error, term()}
+def extract_tar_metadata(bytes, limits)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `bytes` | `binary()` | Yes | The TAR archive bytes (can be compressed with gzip or bzip2) |
+| `limits` | `SecurityLimits` | Yes | Security limits for archive extraction |
+
+**Returns:** `ArchiveMetadata`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### extract_tar_text_content()
+
+Extract text content from files within a TAR archive.
+
+Only extracts files with common text extensions: .txt, .md, .json, .xml, .html, .csv, .log, .yaml, .toml
+
+**Returns:**
+
+Returns a `HashMap` mapping file paths to their text content.
+Binary files and files with non-text extensions are excluded.
+
+**Errors:**
+
+Returns an error if the TAR archive cannot be read or parsed.
+
+**Signature:**
+
+```elixir
+@spec extract_tar_text_content(bytes, limits) :: {:ok, term()} | {:error, term()}
+def extract_tar_text_content(bytes, limits)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `bytes` | `binary()` | Yes | The TAR archive bytes (can be compressed with gzip or bzip2) |
+| `limits` | `SecurityLimits` | Yes | The security limits |
+
+**Returns:** `AHashMap`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### extract_tar_file_bytes()
+
+Extract raw file bytes for all non-directory entries in a TAR archive.
+
+Returns a `HashMap` mapping file paths to their raw byte content.
+Respects security limits for file count and total archive size.
+
+**Errors:**
+
+Returns an error if the TAR archive cannot be read or if security limits are exceeded.
+
+**Signature:**
+
+```elixir
+@spec extract_tar_file_bytes(bytes, limits) :: {:ok, term()} | {:error, term()}
+def extract_tar_file_bytes(bytes, limits)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `bytes` | `binary()` | Yes | The TAR archive bytes |
+| `limits` | `SecurityLimits` | Yes | Security limits for archive extraction |
+
+**Returns:** `AHashMap`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### extract_zip_metadata()
+
+Extract metadata from a ZIP archive.
+
+**Returns:**
+
+Returns `ArchiveMetadata` containing:
+- Format: "ZIP"
+- File list with paths, sizes, and directory flags
+- Total file count
+- Total uncompressed size
+
+**Errors:**
+
+Returns an error if the ZIP archive cannot be read or parsed,
+or if security limits are exceeded.
+
+**Signature:**
+
+```elixir
+@spec extract_zip_metadata(bytes, limits) :: {:ok, term()} | {:error, term()}
+def extract_zip_metadata(bytes, limits)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `bytes` | `binary()` | Yes | The ZIP archive bytes |
+| `limits` | `SecurityLimits` | Yes | Security limits for archive extraction |
+
+**Returns:** `ArchiveMetadata`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### extract_zip_text_content()
+
+Extract text content from files within a ZIP archive.
+
+Only extracts files with common text extensions: .txt, .md, .json, .xml, .html, .csv, .log, .yaml, .toml
+
+**Returns:**
+
+Returns a `HashMap` mapping file paths to their text content.
+Binary files and files with non-text extensions are excluded.
+
+**Errors:**
+
+Returns an error if the ZIP archive cannot be read or parsed.
+
+**Signature:**
+
+```elixir
+@spec extract_zip_text_content(bytes, limits) :: {:ok, term()} | {:error, term()}
+def extract_zip_text_content(bytes, limits)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `bytes` | `binary()` | Yes | The ZIP archive bytes |
+| `limits` | `SecurityLimits` | Yes | The security limits |
+
+**Returns:** `AHashMap`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### extract_zip_file_bytes()
+
+Extract raw file bytes for all non-directory entries in a ZIP archive.
+
+Returns a `HashMap` mapping file paths to their raw byte content.
+Respects security limits for file count and total archive size.
+
+**Errors:**
+
+Returns an error if the ZIP archive cannot be read or if security limits are exceeded.
+
+**Signature:**
+
+```elixir
+@spec extract_zip_file_bytes(bytes, limits) :: {:ok, term()} | {:error, term()}
+def extract_zip_file_bytes(bytes, limits)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `bytes` | `binary()` | Yes | The ZIP archive bytes |
+| `limits` | `SecurityLimits` | Yes | Security limits for archive extraction |
+
+**Returns:** `AHashMap`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### parse_eml_content()
+
+Parse .eml file content (RFC822 format)
+
+**Signature:**
+
+```elixir
+@spec parse_eml_content(data) :: {:ok, term()} | {:error, term()}
+def parse_eml_content(data)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `data` | `binary()` | Yes | The data |
+
+**Returns:** `EmailExtractionResult`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### parse_msg_content()
+
+Parse .msg file content (Outlook format).
+
+Reads MSG files directly via the CFB (OLE Compound Document) format,
+extracting text properties and attachment metadata without the overhead
+of hex-encoding attachment binary data (which caused hangs on large files
+with the previous `msg_parser` dependency).
+
+Some MSG files have FAT headers declaring more sectors than the file
+actually contains.  The strict `cfb` crate rejects these.  When that
+happens we pad the data with zero bytes so the sector count matches
+the FAT and retry – the real streams are still within the original
+data range and parse correctly.
+
+**Signature:**
+
+```elixir
+@spec parse_msg_content(data, fallback_codepage) :: {:ok, term()} | {:error, term()}
+def parse_msg_content(data, fallback_codepage)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `data` | `binary()` | Yes | The data |
+| `fallback_codepage` | `integer() | nil` | No | The fallback codepage |
+
+**Returns:** `EmailExtractionResult`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### extract_email_content()
+
+Extract email content from either .eml or .msg format
+
+**Signature:**
+
+```elixir
+@spec extract_email_content(data, mime_type, fallback_codepage) :: {:ok, term()} | {:error, term()}
+def extract_email_content(data, mime_type, fallback_codepage)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `data` | `binary()` | Yes | The data |
+| `mime_type` | `String.t()` | Yes | The mime type |
+| `fallback_codepage` | `integer() | nil` | No | The fallback codepage |
+
+**Returns:** `EmailExtractionResult`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### build_email_text_output()
+
+Build text output from email extraction result
+
+**Signature:**
+
+```elixir
+@spec build_email_text_output(result) :: {:ok, term()} | {:error, term()}
+def build_email_text_output(result)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `result` | `EmailExtractionResult` | Yes | The email extraction result |
+
+**Returns:** `String.t()`
+
+
+---
+
+#### read_excel_file()
+
+**Signature:**
+
+```elixir
+@spec read_excel_file(file_path) :: {:ok, term()} | {:error, term()}
+def read_excel_file(file_path)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `file_path` | `String.t()` | Yes | Path to the file |
+
+**Returns:** `ExcelWorkbook`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### read_excel_bytes()
+
+**Signature:**
+
+```elixir
+@spec read_excel_bytes(data, file_extension) :: {:ok, term()} | {:error, term()}
+def read_excel_bytes(data, file_extension)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `data` | `binary()` | Yes | The data |
+| `file_extension` | `String.t()` | Yes | The file extension |
+
+**Returns:** `ExcelWorkbook`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### excel_to_text()
+
+Convert an Excel workbook to plain text (space-separated cells, one row per line).
+
+Each sheet is separated by a blank line. Sheet names are included as headers.
+This produces text suitable for quality scoring against ground truth.
+
+**Signature:**
+
+```elixir
+@spec excel_to_text(workbook) :: {:ok, term()} | {:error, term()}
+def excel_to_text(workbook)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `workbook` | `ExcelWorkbook` | Yes | The excel workbook |
+
+**Returns:** `String.t()`
+
+
+---
+
+#### excel_to_markdown()
+
+**Signature:**
+
+```elixir
+@spec excel_to_markdown(workbook) :: {:ok, term()} | {:error, term()}
+def excel_to_markdown(workbook)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `workbook` | `ExcelWorkbook` | Yes | The excel workbook |
+
+**Returns:** `String.t()`
+
+
+---
+
+#### convert_html_to_markdown()
+
+Convert HTML with optional configuration and output format.
+
+Uses sensible defaults if no configuration is provided:
+- `extract_metadata = true` (parse YAML frontmatter)
+- `include_document_structure = true` (populate document tree)
+- `preprocessing.enabled = false` (disable HTML preprocessing)
+
+Supports both markdown and djot output based on the output_format parameter.
+Defaults to Markdown for backward compatibility.
+
+# WASM Limitations
+
+In WASM builds, HTML files larger than 2MB will be rejected with an error
+to prevent stack overflow. For larger files, use the native library.
+
+**Returns:**
+
+A markdown or djot string, or an error if conversion fails
+
+**Signature:**
+
+```elixir
+@spec convert_html_to_markdown(html, options, output_format) :: {:ok, term()} | {:error, term()}
+def convert_html_to_markdown(html, options, output_format)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `html` | `String.t()` | Yes | The HTML string to convert |
+| `options` | `ConversionOptions | nil` | No | Optional conversion options; defaults will be used if None |
+| `output_format` | `KreuzbergOutputFormat | nil` | No | Optional output format; defaults to Markdown if None |
+
+**Returns:** `String.t()`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### convert_html_to_markdown_with_metadata()
+
+Convert HTML with direct metadata extraction and output format support.
+
+Extracts metadata directly from HTML using the metadata extraction
+capabilities of the `html-to-markdown-rs` library, without relying
+on YAML frontmatter in the converted markdown.
+
+Supports both markdown and djot output based on the output_format parameter.
+Defaults to Markdown for backward compatibility.
+
+# WASM Limitations
+
+In WASM builds, HTML files larger than 2MB will be rejected with an error
+to prevent stack overflow. For larger files, use the native library.
+
+**Returns:**
+
+A tuple of (markdown/djot content, optional metadata), or an error if conversion fails
+
+**Signature:**
+
+```elixir
+@spec convert_html_to_markdown_with_metadata(html, options, output_format) :: {:ok, term()} | {:error, term()}
+def convert_html_to_markdown_with_metadata(html, options, output_format)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `html` | `String.t()` | Yes | The HTML string to convert |
+| `options` | `ConversionOptions | nil` | No | Optional conversion options; defaults will be used if None |
+| `output_format` | `KreuzbergOutputFormat | nil` | No | Optional output format; defaults to Markdown if None |
+
+**Returns:** `StringOptionHtmlMetadata`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### convert_html_to_markdown_with_tables()
+
+Convert HTML to markdown/djot/plain with metadata, structured tables, and document structure.
+
+Performs a single unified `convert()` call with `include_document_structure: true`,
+`extract_metadata: true`, and `extract_images: true` to capture content, metadata,
+structured table data, and the full semantic document tree in one pass.
+
+Returns `(content, optional_metadata, tables, optional_document_structure)`.
+
+**Signature:**
+
+```elixir
+@spec convert_html_to_markdown_with_tables(html, options, output_format) :: {:ok, term()} | {:error, term()}
+def convert_html_to_markdown_with_tables(html, options, output_format)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `html` | `String.t()` | Yes | The html |
+| `options` | `ConversionOptions | nil` | No | The options to use |
+| `output_format` | `KreuzbergOutputFormat | nil` | No | The kreuzberg output format |
+
+**Returns:** `DocumentStructure`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### extract_html_inline_images()
+
+Extract inline images (data URIs and SVGs) from HTML.
+
+Uses a single `convert()` call with `extract_images = true` to collect
+inline images embedded in the HTML document. Uses plain text output format
+for minimal conversion overhead since only images are needed.
+Returns an empty vector when no images are found.
+
+**Signature:**
+
+```elixir
+@spec extract_html_inline_images(html, options) :: {:ok, term()} | {:error, term()}
+def extract_html_inline_images(html, options)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `html` | `String.t()` | Yes | The html |
+| `options` | `ConversionOptions | nil` | No | The options to use |
+
+**Returns:** `list(InlineImage)`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### extract_doc_text()
+
+Extract text from DOC bytes.
+
+Parses the OLE/CFB compound document, reads the FIB (File Information Block),
+and extracts text from the piece table.
+
+**Signature:**
+
+```elixir
+@spec extract_doc_text(content) :: {:ok, term()} | {:error, term()}
+def extract_doc_text(content)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `content` | `binary()` | Yes | The content to process |
+
+**Returns:** `DocExtractionResult`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### parse_drawing()
+
+Parse a drawing object starting after the `<w:drawing>` Start event.
+
+This function reads events until it encounters the closing `</w:drawing>` tag,
+parsing the drawing type (inline or anchored), extent, properties, and image references.
+
+**Signature:**
+
+```elixir
+@spec parse_drawing(reader) :: {:ok, term()} | {:error, term()}
+def parse_drawing(reader)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `reader` | `Reader` | Yes | The reader |
+
+**Returns:** `Drawing`
+
+
+---
+
+#### collect_and_convert_omath_para()
+
+Collect an `m:oMathPara` subtree and convert to LaTeX (display math).
+The reader should be positioned right after the `<m:oMathPara>` start tag.
+
+**Signature:**
+
+```elixir
+@spec collect_and_convert_omath_para(reader) :: {:ok, term()} | {:error, term()}
+def collect_and_convert_omath_para(reader)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `reader` | `Reader` | Yes | The reader |
+
+**Returns:** `String.t()`
+
+
+---
+
+#### collect_and_convert_omath()
+
+Collect an `m:oMath` subtree and convert to LaTeX (inline math).
+The reader should be positioned right after the `<m:oMath>` start tag.
+
+**Signature:**
+
+```elixir
+@spec collect_and_convert_omath(reader) :: {:ok, term()} | {:error, term()}
+def collect_and_convert_omath(reader)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `reader` | `Reader` | Yes | The reader |
+
+**Returns:** `String.t()`
+
+
+---
+
+#### parse_document()
+
+Parse a DOCX document from bytes and return the structured document.
+
+**Signature:**
+
+```elixir
+@spec parse_document(bytes) :: {:ok, term()} | {:error, term()}
+def parse_document(bytes)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `bytes` | `binary()` | Yes | The bytes |
+
+**Returns:** `Document`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### extract_text_from_bytes()
+
+Extract text from DOCX bytes.
+
+**Signature:**
+
+```elixir
+@spec extract_text_from_bytes(bytes) :: {:ok, term()} | {:error, term()}
+def extract_text_from_bytes(bytes)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `bytes` | `binary()` | Yes | The bytes |
+
+**Returns:** `String.t()`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### parse_section_properties()
+
+Parse a `w:sectPr` XML element (roxmltree node) into `SectionProperties`.
+
+**Signature:**
+
+```elixir
+@spec parse_section_properties(node) :: {:ok, term()} | {:error, term()}
+def parse_section_properties(node)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `node` | `Node` | Yes | The node |
+
+**Returns:** `SectionProperties`
+
+
+---
+
+#### parse_section_properties_streaming()
+
+Parse section properties from a quick_xml event stream.
+
+Reads events from the reader until `</w:sectPr>` is encountered,
+extracting the same properties as the roxmltree parser.
+
+**Important:** This function advances the reader past the closing `</w:sectPr>` tag.
+The caller must not attempt to process the `w:sectPr` end event again.
+
+**Signature:**
+
+```elixir
+@spec parse_section_properties_streaming(reader) :: {:ok, term()} | {:error, term()}
+def parse_section_properties_streaming(reader)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `reader` | `Reader` | Yes | The reader |
+
+**Returns:** `SectionProperties`
+
+
+---
+
+#### parse_styles_xml()
+
+Parse `word/styles.xml` content into a `StyleCatalog`.
+
+Uses `roxmltree` for tree-based XML parsing, consistent with the
+office metadata parsing approach used elsewhere in the codebase.
+
+**Signature:**
+
+```elixir
+@spec parse_styles_xml(xml) :: {:ok, term()} | {:error, term()}
+def parse_styles_xml(xml)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `xml` | `String.t()` | Yes | The xml |
+
+**Returns:** `StyleCatalog`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### parse_table_properties()
+
+Parse table-level properties from streaming XML reader.
+
+Expects the reader to be positioned just after the `<w:tblPr>` start tag.
+Reads all child elements until the matching `</w:tblPr>` end tag.
+
+**Signature:**
+
+```elixir
+@spec parse_table_properties(reader) :: {:ok, term()} | {:error, term()}
+def parse_table_properties(reader)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `reader` | `Reader` | Yes | The reader |
+
+**Returns:** `TableProperties`
+
+
+---
+
+#### parse_row_properties()
+
+Parse row-level properties from streaming XML reader.
+
+Expects the reader to be positioned just after the `<w:trPr>` start tag.
+
+**Signature:**
+
+```elixir
+@spec parse_row_properties(reader) :: {:ok, term()} | {:error, term()}
+def parse_row_properties(reader)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `reader` | `Reader` | Yes | The reader |
+
+**Returns:** `RowProperties`
+
+
+---
+
+#### parse_cell_properties()
+
+Parse cell-level properties from streaming XML reader.
+
+Expects the reader to be positioned just after the `<w:tcPr>` start tag.
+
+**Signature:**
+
+```elixir
+@spec parse_cell_properties(reader) :: {:ok, term()} | {:error, term()}
+def parse_cell_properties(reader)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `reader` | `Reader` | Yes | The reader |
+
+**Returns:** `CellProperties`
+
+
+---
+
+#### parse_table_grid()
+
+Parse table grid (column widths) from streaming XML reader.
+
+Expects the reader to be positioned just after the `<w:tblGrid>` start tag.
+
+**Signature:**
+
+```elixir
+@spec parse_table_grid(reader) :: {:ok, term()} | {:error, term()}
+def parse_table_grid(reader)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `reader` | `Reader` | Yes | The reader |
+
+**Returns:** `TableGrid`
+
+
+---
+
+#### parse_theme_xml()
+
+Parse `word/theme/theme1.xml` content into a `Theme`.
+
+Uses `roxmltree` for tree-based XML parsing of DrawingML theme elements.
+
+**Returns:**
+* `Ok(Theme)` - The parsed theme
+* `Err(KreuzbergError)` - If parsing fails
+
+**Signature:**
+
+```elixir
+@spec parse_theme_xml(xml) :: {:ok, term()} | {:error, term()}
+def parse_theme_xml(xml)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `xml` | `String.t()` | Yes | The theme XML content as a string |
+
+**Returns:** `Theme`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### extract_text()
+
+Extract text from DOCX bytes.
+
+**Signature:**
+
+```elixir
+@spec extract_text(bytes) :: {:ok, term()} | {:error, term()}
+def extract_text(bytes)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `bytes` | `binary()` | Yes | The bytes |
+
+**Returns:** `String.t()`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### extract_text_with_page_breaks()
+
+Extract text and page boundaries from DOCX bytes.
+
+Detects explicit page breaks (`<w:br w:type="page"/>`) in the document XML and maps them to
+character offsets in the extracted text. This is a best-effort approach that only detects
+explicit page breaks, not automatic pagination.
+
+**Returns:**
+* `Ok((String, Option<Vec<PageBoundary>>))` - Extracted text and optional page boundaries
+* `Err(KreuzbergError)` - If extraction fails
+
+# Limitations
+- Only detects explicit page breaks, not reflowed content
+- Page numbers are estimates, not guaranteed accurate
+- Word's pagination may differ from detected breaks
+- No page dimensions available (would require layout engine)
+
+# Performance
+Performs two passes: one with docx-lite for text extraction and one for page break detection.
+
+**Signature:**
+
+```elixir
+@spec extract_text_with_page_breaks(bytes) :: {:ok, term()} | {:error, term()}
+def extract_text_with_page_breaks(bytes)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `bytes` | `binary()` | Yes | The DOCX file contents as bytes |
+
+**Returns:** `StringOptionVecPageBoundary`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### detect_page_breaks_from_docx()
+
+Detect explicit page break positions in document.xml and extract full text with page boundaries.
+
+This is a convenience function for the extractor that combines text extraction with page
+break detection. It returns the extracted text along with page boundaries.
+
+**Returns:**
+* `Ok(Option<Vec<PageBoundary>>)` - Optional page boundaries
+* `Err(KreuzbergError)` - If extraction fails
+
+# Limitations
+- Only detects explicit page breaks, not reflowed content
+- Page numbers are estimates based on detected breaks
+
+**Signature:**
+
+```elixir
+@spec detect_page_breaks_from_docx(bytes) :: {:ok, term()} | {:error, term()}
+def detect_page_breaks_from_docx(bytes)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `bytes` | `binary()` | Yes | The DOCX file contents (ZIP archive) |
+
+**Returns:** `list(PageBoundary) | nil`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### detect_table_page_numbers()
+
+Compute the 1-based page number for each top-level table in the document.
+
+Scans `word/document.xml` for page-break markers (`<w:br w:type="page"/>`) and
+top-level table opens (`<w:tbl>`), walking them in document order. Nested tables
+(tables inside table cells) are skipped by tracking the nesting depth.
+
+Returns a `Vec<usize>` with one entry per top-level table in document order.
+If the document cannot be read or parsed, returns an empty Vec (callers should
+fall back to page 1 for all tables).
+
+# Limitations
+- Only detects explicit page breaks, not reflowed/automatic pagination.
+
+**Signature:**
+
+```elixir
+@spec detect_table_page_numbers(bytes) :: {:ok, term()} | {:error, term()}
+def detect_table_page_numbers(bytes)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `bytes` | `binary()` | Yes | The bytes |
+
+**Returns:** `list(integer())`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### extract_ooxml_embedded_objects()
+
+Extract embedded objects from an OOXML ZIP archive and recursively process them.
+
+Scans the given `embeddings_prefix` directory (e.g. `word/embeddings/` or
+`ppt/embeddings/`) inside the ZIP archive for embedded files. Known formats
+(.xlsx, .pdf, .docx, .pptx, etc.) are recursively extracted. OLE compound
+files (oleObject*.bin) are skipped with a warning unless their format can be
+identified.
+
+Returns `(children, warnings)` suitable for attaching to `InternalDocument`.
+
+**Signature:**
+
+```elixir
+@spec extract_ooxml_embedded_objects(zip_bytes, embeddings_prefix, source_label, config) :: {:ok, term()} | {:error, term()}
+def extract_ooxml_embedded_objects(zip_bytes, embeddings_prefix, source_label, config)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `zip_bytes` | `binary()` | Yes | The zip bytes |
+| `embeddings_prefix` | `String.t()` | Yes | The embeddings prefix |
+| `source_label` | `String.t()` | Yes | The source label |
+| `config` | `ExtractionConfig` | Yes | The configuration options |
+
+**Returns:** `VecArchiveEntryVecProcessingWarning`
+
+
+---
+
+#### detect_image_format()
+
+Detect image format from raw bytes using magic byte signatures.
+
+Returns a format string like "jpeg", "png", etc. Used by both DOCX and PPTX extractors.
+
+**Signature:**
+
+```elixir
+@spec detect_image_format(data) :: {:ok, term()} | {:error, term()}
+def detect_image_format(data)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `data` | `binary()` | Yes | The data |
+
+**Returns:** `Str`
+
+
+---
+
+#### extract_ppt_text()
+
+Extract text from PPT bytes.
+
+Parses the OLE/CFB compound document, reads the "PowerPoint Document" stream,
+and extracts text from TextCharsAtom and TextBytesAtom records.
+
+When `include_master_slides` is `true`, master slide content (placeholder text
+like "Click to edit Master title style") is included instead of being skipped.
+
+**Signature:**
+
+```elixir
+@spec extract_ppt_text(content) :: {:ok, term()} | {:error, term()}
+def extract_ppt_text(content)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `content` | `binary()` | Yes | The content to process |
+
+**Returns:** `PptExtractionResult`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### extract_ppt_text_with_options()
+
+Extract text from PPT bytes with configurable master slide inclusion.
+
+When `include_master_slides` is `true`, `RT_MAIN_MASTER` containers are not
+skipped, so master slide placeholder text is included in the output.
+
+**Signature:**
+
+```elixir
+@spec extract_ppt_text_with_options(content, include_master_slides) :: {:ok, term()} | {:error, term()}
+def extract_ppt_text_with_options(content, include_master_slides)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `content` | `binary()` | Yes | The content to process |
+| `include_master_slides` | `boolean()` | Yes | The include master slides |
+
+**Returns:** `PptExtractionResult`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### extract_pptx_from_path()
+
+Extract PPTX content from a file path.
+
+**Returns:**
+
+A `PptxExtractionResult` containing extracted content, metadata, and images.
+
+**Signature:**
+
+```elixir
+@spec extract_pptx_from_path(path, options) :: {:ok, term()} | {:error, term()}
+def extract_pptx_from_path(path, options)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `path` | `String.t()` | Yes | Path to the PPTX file |
+| `options` | `PptxExtractionOptions` | Yes | Extraction options controlling image extraction, formatting, etc. |
+
+**Returns:** `PptxExtractionResult`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### extract_pptx_from_bytes()
+
+Extract PPTX content from a byte buffer.
+
+**Returns:**
+
+A `PptxExtractionResult` containing extracted content, metadata, and images.
+
+**Signature:**
+
+```elixir
+@spec extract_pptx_from_bytes(data, options) :: {:ok, term()} | {:error, term()}
+def extract_pptx_from_bytes(data, options)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `data` | `binary()` | Yes | Raw PPTX file bytes |
+| `options` | `PptxExtractionOptions` | Yes | Extraction options controlling image extraction, formatting, etc. |
+
+**Returns:** `PptxExtractionResult`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### parse_xml_svg()
+
+Parse XML with optional SVG mode.
+
+In SVG mode, only text from SVG text-bearing elements (`<text>`, `<tspan>`,
+`<title>`, `<desc>`, `<textPath>`) is extracted, without element name prefixes.
+Attribute values are also omitted in SVG mode.
+
+**Signature:**
+
+```elixir
+@spec parse_xml_svg(xml_bytes, preserve_whitespace) :: {:ok, term()} | {:error, term()}
+def parse_xml_svg(xml_bytes, preserve_whitespace)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `xml_bytes` | `binary()` | Yes | The xml bytes |
+| `preserve_whitespace` | `boolean()` | Yes | The preserve whitespace |
+
+**Returns:** `XmlExtractionResult`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### parse_xml()
+
+**Signature:**
+
+```elixir
+@spec parse_xml(xml_bytes, preserve_whitespace) :: {:ok, term()} | {:error, term()}
+def parse_xml(xml_bytes, preserve_whitespace)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `xml_bytes` | `binary()` | Yes | The xml bytes |
+| `preserve_whitespace` | `boolean()` | Yes | The preserve whitespace |
+
+**Returns:** `XmlExtractionResult`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### cells_to_text()
+
+Converts a 2D vector of cell strings into a GitHub-Flavored Markdown table.
+
+# Behavior
+
+- The first row is treated as the header row
+- A separator row is inserted after the header
+- Pipe characters (`|`) in cell content are automatically escaped with backslash
+- Irregular tables (rows with varying column counts) are padded with empty cells to match the header
+- Returns an empty string for empty input
+
+**Returns:**
+
+A `String` containing the GFM markdown table representation
+
+Converts a 2D vector of cell strings into plain text with tab-separated columns.
+
+# Behavior
+
+- Rows are separated by newlines
+- Cells within a row are separated by tab characters
+- No pipe delimiters or separator rows (unlike markdown tables)
+- Returns an empty string for empty input
+
+**Returns:**
+
+A `String` containing the plain text table representation
+
+**Signature:**
+
+```elixir
+@spec cells_to_text(cells) :: {:ok, term()} | {:error, term()}
+def cells_to_text(cells)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `cells` | `list(list(String.t()))` | Yes | A slice of vectors representing table rows, where each inner vector contains cell values |
+
+**Returns:** `String.t()`
+
+
+---
+
+#### cells_to_markdown()
+
+**Signature:**
+
+```elixir
+@spec cells_to_markdown(cells) :: {:ok, term()} | {:error, term()}
+def cells_to_markdown(cells)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `cells` | `list(list(String.t()))` | Yes | The cells |
+
+**Returns:** `String.t()`
+
+
+---
+
+#### parse_jotdown_attributes()
+
+Parse jotdown attributes into our Attributes representation.
+
+Converts jotdown's internal attribute representation to Kreuzberg's
+standardized Attributes struct, handling IDs, classes, and key-value pairs.
+
+**Signature:**
+
+```elixir
+@spec parse_jotdown_attributes(attrs) :: {:ok, term()} | {:error, term()}
+def parse_jotdown_attributes(attrs)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `attrs` | `Attributes` | Yes | The attributes |
+
+**Returns:** `Attributes`
+
+
+---
+
+#### render_attributes()
+
+Render attributes to djot attribute syntax.
+
+Converts Kreuzberg's Attributes struct back to djot attribute syntax:
+{.class #id key="value"}
+
+**Signature:**
+
+```elixir
+@spec render_attributes(attrs) :: {:ok, term()} | {:error, term()}
+def render_attributes(attrs)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `attrs` | `Attributes` | Yes | The attributes |
+
+**Returns:** `String.t()`
+
+
+---
+
+#### djot_content_to_djot()
+
+Convert DjotContent back to djot markup.
+
+This function takes a `DjotContent` structure and generates valid djot markup
+from it, preserving:
+- Block structure (headings, code blocks, lists, blockquotes, etc.)
+- Inline formatting (strong, emphasis, highlight, subscript, superscript, etc.)
+- Attributes where present ({.class #id key="value"})
+
+**Returns:**
+
+A String containing valid djot markup
+
+**Signature:**
+
+```elixir
+@spec djot_content_to_djot(content) :: {:ok, term()} | {:error, term()}
+def djot_content_to_djot(content)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `content` | `DjotContent` | Yes | The DjotContent to convert |
+
+**Returns:** `String.t()`
+
+
+---
+
+#### extraction_result_to_djot()
+
+Convert any ExtractionResult to djot format.
+
+This function converts an `ExtractionResult` to djot markup:
+- If `djot_content` is `Some`, uses `djot_content_to_djot` for full fidelity conversion
+- Otherwise, wraps the plain text content in paragraphs
+
+**Returns:**
+
+A `Result` containing the djot markup string
+
+**Signature:**
+
+```elixir
+@spec extraction_result_to_djot(result) :: {:ok, term()} | {:error, term()}
+def extraction_result_to_djot(result)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `result` | `ExtractionResult` | Yes | The ExtractionResult to convert |
+
+**Returns:** `String.t()`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### djot_to_html()
+
+Render djot content to HTML.
+
+This function takes djot source text and renders it to HTML using jotdown's
+built-in HTML renderer.
+
+**Returns:**
+
+A `Result` containing the rendered HTML string
+
+**Signature:**
+
+```elixir
+@spec djot_to_html(djot_source) :: {:ok, term()} | {:error, term()}
+def djot_to_html(djot_source)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `djot_source` | `String.t()` | Yes | The djot markup text to render |
+
+**Returns:** `String.t()`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### extract_complete_djot_content()
+
+Extract complete djot content with 100% feature extraction.
+
+Processes ALL djot events to build a rich DjotContent structure including:
+- Block structure (headings, lists, blockquotes, divs, sections, code blocks)
+- Inline formatting (strong, emphasis, highlight, subscript, superscript, insert, delete)
+- Attributes (classes, IDs, key-value pairs)
+- Links and images with full metadata (href, src, alt, title)
+- Math blocks (inline & display)
+- Definition lists (term/description pairs)
+- Task lists with checked state
+- Raw blocks (HTML/LaTeX)
+- Footnotes (references and definitions)
+- Captions
+- Smart punctuation
+- All other djot features
+
+**Signature:**
+
+```elixir
+@spec extract_complete_djot_content(events, metadata, tables) :: {:ok, term()} | {:error, term()}
+def extract_complete_djot_content(events, metadata, tables)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `events` | `list(Event)` | Yes | The events |
+| `metadata` | `Metadata` | Yes | The metadata |
+| `tables` | `list(Table)` | Yes | The tables |
+
+**Returns:** `DjotContent`
+
+
+---
+
+#### extract_tables_from_events()
+
+Extract tables from Djot events.
+
+Parses table events and extracts table data as a Vec<Vec<String>>,
+converting each table to markdown representation for storage.
+
+**Signature:**
+
+```elixir
+@spec extract_tables_from_events(events) :: {:ok, term()} | {:error, term()}
+def extract_tables_from_events(events)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `events` | `list(Event)` | Yes | The events |
+
+**Returns:** `list(Table)`
+
+
+---
+
+#### extract_text_from_events()
+
+Extract plain text from Djot events.
+
+Processes djot events and extracts plain text content, handling:
+- Text content
+- Line breaks (soft, hard, blank)
+- Smart punctuation (quotes, dashes, ellipsis)
+- Special symbols and footnote references
+
+**Signature:**
+
+```elixir
+@spec extract_text_from_events(events) :: {:ok, term()} | {:error, term()}
+def extract_text_from_events(events)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `events` | `list(Event)` | Yes | The events |
+
+**Returns:** `String.t()`
+
+
+---
+
+#### render_block_to_djot()
+
+Render a single block to djot markup.
+
+**Signature:**
+
+```elixir
+@spec render_block_to_djot(block, indent_level) :: {:ok, term()} | {:error, term()}
+def render_block_to_djot(block, indent_level)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `block` | `FormattedBlock` | Yes | The formatted block |
+| `indent_level` | `integer()` | Yes | The indent level |
+
+**Returns:** `String.t()`
+
+
+---
+
+#### render_list_item()
+
+Render a list item with the given marker.
+
+**Signature:**
+
+```elixir
+@spec render_list_item(item, indent, marker) :: {:ok, term()} | {:error, term()}
+def render_list_item(item, indent, marker)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `item` | `FormattedBlock` | Yes | The formatted block |
+| `indent` | `String.t()` | Yes | The indent |
+| `marker` | `String.t()` | Yes | The marker |
+
+**Returns:** `String.t()`
+
+
+---
+
+#### render_inline_content()
+
+Render inline content to djot markup.
+
+**Signature:**
+
+```elixir
+@spec render_inline_content(elements) :: {:ok, term()} | {:error, term()}
+def render_inline_content(elements)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `elements` | `list(InlineElement)` | Yes | The elements |
+
+**Returns:** `String.t()`
+
+
+---
+
+#### extract_frontmatter()
+
+Extract YAML frontmatter from document content.
+
+Frontmatter is expected to be delimited by `---` or `...` at the start of the document.
+This implementation properly handles edge cases:
+- `---` appearing within YAML strings or arrays
+- Both `---` and `...` as end delimiters (YAML spec compliant)
+- Multiline YAML values containing dashes
+
+Returns a tuple of (parsed YAML value, remaining content after frontmatter).
+
+**Signature:**
+
+```elixir
+@spec extract_frontmatter(content) :: {:ok, term()} | {:error, term()}
+def extract_frontmatter(content)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `content` | `String.t()` | Yes | The content to process |
+
+**Returns:** `OptionYamlValueString`
+
+
+---
+
+#### extract_metadata_from_yaml()
+
+Extract metadata from YAML frontmatter.
+
+Extracts the following YAML fields into Kreuzberg metadata:
+- **Standard fields**: title, author, date, description (as subject)
+- **Extended fields**: abstract, subject, category, tags, language, version
+- **Array fields** (keywords, tags): stored as `Vec<String>` in typed fields
+
+**Returns:**
+
+A `Metadata` struct populated with extracted fields
+
+**Signature:**
+
+```elixir
+@spec extract_metadata_from_yaml(yaml) :: {:ok, term()} | {:error, term()}
+def extract_metadata_from_yaml(yaml)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `yaml` | `YamlValue` | Yes | The parsed YAML value from frontmatter |
+
+**Returns:** `Metadata`
+
+
+---
+
+#### extract_title_from_content()
+
+Extract first heading as title from content.
+
+Searches for the first level-1 heading (# Title) in the content
+and returns it as a potential title if no title was found in frontmatter.
+
+**Returns:**
+
+Some(title) if a heading is found, None otherwise
+
+**Signature:**
+
+```elixir
+@spec extract_title_from_content(content) :: {:ok, term()} | {:error, term()}
+def extract_title_from_content(content)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `content` | `String.t()` | Yes | The document content to search |
+
+**Returns:** `String.t() | nil`
+
+
+---
+
+#### collect_iwa_paths()
+
+Collects all .iwa file paths from a ZIP archive.
+
+Opens the ZIP from `content`, iterates every entry, and returns the names of
+all entries whose path ends with `.iwa`. Entries that cannot be read are
+silently skipped (consistent with the per-extractor `filter_map` pattern).
+
+**Signature:**
+
+```elixir
+@spec collect_iwa_paths(content) :: {:ok, term()} | {:error, term()}
+def collect_iwa_paths(content)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `content` | `binary()` | Yes | The content to process |
+
+**Returns:** `list(String.t())`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### read_iwa_file()
+
+Read and Snappy-decompress a single `.iwa` file from the ZIP archive.
+
+Apple IWA files use a custom framing format:
+Each block in the file is: `[type: u8][length: u24 LE][payload: length bytes]`
+- type `0x00`: Snappy-compressed block → decompress payload with raw Snappy
+- type `0x01`: Uncompressed block → use payload as-is
+
+Multiple blocks are concatenated to form the decompressed IWA stream.
+
+**Signature:**
+
+```elixir
+@spec read_iwa_file(content, path) :: {:ok, term()} | {:error, term()}
+def read_iwa_file(content, path)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `content` | `binary()` | Yes | The content to process |
+| `path` | `String.t()` | Yes | Path to the file |
+
+**Returns:** `binary()`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### decode_iwa_stream()
+
+Decode an Apple IWA byte stream into the raw protobuf payload.
+
+IWA framing: each block = 1 byte type + 3 bytes LE length + N bytes payload
+- type 0x00 → Snappy-compressed, decompress with `snap.raw.Decoder`
+- type 0x01 → Uncompressed, use as-is
+
+**Signature:**
+
+```elixir
+@spec decode_iwa_stream(data) :: {:ok, term()} | {:error, term()}
+def decode_iwa_stream(data)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `data` | `binary()` | Yes | The data |
+
+**Returns:** `binary()`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### extract_text_from_proto()
+
+Extract all UTF-8 text strings from a raw protobuf byte slice.
+
+This uses a simple wire-format scanner without a full schema:
+- Field type 2 (length-delimited) with a valid UTF-8 payload of ≥3 bytes is
+  treated as a text string candidate.
+- We skip binary blobs (non-UTF-8) and very short noise strings.
+
+This approach avoids the need for `prost-build` and generated proto code while
+still extracting human-readable text reliably from iWork documents.
+
+**Signature:**
+
+```elixir
+@spec extract_text_from_proto(data) :: {:ok, term()} | {:error, term()}
+def extract_text_from_proto(data)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `data` | `binary()` | Yes | The data |
+
+**Returns:** `list(String.t())`
+
+
+---
+
+#### extract_text_from_iwa_files()
+
+Extract all text from an iWork ZIP archive by reading specified IWA entries.
+
+`iwa_paths` should list the IWA file paths to read (e.g. `["Index/Document.iwa"]`).
+Returns a flat joined string of all text found across all IWA files.
+
+**Signature:**
+
+```elixir
+@spec extract_text_from_iwa_files(content, iwa_paths) :: {:ok, term()} | {:error, term()}
+def extract_text_from_iwa_files(content, iwa_paths)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `content` | `binary()` | Yes | The content to process |
+| `iwa_paths` | `list(String.t())` | Yes | The iwa paths |
+
+**Returns:** `String.t()`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### extract_metadata_from_zip()
+
+Extract metadata from an iWork ZIP archive.
+
+Attempts to read `Metadata/Properties.plist` and
+`Metadata/BuildVersionHistory.plist` from the ZIP. These files are XML plists
+containing authorship and creation information. If the files cannot be read
+or parsed, an empty `Metadata` is returned.
+
+**Signature:**
+
+```elixir
+@spec extract_metadata_from_zip(content) :: {:ok, term()} | {:error, term()}
+def extract_metadata_from_zip(content)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `content` | `binary()` | Yes | The content to process |
+
+**Returns:** `Metadata`
+
+
+---
+
+#### dedup_text()
+
+Deduplicate a list of text strings while preserving order.
+Adjacent duplicates and near-duplicates are removed.
+
+**Signature:**
+
+```elixir
+@spec dedup_text(texts) :: {:ok, term()} | {:error, term()}
+def dedup_text(texts)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `texts` | `list(String.t())` | Yes | The texts |
+
+**Returns:** `list(String.t())`
+
+
+---
+
+#### hex_digit_to_u8()
+
+Convert a hex digit character to its numeric value.
+
+Returns None if the character is not a valid hex digit.
+
+**Signature:**
+
+```elixir
+@spec hex_digit_to_u8(c) :: {:ok, term()} | {:error, term()}
+def hex_digit_to_u8(c)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `c` | `integer()` | Yes | The c |
+
+**Returns:** `integer() | nil`
+
+
+---
+
+#### parse_hex_byte()
+
+Parse a hex-encoded byte from two bytes.
+
+Returns the decoded byte if both bytes are valid hex digits.
+
+**Signature:**
+
+```elixir
+@spec parse_hex_byte(h1, h2) :: {:ok, term()} | {:error, term()}
+def parse_hex_byte(h1, h2)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `h1` | `integer()` | Yes | The h1 |
+| `h2` | `integer()` | Yes | The h2 |
+
+**Returns:** `integer() | nil`
+
+
+---
+
+#### parse_rtf_control_word()
+
+Parse an RTF control word and extract its value.
+
+Returns a tuple of (control_word, optional_numeric_value).
+
+**Signature:**
+
+```elixir
+@spec parse_rtf_control_word(chars) :: {:ok, term()} | {:error, term()}
+def parse_rtf_control_word(chars)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `chars` | `Peekable` | Yes | The peekable |
+
+**Returns:** `StringOptionI32`
+
+
+---
+
+#### normalize_whitespace()
+
+Normalize whitespace in a string.
+
+- Collapses multiple consecutive spaces/tabs into a single space
+- Preserves single newlines (paragraph breaks from \par)
+- Collapses multiple consecutive newlines into a double newline
+- Trims leading/trailing whitespace from each line
+- Trims leading/trailing blank lines
+
+**Signature:**
+
+```elixir
+@spec normalize_whitespace(s) :: {:ok, term()} | {:error, term()}
+def normalize_whitespace(s)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `s` | `String.t()` | Yes | The s |
+
+**Returns:** `String.t()`
+
+
+---
+
+#### extract_pict_image()
+
+Extract image metadata and binary data from within a `\pict` group.
+
+Parses the image type (`\jpegblip`, `\pngblip`, etc.), dimensions, and
+collects the hex-encoded image data that follows the control words.
+Returns the parsed image and a metadata string for text representation.
+
+**Signature:**
+
+```elixir
+@spec extract_pict_image(chars) :: {:ok, term()} | {:error, term()}
+def extract_pict_image(chars)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `chars` | `Peekable` | Yes | The peekable |
+
+**Returns:** `StringOptionRtfImage`
+
+
+---
+
+#### parse_rtf_datetime()
+
+Parse a `{\\creatim ...}` or `{\\revtim ...}` RTF info block into ISO 8601 format.
+
+**Signature:**
+
+```elixir
+@spec parse_rtf_datetime(segment) :: {:ok, term()} | {:error, term()}
+def parse_rtf_datetime(segment)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `segment` | `String.t()` | Yes | The segment |
+
+**Returns:** `String.t() | nil`
+
+
+---
+
+#### extract_rtf_metadata()
+
+Extract metadata from the RTF `\\info` block and augment with computed statistics.
+
+**Signature:**
+
+```elixir
+@spec extract_rtf_metadata(rtf_content, extracted_text) :: {:ok, term()} | {:error, term()}
+def extract_rtf_metadata(rtf_content, extracted_text)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `rtf_content` | `String.t()` | Yes | The rtf content |
+| `extracted_text` | `String.t()` | Yes | The extracted text |
+
+**Returns:** `AHashMap`
+
+
+---
+
+#### extract_rtf_formatting()
+
+Extract formatting metadata from RTF content.
+
+This performs a lightweight pass over the RTF to extract:
+- Bold/italic/underline formatting state changes
+- Color table and color references
+- Header/footer text
+- Hyperlink field instructions
+
+**Signature:**
+
+```elixir
+@spec extract_rtf_formatting(content) :: {:ok, term()} | {:error, term()}
+def extract_rtf_formatting(content)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `content` | `String.t()` | Yes | The content to process |
+
+**Returns:** `RtfFormattingData`
+
+
+---
+
+#### spans_to_annotations()
+
+Convert RTF formatting spans into `TextAnnotation` vectors for a paragraph.
+
+Given the byte range of a paragraph within the full extracted text,
+produces annotations from the formatting spans that overlap.
+
+**Signature:**
+
+```elixir
+@spec spans_to_annotations(para_start, para_end, formatting) :: {:ok, term()} | {:error, term()}
+def spans_to_annotations(para_start, para_end, formatting)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `para_start` | `integer()` | Yes | The para start |
+| `para_end` | `integer()` | Yes | The para end |
+| `formatting` | `RtfFormattingData` | Yes | The rtf formatting data |
+
+**Returns:** `list(TextAnnotation)`
+
+
+---
+
+#### extract_text_from_rtf()
+
+Extract text and image metadata from RTF document.
+
+This function extracts plain text from an RTF document by:
+1. Tracking group nesting depth with a state stack
+2. Skipping known destination groups (fonttbl, stylesheet, info, etc.)
+3. Skipping `{\*\...}` ignorable destination groups
+4. Converting encoded characters to Unicode
+5. Extracting text while skipping formatting groups
+6. Detecting and extracting image metadata (\pict sections)
+7. Normalizing whitespace
+
+**Signature:**
+
+```elixir
+@spec extract_text_from_rtf(content, plain) :: {:ok, term()} | {:error, term()}
+def extract_text_from_rtf(content, plain)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `content` | `String.t()` | Yes | The content to process |
+| `plain` | `boolean()` | Yes | The plain |
+
+**Returns:** `StringVecTableVecRtfImageVecParagraphMetaRtfFormattingData`
+
+
+---
+
+#### ensure_initialized()
+
+Ensure built-in extractors are registered.
+
+This function is called automatically on first extraction operation.
+It's safe to call multiple times - registration only happens once,
+unless the registry was cleared, in which case extractors are re-registered.
+
+**Signature:**
+
+```elixir
+@spec ensure_initialized() :: {:ok, term()} | {:error, term()}
+def ensure_initialized()
+```
+
+**Returns:** `:ok`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### register_default_extractors()
+
+Register all built-in extractors with the global registry.
+
+This function should be called once at application startup to register
+the default extractors (PlainText, Markdown, XML, etc.).
+
+**Note:** This is called automatically on first extraction operation.
+Explicit calling is optional.
+
+**Signature:**
+
+```elixir
+@spec register_default_extractors() :: {:ok, term()} | {:error, term()}
+def register_default_extractors()
+```
+
+**Returns:** `:ok`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### extract_panic_message()
+
+Extracts a human-readable message from a panic payload.
+
+Attempts to downcast the panic payload to common types (String, &str)
+to extract a meaningful error message.
+
+Message is truncated to 4KB to prevent DoS attacks via extremely large panic messages.
+
+**Returns:**
+
+A string representation of the panic message (truncated if necessary)
+
+**Signature:**
+
+```elixir
+@spec extract_panic_message(panic_info) :: {:ok, term()} | {:error, term()}
+def extract_panic_message(panic_info)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `panic_info` | `Any` | Yes | The panic payload from catch_unwind |
+
+**Returns:** `String.t()`
+
+
+---
+
+#### register_extractor()
+
+Register a document extractor with the global registry.
+
+The extractor will be registered for all MIME types it supports and will be
+available for document extraction. The extractor's `name()` method is used as
+the registration name.
+
+**Returns:**
+
+- `Ok(())` if registration succeeded
+- `Err(...)` if validation failed or initialization failed
+
+**Errors:**
+
+- `KreuzbergError.Validation` - Invalid extractor name (empty or contains whitespace)
+- Any error from the extractor's `initialize()` method
+
+**Signature:**
+
+```elixir
+@spec register_extractor(extractor) :: {:ok, term()} | {:error, term()}
+def register_extractor(extractor)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `extractor` | `DocumentExtractor` | Yes | The extractor implementation wrapped in Arc |
+
+**Returns:** `:ok`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### unregister_extractor()
+
+Unregister a document extractor by name.
+
+Removes the extractor from the global registry and calls its `shutdown()` method.
+
+**Returns:**
+
+- `Ok(())` if the extractor was unregistered or didn't exist
+- `Err(...)` if the shutdown method failed
+
+**Signature:**
+
+```elixir
+@spec unregister_extractor(name) :: {:ok, term()} | {:error, term()}
+def unregister_extractor(name)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `name` | `String.t()` | Yes | Name of the extractor to unregister |
+
+**Returns:** `:ok`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### list_extractors()
+
+List all registered extractors.
+
+Returns the names of all extractors currently registered in the global registry.
+
+**Returns:**
+
+A vector of extractor names.
+
+**Signature:**
+
+```elixir
+@spec list_extractors() :: {:ok, term()} | {:error, term()}
+def list_extractors()
+```
+
+**Returns:** `list(String.t())`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### clear_extractors()
+
+Clear all extractors from the global registry.
+
+Removes all extractors and calls their `shutdown()` methods.
+
+**Returns:**
+
+- `Ok(())` if all extractors were cleared successfully
+- `Err(...)` if any shutdown method failed
+
+**Signature:**
+
+```elixir
+@spec clear_extractors() :: {:ok, term()} | {:error, term()}
+def clear_extractors()
+```
+
+**Returns:** `:ok`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### register_ocr_backend()
+
+Register an OCR backend with the global registry.
+
+The OCR backend will be registered with its name from the `name()` method
+and can be used for OCR processing via the extraction pipeline.
+
+**Returns:**
+
+- `Ok(())` if registration succeeded
+- `Err(...)` if validation failed or initialization failed
+
+**Errors:**
+
+- `KreuzbergError.Validation` - Invalid backend name (empty or contains whitespace)
+- Any error from the backend's `initialize()` method
+
+**Signature:**
+
+```elixir
+@spec register_ocr_backend(backend) :: {:ok, term()} | {:error, term()}
+def register_ocr_backend(backend)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `backend` | `OcrBackend` | Yes | The OCR backend implementation wrapped in Arc |
+
+**Returns:** `:ok`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### unregister_ocr_backend()
+
+Unregister an OCR backend by name.
+
+Removes the OCR backend from the global registry and calls its `shutdown()` method.
+
+**Returns:**
+
+- `Ok(())` if the backend was unregistered or didn't exist
+- `Err(...)` if the shutdown method failed
+
+**Signature:**
+
+```elixir
+@spec unregister_ocr_backend(name) :: {:ok, term()} | {:error, term()}
+def unregister_ocr_backend(name)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `name` | `String.t()` | Yes | Name of the OCR backend to unregister |
+
+**Returns:** `:ok`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### list_ocr_backends()
+
+List all registered OCR backends.
+
+Returns the names of all OCR backends currently registered in the global registry.
+
+**Returns:**
+
+A vector of OCR backend names.
+
+**Signature:**
+
+```elixir
+@spec list_ocr_backends() :: {:ok, term()} | {:error, term()}
+def list_ocr_backends()
+```
+
+**Returns:** `list(String.t())`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### clear_ocr_backends()
+
+Clear all OCR backends from the global registry.
+
+Removes all OCR backends and calls their `shutdown()` methods.
+
+**Returns:**
+
+- `Ok(())` if all backends were cleared successfully
+- `Err(...)` if any shutdown method failed
+
+**Signature:**
+
+```elixir
+@spec clear_ocr_backends() :: {:ok, term()} | {:error, term()}
+def clear_ocr_backends()
+```
+
+**Returns:** `:ok`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### list_post_processors()
+
+List all registered post-processor names.
+
+Returns a vector of all post-processor names currently registered in the
+global registry.
+
+**Returns:**
+
+- `Ok(Vec<String>)` - Vector of post-processor names
+- `Err(...)` if the registry lock is poisoned
+
+**Signature:**
+
+```elixir
+@spec list_post_processors() :: {:ok, term()} | {:error, term()}
+def list_post_processors()
+```
+
+**Returns:** `list(String.t())`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### get_ocr_backend_registry()
+
+Get the global OCR backend registry.
+
+**Signature:**
+
+```elixir
+@spec get_ocr_backend_registry() :: {:ok, term()} | {:error, term()}
+def get_ocr_backend_registry()
+```
+
+**Returns:** `RwLock`
+
+
+---
+
+#### get_document_extractor_registry()
+
+Get the global document extractor registry.
+
+**Signature:**
+
+```elixir
+@spec get_document_extractor_registry() :: {:ok, term()} | {:error, term()}
+def get_document_extractor_registry()
+```
+
+**Returns:** `RwLock`
+
+
+---
+
+#### get_post_processor_registry()
+
+Get the global post-processor registry.
+
+**Signature:**
+
+```elixir
+@spec get_post_processor_registry() :: {:ok, term()} | {:error, term()}
+def get_post_processor_registry()
+```
+
+**Returns:** `RwLock`
+
+
+---
+
+#### get_validator_registry()
+
+Get the global validator registry.
+
+**Signature:**
+
+```elixir
+@spec get_validator_registry() :: {:ok, term()} | {:error, term()}
+def get_validator_registry()
+```
+
+**Returns:** `RwLock`
+
+
+---
+
+#### get_renderer_registry()
+
+Get the global renderer registry.
+
+**Signature:**
+
+```elixir
+@spec get_renderer_registry() :: {:ok, term()} | {:error, term()}
+def get_renderer_registry()
+```
+
+**Returns:** `RwLock`
+
+
+---
+
+#### register_renderer()
+
+Register a renderer with the global registry.
+
+**Returns:**
+
+- `Ok(())` if registration succeeded
+- `Err(...)` if validation failed
+
+**Signature:**
+
+```elixir
+@spec register_renderer(renderer) :: {:ok, term()} | {:error, term()}
+def register_renderer(renderer)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `renderer` | `Renderer` | Yes | The renderer implementation wrapped in Arc |
+
+**Returns:** `:ok`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### unregister_renderer()
+
+Unregister a renderer by name.
+
+Removes the renderer from the global registry.
+
+**Returns:**
+
+- `Ok(())` if the renderer was unregistered or didn't exist
+
+**Signature:**
+
+```elixir
+@spec unregister_renderer(name) :: {:ok, term()} | {:error, term()}
+def unregister_renderer(name)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `name` | `String.t()` | Yes | Name of the renderer to unregister |
+
+**Returns:** `:ok`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### list_renderers()
+
+List all registered renderers.
+
+Returns the names of all renderers currently registered in the global registry.
+
+**Returns:**
+
+A vector of renderer names.
+
+**Signature:**
+
+```elixir
+@spec list_renderers() :: {:ok, term()} | {:error, term()}
+def list_renderers()
+```
+
+**Returns:** `list(String.t())`
+
+
+---
+
+#### clear_renderers()
+
+Clear all renderers from the global registry and re-register built-in defaults.
+
+**Returns:**
+
+- `Ok(())` if all renderers were cleared and defaults re-registered
+
+**Signature:**
+
+```elixir
+@spec clear_renderers() :: {:ok, term()} | {:error, term()}
+def clear_renderers()
+```
+
+**Returns:** `:ok`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### validate_plugins_at_startup()
+
+Validate plugin registries at startup and emit diagnostic logs.
+
+This function is designed to be called when the API server starts
+to help diagnose configuration issues early. It checks:
+
+- Whether OCR backends are registered (warns if none)
+- Whether document extractors are registered (warns if none)
+- Environment variables that might affect plugin initialization
+- File permission issues in containerized environments
+
+For Kubernetes deployments, this logs information that helps with
+troubleshooting in the container logs.
+
+**Returns:**
+
+- `Ok(PluginHealthStatus)` with diagnostic information
+- `Err(KreuzbergError)` if critical issues are detected (currently always succeeds)
+
+**Signature:**
+
+```elixir
+@spec validate_plugins_at_startup() :: {:ok, term()} | {:error, term()}
+def validate_plugins_at_startup()
+```
+
+**Returns:** `PluginHealthStatus`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### register_validator()
+
+Register a validator with the global registry.
+
+The validator will be registered with its default priority and will be called
+during extraction validation. The validator's `name()` method is used as the
+registration name.
+
+**Returns:**
+
+- `Ok(())` if registration succeeded
+- `Err(...)` if validation failed or initialization failed
+
+**Errors:**
+
+- `KreuzbergError.Validation` - Invalid validator name (empty or contains whitespace)
+- Any error from the validator's `initialize()` method
+
+**Signature:**
+
+```elixir
+@spec register_validator(validator) :: {:ok, term()} | {:error, term()}
+def register_validator(validator)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `validator` | `Validator` | Yes | The validator implementation wrapped in Arc |
+
+**Returns:** `:ok`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### unregister_validator()
+
+Unregister a validator by name.
+
+Removes the validator from the global registry and calls its `shutdown()` method.
+
+**Returns:**
+
+- `Ok(())` if the validator was unregistered or didn't exist
+- `Err(...)` if the shutdown method failed
+
+**Signature:**
+
+```elixir
+@spec unregister_validator(name) :: {:ok, term()} | {:error, term()}
+def unregister_validator(name)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `name` | `String.t()` | Yes | Name of the validator to unregister |
+
+**Returns:** `:ok`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### list_validators()
+
+List all registered validators.
+
+Returns the names of all validators currently registered in the global registry.
+
+**Returns:**
+
+A vector of validator names.
+
+**Signature:**
+
+```elixir
+@spec list_validators() :: {:ok, term()} | {:error, term()}
+def list_validators()
+```
+
+**Returns:** `list(String.t())`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### clear_validators()
+
+Clear all validators from the global registry.
+
+Removes all validators and calls their `shutdown()` methods.
+
+**Returns:**
+
+- `Ok(())` if all validators were cleared successfully
+- `Err(...)` if any shutdown method failed
+
+**Signature:**
+
+```elixir
+@spec clear_validators() :: {:ok, term()} | {:error, term()}
+def clear_validators()
+```
+
+**Returns:** `:ok`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### render_djot()
+
+Render an `InternalDocument` to Djot markup.
+
+**Signature:**
+
+```elixir
+@spec render_djot(doc) :: {:ok, term()} | {:error, term()}
+def render_djot(doc)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `doc` | `InternalDocument` | Yes | The internal document |
+
+**Returns:** `String.t()`
+
+
+---
+
+#### render_html()
+
+Render an `InternalDocument` to HTML5.
+
+**Signature:**
+
+```elixir
+@spec render_html(doc) :: {:ok, term()} | {:error, term()}
+def render_html(doc)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `doc` | `InternalDocument` | Yes | The internal document |
+
+**Returns:** `String.t()`
+
+
+---
+
+#### render_json()
+
+Render an `InternalDocument` as a JSON tree string.
+
+Walks the flat element list and builds a heading-driven section tree.
+Returns a JSON string (always valid JSON).
+
+**Signature:**
+
+```elixir
+@spec render_json(doc) :: {:ok, term()} | {:error, term()}
+def render_json(doc)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `doc` | `InternalDocument` | Yes | The internal document |
+
+**Returns:** `String.t()`
+
+
+---
+
+#### render_markdown()
+
+Render an `InternalDocument` to GFM Markdown.
+
+**Signature:**
+
+```elixir
+@spec render_markdown(doc) :: {:ok, term()} | {:error, term()}
+def render_markdown(doc)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `doc` | `InternalDocument` | Yes | The internal document |
+
+**Returns:** `String.t()`
+
+
+---
+
+#### render_plain()
+
+Render an `InternalDocument` to plain text.
+
+**Signature:**
+
+```elixir
+@spec render_plain(doc) :: {:ok, term()} | {:error, term()}
+def render_plain(doc)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `doc` | `InternalDocument` | Yes | The internal document |
+
+**Returns:** `String.t()`
+
+
+---
+
+#### sanitize_filename()
+
+Sanitize a file path to return only the filename (no directory).
+
+Prevents PII from appearing in traces.
+
+**Signature:**
+
+```elixir
+@spec sanitize_filename(path) :: {:ok, term()} | {:error, term()}
+def sanitize_filename(path)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `path` | `String.t()` | Yes | Path to the file |
+
+**Returns:** `String.t()`
+
+
+---
+
+#### get_metrics()
+
+Get the global extraction metrics, initialising on first call.
+
+Uses the global `opentelemetry.global.meter` to create instruments.
+
+**Signature:**
+
+```elixir
+@spec get_metrics() :: {:ok, term()} | {:error, term()}
+def get_metrics()
+```
+
+**Returns:** `ExtractionMetrics`
+
+
+---
+
+#### record_error_on_current_span()
+
+Record an error on the current span using semantic conventions.
+
+Sets `otel.status_code = "ERROR"`, `kreuzberg.error.type`, and `error.message`.
+
+**Signature:**
+
+```elixir
+@spec record_error_on_current_span(error) :: {:ok, term()} | {:error, term()}
+def record_error_on_current_span(error)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `error` | `KreuzbergError` | Yes | The kreuzberg error |
+
+**Returns:** `:ok`
+
+
+---
+
+#### record_success_on_current_span()
+
+Record extraction success on the current span.
+
+**Signature:**
+
+```elixir
+@spec record_success_on_current_span() :: {:ok, term()} | {:error, term()}
+def record_success_on_current_span()
+```
+
+**Returns:** `:ok`
+
+
+---
+
+#### sanitize_path()
+
+Sanitize a file path to return only the filename.
+
+Prevents PII (personally identifiable information) from appearing in
+traces by only recording filenames instead of full paths.
+
+**Signature:**
+
+```elixir
+@spec sanitize_path(path) :: {:ok, term()} | {:error, term()}
+def sanitize_path(path)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `path` | `String.t()` | Yes | Path to the file |
+
+**Returns:** `String.t()`
+
+
+---
+
+#### extractor_span()
+
+Create an extractor-level span with semantic convention fields.
+
+Returns a `tracing.Span` with all `kreuzberg.extractor.*` and
+`kreuzberg.document.*` fields pre-allocated (set to `Empty` for
+lazy recording).
+
+**Signature:**
+
+```elixir
+@spec extractor_span(extractor_name, mime_type, size_bytes) :: {:ok, term()} | {:error, term()}
+def extractor_span(extractor_name, mime_type, size_bytes)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `extractor_name` | `String.t()` | Yes | The extractor name |
+| `mime_type` | `String.t()` | Yes | The mime type |
+| `size_bytes` | `integer()` | Yes | The size bytes |
+
+**Returns:** `Span`
+
+
+---
+
+#### pipeline_stage_span()
+
+Create a pipeline stage span.
+
+**Signature:**
+
+```elixir
+@spec pipeline_stage_span(stage) :: {:ok, term()} | {:error, term()}
+def pipeline_stage_span(stage)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `stage` | `String.t()` | Yes | The stage |
+
+**Returns:** `Span`
+
+
+---
+
+#### pipeline_processor_span()
+
+Create a pipeline processor span.
+
+**Signature:**
+
+```elixir
+@spec pipeline_processor_span(stage, processor_name) :: {:ok, term()} | {:error, term()}
+def pipeline_processor_span(stage, processor_name)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `stage` | `String.t()` | Yes | The stage |
+| `processor_name` | `String.t()` | Yes | The processor name |
+
+**Returns:** `Span`
+
+
+---
+
+#### ocr_span()
+
+Create an OCR operation span.
+
+**Signature:**
+
+```elixir
+@spec ocr_span(backend, language) :: {:ok, term()} | {:error, term()}
+def ocr_span(backend, language)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `backend` | `String.t()` | Yes | The backend |
+| `language` | `String.t()` | Yes | The language |
+
+**Returns:** `Span`
+
+
+---
+
+#### model_inference_span()
+
+Create a model inference span.
+
+**Signature:**
+
+```elixir
+@spec model_inference_span(model_name) :: {:ok, term()} | {:error, term()}
+def model_inference_span(model_name)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `model_name` | `String.t()` | Yes | The model name |
+
+**Returns:** `Span`
+
+
+---
+
+#### from_utf8()
+
+Validates and converts bytes to string using SIMD when available.
+
+This function attempts to use SIMD UTF-8 validation if the `simd-utf8` feature
+is enabled and the platform supports it. Otherwise, it falls back to the standard
+`std.str.from_utf8()` validation.
+
+**Returns:**
+
+`Ok(&str)` if the bytes are valid UTF-8, `Err(std.str.Utf8Error)` otherwise.
+
+**Safety:**
+
+This function is safe and does not use any unsafe code directly. The underlying
+SIMD validation (when enabled) is contained within the simdutf8 crate and is safe.
+
+**Signature:**
+
+```elixir
+@spec from_utf8(bytes) :: {:ok, term()} | {:error, term()}
+def from_utf8(bytes)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `bytes` | `binary()` | Yes | The byte slice to validate and convert |
+
+**Returns:** `String.t()`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### string_from_utf8()
+
+Validates and converts owned bytes to String using SIMD when available.
+
+This function converts bytes to an owned String, validating UTF-8 using SIMD
+when available. The caller's bytes are consumed to create the String.
+
+**Returns:**
+
+`Ok(String)` if the bytes are valid UTF-8, `Err(std.string.FromUtf8Error)` otherwise.
+
+# Performance
+
+When enabled, SIMD validation significantly reduces the time spent on validation,
+especially for large text documents.
+
+**Signature:**
+
+```elixir
+@spec string_from_utf8(bytes) :: {:ok, term()} | {:error, term()}
+def string_from_utf8(bytes)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `bytes` | `binary()` | Yes | The byte vector to validate and convert |
+
+**Returns:** `String.t()`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### is_valid_utf8()
+
+Validates bytes as UTF-8 without conversion to string slice.
+
+Returns `true` if the bytes represent valid UTF-8, `false` otherwise.
+This is useful when you only need to check validity without constructing a string.
+
+**Returns:**
+
+`true` if valid UTF-8, `false` otherwise.
+
+# Performance
+
+This function is optimized for early exit on invalid sequences.
+
+**Signature:**
+
+```elixir
+@spec is_valid_utf8(bytes) :: {:ok, term()} | {:error, term()}
+def is_valid_utf8(bytes)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `bytes` | `binary()` | Yes | The byte slice to validate |
+
+**Returns:** `boolean()`
+
+
+---
+
+#### calculate_quality_score()
+
+**Signature:**
+
+```elixir
+@spec calculate_quality_score(text, metadata) :: {:ok, term()} | {:error, term()}
+def calculate_quality_score(text, metadata)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `text` | `String.t()` | Yes | The text |
+| `metadata` | `AHashMap | nil` | No | The a hash map |
+
+**Returns:** `float()`
+
+
+---
+
+#### clean_extracted_text()
+
+**Signature:**
+
+```elixir
+@spec clean_extracted_text(text) :: {:ok, term()} | {:error, term()}
+def clean_extracted_text(text)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `text` | `String.t()` | Yes | The text |
+
+**Returns:** `String.t()`
+
+
+---
+
+#### normalize_spaces()
+
+**Signature:**
+
+```elixir
+@spec normalize_spaces(text) :: {:ok, term()} | {:error, term()}
+def normalize_spaces(text)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `text` | `String.t()` | Yes | The text |
+
+**Returns:** `String.t()`
+
+
+---
+
+#### reduce_tokens()
+
+Reduces token count in text while preserving meaning and structure.
+
+This function removes stopwords, redundancy, and applies compression techniques
+based on the specified reduction level. Supports 64 languages with automatic
+stopword removal and optional semantic clustering.
+
+**Returns:**
+
+Returns the reduced text with preserved structure (markdown, code blocks).
+
+**Errors:**
+
+Returns an error if the language hint is invalid or stopwords cannot be loaded.
+
+**Signature:**
+
+```elixir
+@spec reduce_tokens(text, config, language_hint) :: {:ok, term()} | {:error, term()}
+def reduce_tokens(text, config, language_hint)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `text` | `String.t()` | Yes | The input text to reduce |
+| `config` | `TokenReductionConfig` | Yes | Configuration specifying reduction level and options |
+| `language_hint` | `String.t() | nil` | No | Optional ISO 639-3 language code (e.g., "eng", "spa") |
+
+**Returns:** `String.t()`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### batch_reduce_tokens()
+
+Reduces token count for multiple texts efficiently using parallel processing.
+
+This function processes multiple texts in parallel using Rayon, providing
+significant performance improvements for batch operations. All texts use the
+same configuration and language hint for consistency.
+
+**Returns:**
+
+Returns a vector of reduced texts in the same order as the input.
+
+**Errors:**
+
+Returns an error if the language hint is invalid or stopwords cannot be loaded.
+
+**Signature:**
+
+```elixir
+@spec batch_reduce_tokens(texts, config, language_hint) :: {:ok, term()} | {:error, term()}
+def batch_reduce_tokens(texts, config, language_hint)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `texts` | `list(String.t())` | Yes | Slice of text references to reduce |
+| `config` | `TokenReductionConfig` | Yes | Configuration specifying reduction level and options |
+| `language_hint` | `String.t() | nil` | No | Optional ISO 639-3 language code (e.g., "eng", "spa") |
+
+**Returns:** `list(String.t())`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### get_reduction_statistics()
+
+Calculates detailed statistics comparing original and reduced text.
+
+Provides comprehensive metrics including reduction percentages and absolute
+counts for both characters and tokens. Useful for analyzing the effectiveness
+of token reduction and monitoring compression ratios.
+
+**Returns:**
+
+Returns a tuple with the following statistics (in order):
+1. `char_reduction` (f64) - Character reduction ratio (0.0 to 1.0)
+2. `token_reduction` (f64) - Token reduction ratio (0.0 to 1.0)
+3. `original_chars` (usize) - Original character count
+4. `reduced_chars` (usize) - Reduced character count
+5. `original_tokens` (usize) - Original token count (whitespace-delimited)
+6. `reduced_tokens` (usize) - Reduced token count (whitespace-delimited)
+
+**Signature:**
+
+```elixir
+@spec get_reduction_statistics(original, reduced) :: {:ok, term()} | {:error, term()}
+def get_reduction_statistics(original, reduced)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `original` | `String.t()` | Yes | The original text before reduction |
+| `reduced` | `String.t()` | Yes | The reduced text after applying token reduction |
+
+**Returns:** `F64F64UsizeUsizeUsizeUsize`
+
+
+---
+
+#### bold()
+
+Create a bold annotation for the given byte range.
+
+**Signature:**
+
+```elixir
+@spec bold(start, end) :: {:ok, term()} | {:error, term()}
+def bold(start, end)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `start` | `integer()` | Yes | The start |
+| `end` | `integer()` | Yes | The end |
+
+**Returns:** `TextAnnotation`
+
+
+---
+
+#### italic()
+
+Create an italic annotation for the given byte range.
+
+**Signature:**
+
+```elixir
+@spec italic(start, end) :: {:ok, term()} | {:error, term()}
+def italic(start, end)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `start` | `integer()` | Yes | The start |
+| `end` | `integer()` | Yes | The end |
+
+**Returns:** `TextAnnotation`
+
+
+---
+
+#### underline()
+
+Create an underline annotation for the given byte range.
+
+**Signature:**
+
+```elixir
+@spec underline(start, end) :: {:ok, term()} | {:error, term()}
+def underline(start, end)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `start` | `integer()` | Yes | The start |
+| `end` | `integer()` | Yes | The end |
+
+**Returns:** `TextAnnotation`
+
+
+---
+
+#### link()
+
+Create a link annotation for the given byte range.
+
+**Signature:**
+
+```elixir
+@spec link(start, end, url, title) :: {:ok, term()} | {:error, term()}
+def link(start, end, url, title)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `start` | `integer()` | Yes | The start |
+| `end` | `integer()` | Yes | The end |
+| `url` | `String.t()` | Yes | The URL to fetch |
+| `title` | `String.t() | nil` | No | The title |
+
+**Returns:** `TextAnnotation`
+
+
+---
+
+#### code()
+
+Create a code (inline) annotation for the given byte range.
+
+**Signature:**
+
+```elixir
+@spec code(start, end) :: {:ok, term()} | {:error, term()}
+def code(start, end)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `start` | `integer()` | Yes | The start |
+| `end` | `integer()` | Yes | The end |
+
+**Returns:** `TextAnnotation`
+
+
+---
+
+#### strikethrough()
+
+Create a strikethrough annotation for the given byte range.
+
+**Signature:**
+
+```elixir
+@spec strikethrough(start, end) :: {:ok, term()} | {:error, term()}
+def strikethrough(start, end)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `start` | `integer()` | Yes | The start |
+| `end` | `integer()` | Yes | The end |
+
+**Returns:** `TextAnnotation`
+
+
+---
+
+#### subscript()
+
+Create a subscript annotation for the given byte range.
+
+**Signature:**
+
+```elixir
+@spec subscript(start, end) :: {:ok, term()} | {:error, term()}
+def subscript(start, end)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `start` | `integer()` | Yes | The start |
+| `end` | `integer()` | Yes | The end |
+
+**Returns:** `TextAnnotation`
+
+
+---
+
+#### superscript()
+
+Create a superscript annotation for the given byte range.
+
+**Signature:**
+
+```elixir
+@spec superscript(start, end) :: {:ok, term()} | {:error, term()}
+def superscript(start, end)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `start` | `integer()` | Yes | The start |
+| `end` | `integer()` | Yes | The end |
+
+**Returns:** `TextAnnotation`
+
+
+---
+
+#### font_size()
+
+Create a font size annotation for the given byte range.
+
+**Signature:**
+
+```elixir
+@spec font_size(start, end, value) :: {:ok, term()} | {:error, term()}
+def font_size(start, end, value)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `start` | `integer()` | Yes | The start |
+| `end` | `integer()` | Yes | The end |
+| `value` | `String.t()` | Yes | The value |
+
+**Returns:** `TextAnnotation`
+
+
+---
+
+#### color()
+
+Create a color annotation for the given byte range.
+
+**Signature:**
+
+```elixir
+@spec color(start, end, value) :: {:ok, term()} | {:error, term()}
+def color(start, end, value)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `start` | `integer()` | Yes | The start |
+| `end` | `integer()` | Yes | The end |
+| `value` | `String.t()` | Yes | The value |
+
+**Returns:** `TextAnnotation`
+
+
+---
+
+#### highlight()
+
+Create a highlight annotation for the given byte range.
+
+**Signature:**
+
+```elixir
+@spec highlight(start, end) :: {:ok, term()} | {:error, term()}
+def highlight(start, end)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `start` | `integer()` | Yes | The start |
+| `end` | `integer()` | Yes | The end |
+
+**Returns:** `TextAnnotation`
+
+
+---
+
+#### classify_uri()
+
+Classify a URL string into the appropriate `UriKind`.
+
+- `mailto:` → `Email`
+- `#` prefix → `Anchor`
+- everything else → `Hyperlink`
+
+**Signature:**
+
+```elixir
+@spec classify_uri(url) :: {:ok, term()} | {:error, term()}
+def classify_uri(url)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `url` | `String.t()` | Yes | The URL to fetch |
+
+**Returns:** `UriKind`
+
+
+---
+
+#### safe_decode()
+
+Decode raw bytes into UTF-8, using heuristics and fallback encodings when necessary.
+
+The function prefers an explicit `encoding`, falls back to the cached guess, probes
+an encoding detector, and finally tries a small curated list before returning a
+mojibake-cleaned string.
+
+**Signature:**
+
+```elixir
+@spec safe_decode(byte_data, encoding) :: {:ok, term()} | {:error, term()}
+def safe_decode(byte_data, encoding)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `byte_data` | `binary()` | Yes | The byte data |
+| `encoding` | `String.t() | nil` | No | The encoding |
+
+**Returns:** `String.t()`
+
+
+---
+
+#### calculate_text_confidence()
+
+Estimate how trustworthy a decoded string is on a 0.0–1.0 scale.
+
+Scores close to 1.0 indicate mostly printable characters, whereas lower scores
+point to mojibake, control characters, or suspicious character mixes.
+
+**Signature:**
+
+```elixir
+@spec calculate_text_confidence(text) :: {:ok, term()} | {:error, term()}
+def calculate_text_confidence(text)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `text` | `String.t()` | Yes | The text |
+
+**Returns:** `float()`
+
+
+---
+
+#### fix_mojibake()
+
+Strip control characters and replacement glyphs that typically arise from mojibake.
+
+**Signature:**
+
+```elixir
+@spec fix_mojibake(text) :: {:ok, term()} | {:error, term()}
+def fix_mojibake(text)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `text` | `String.t()` | Yes | The text |
+
+**Returns:** `Str`
+
+
+---
+
+#### snake_to_camel()
+
+Recursively convert snake_case keys in a JSON Value to camelCase.
+
+This is used by language bindings (Node.js, Go, Java, C#, etc.) to provide
+a consistent camelCase API for consumers even though the Rust core uses snake_case.
+
+**Signature:**
+
+```elixir
+@spec snake_to_camel(val) :: {:ok, term()} | {:error, term()}
+def snake_to_camel(val)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `val` | `Value` | Yes | The value |
+
+**Returns:** `Value`
+
+
+---
+
+#### camel_to_snake()
+
+Recursively convert camelCase keys in a JSON Value to snake_case.
+
+This is the inverse of `snake_to_camel`. Used by WASM bindings to accept
+camelCase config from JavaScript while the Rust core expects snake_case.
+
+**Signature:**
+
+```elixir
+@spec camel_to_snake(val) :: {:ok, term()} | {:error, term()}
+def camel_to_snake(val)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `val` | `Value` | Yes | The value |
+
+**Returns:** `Value`
+
+
+---
+
+#### is_markdown_header()
+
+Check whether a line is a markdown ATX header (`# ...` through `###### ...`).
+
+**Signature:**
+
+```elixir
+@spec is_markdown_header(line) :: {:ok, term()} | {:error, term()}
+def is_markdown_header(line)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `line` | `String.t()` | Yes | The line |
+
+**Returns:** `boolean()`
+
+
+---
+
+#### create_string_buffer_pool()
+
+Create a pre-configured string buffer pool for batch processing.
+
+**Returns:**
+
+A pool configured for text accumulation with reasonable defaults.
+
+**Signature:**
+
+```elixir
+@spec create_string_buffer_pool(pool_size, buffer_capacity) :: {:ok, term()} | {:error, term()}
+def create_string_buffer_pool(pool_size, buffer_capacity)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `pool_size` | `integer()` | Yes | Maximum number of buffers to keep in the pool |
+| `buffer_capacity` | `integer()` | Yes | Initial capacity for each buffer in bytes |
+
+**Returns:** `StringBufferPool`
+
+
+---
+
+#### create_byte_buffer_pool()
+
+Create a pre-configured byte buffer pool for batch processing.
+
+**Returns:**
+
+A pool configured for binary data handling with reasonable defaults.
+
+**Signature:**
+
+```elixir
+@spec create_byte_buffer_pool(pool_size, buffer_capacity) :: {:ok, term()} | {:error, term()}
+def create_byte_buffer_pool(pool_size, buffer_capacity)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `pool_size` | `integer()` | Yes | Maximum number of buffers to keep in the pool |
+| `buffer_capacity` | `integer()` | Yes | Initial capacity for each buffer in bytes |
+
+**Returns:** `ByteBufferPool`
+
+
+---
+
+#### estimate_pool_size()
+
+Estimate optimal pool sizing based on file size and document type.
+
+This function uses the file size and MIME type to estimate how many
+buffers and what capacity they should have. The estimates are conservative
+to avoid starving large document processing.
+
+**Returns:**
+
+A `PoolSizeHint` with recommended pool configuration
+
+**Signature:**
+
+```elixir
+@spec estimate_pool_size(file_size, mime_type) :: {:ok, term()} | {:error, term()}
+def estimate_pool_size(file_size, mime_type)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `file_size` | `integer()` | Yes | Size of the file in bytes |
+| `mime_type` | `String.t()` | Yes | MIME type of the document (e.g., "application/pdf") |
+
+**Returns:** `PoolSizeHint`
+
+
+---
+
+#### acquire_string_buffer()
+
+Acquire a string buffer from the global pool.
+
+The returned buffer is automatically returned to the pool when dropped.
+
+**Signature:**
+
+```elixir
+@spec acquire_string_buffer() :: {:ok, term()} | {:error, term()}
+def acquire_string_buffer()
+```
+
+**Returns:** `PooledString`
+
+
+---
+
+#### intern_language_code()
+
+Get or intern a language code string.
+
+Returns an `InternedString` that is guaranteed to be deduplicated with any other
+intern call for the same language code.
+
+**Returns:**
+
+An `InternedString` pointing to the deduplicated string
+
+**Signature:**
+
+```elixir
+@spec intern_language_code(lang_code) :: {:ok, term()} | {:error, term()}
+def intern_language_code(lang_code)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `lang_code` | `String.t()` | Yes | The language code to intern (e.g., "en", "es", "fr") |
+
+**Returns:** `InternedString`
+
+
+---
+
+#### intern_mime_type()
+
+Get or intern a MIME type string.
+
+Returns an `InternedString` that is guaranteed to be deduplicated with any other
+intern call for the same MIME type. This reduces memory usage and allows
+fast pointer-based comparisons.
+
+**Returns:**
+
+An `InternedString` pointing to the deduplicated string
+
+**Signature:**
+
+```elixir
+@spec intern_mime_type(mime_type) :: {:ok, term()} | {:error, term()}
+def intern_mime_type(mime_type)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `mime_type` | `String.t()` | Yes | The MIME type string to intern |
+
+**Returns:** `InternedString`
+
+
+---
+
+#### xml_tag_name()
+
+Converts XML tag name bytes to a string, avoiding allocation when possible.
+
+**Signature:**
+
+```elixir
+@spec xml_tag_name(name) :: {:ok, term()} | {:error, term()}
+def xml_tag_name(name)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `name` | `binary()` | Yes | The name |
+
+**Returns:** `Str`
+
+
+---
+
+#### escape_html_entities()
+
+Escape `&`, `<`, and `>` in text destined for markdown/HTML output.
+
+Underscores are intentionally **not** escaped. In extracted PDF text they are
+literal content (e.g. identifiers like `CTC_ARP_01`), not markdown italic
+delimiters.
+
+Uses a single-pass scan: if no special characters are found, returns a
+borrowed `Cow` with no allocation.
+
+**Signature:**
+
+```elixir
+@spec escape_html_entities(text) :: {:ok, term()} | {:error, term()}
+def escape_html_entities(text)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `text` | `String.t()` | Yes | The text |
+
+**Returns:** `Str`
+
+
+---
+
+#### detect_columns()
+
+Detect column positions from word x-coordinates.
+
+Groups words by approximate x-position (within `column_threshold` pixels)
+and returns the median x-position for each detected column, sorted left to right.
+
+**Signature:**
+
+```elixir
+@spec detect_columns(words, column_threshold) :: {:ok, term()} | {:error, term()}
+def detect_columns(words, column_threshold)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `words` | `list(HocrWord)` | Yes | The words |
+| `column_threshold` | `integer()` | Yes | The column threshold |
+
+**Returns:** `list(integer())`
+
+
+---
+
+#### detect_rows()
+
+Detect row positions from word y-coordinates.
+
+Groups words by their vertical center position and returns the median
+y-position for each detected row. The `row_threshold_ratio` is multiplied
+by the median word height to determine the grouping threshold.
+
+**Signature:**
+
+```elixir
+@spec detect_rows(words, row_threshold_ratio) :: {:ok, term()} | {:error, term()}
+def detect_rows(words, row_threshold_ratio)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `words` | `list(HocrWord)` | Yes | The words |
+| `row_threshold_ratio` | `float()` | Yes | The row threshold ratio |
+
+**Returns:** `list(integer())`
+
+
+---
+
+#### reconstruct_table()
+
+Reconstruct a table grid from words with bounding box positions.
+
+Takes detected words and reconstructs a 2D table by:
+1. Detecting column positions (grouping by x-coordinate within `column_threshold`)
+2. Detecting row positions (grouping by y-center within `row_threshold_ratio` * median height)
+3. Assigning words to cells based on closest row/column
+4. Combining words within the same cell
+
+Returns a `Vec<Vec<String>>` where each inner `Vec` is a row of cell texts.
+
+**Signature:**
+
+```elixir
+@spec reconstruct_table(words, column_threshold, row_threshold_ratio) :: {:ok, term()} | {:error, term()}
+def reconstruct_table(words, column_threshold, row_threshold_ratio)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `words` | `list(HocrWord)` | Yes | The words |
+| `column_threshold` | `integer()` | Yes | The column threshold |
+| `row_threshold_ratio` | `float()` | Yes | The row threshold ratio |
+
+**Returns:** `list(list(String.t()))`
+
+
+---
+
+#### table_to_markdown()
+
+Convert a table grid to markdown format.
+
+The first row is treated as the header row, with a separator line added after it.
+Pipe characters in cell content are escaped.
+
+**Signature:**
+
+```elixir
+@spec table_to_markdown(table) :: {:ok, term()} | {:error, term()}
+def table_to_markdown(table)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `table` | `list(list(String.t()))` | Yes | The table |
+
+**Returns:** `String.t()`
+
+
+---
+
+#### load_server_config()
+
+Load ServerConfig with proper precedence order.
+
+This function implements the configuration hierarchy:
+1. File (if provided)
+2. Environment variables (via apply_env_overrides)
+3. Defaults
+
+The config file can be in flat format (server settings at root) or nested format
+(server settings under [server] section alongside other configs like [ocr]).
+
+**Returns:**
+
+A configured ServerConfig with proper precedence applied.
+
+**Errors:**
+
+Returns an error if:
+- The config file path is provided but cannot be read
+- The config file contains invalid server configuration
+- Environment variable overrides contain invalid values
+
+**Signature:**
+
+```elixir
+@spec load_server_config(config_path) :: {:ok, term()} | {:error, term()}
+def load_server_config(config_path)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `config_path` | `String.t() | nil` | No | Optional path to a ServerConfig file (TOML, YAML, or JSON) |
+
+**Returns:** `ServerConfig`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### create_router()
+
+Create the API router with all routes configured.
+
+This is public to allow users to embed the router in their own applications.
+
+**Signature:**
+
+```elixir
+@spec create_router(config) :: {:ok, term()} | {:error, term()}
+def create_router(config)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `config` | `ExtractionConfig` | Yes | Default extraction configuration. Per-request configs override these defaults. |
+
+**Returns:** `Router`
+
+
+---
+
+#### create_router_with_limits()
+
+Create the API router with custom size limits.
+
+This allows fine-grained control over request body and multipart field size limits.
+
+**Signature:**
+
+```elixir
+@spec create_router_with_limits(config, limits) :: {:ok, term()} | {:error, term()}
+def create_router_with_limits(config, limits)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `config` | `ExtractionConfig` | Yes | Default extraction configuration. Per-request configs override these defaults. |
+| `limits` | `ApiSizeLimits` | Yes | Size limits for request bodies and multipart uploads. |
+
+**Returns:** `Router`
+
+
+---
+
+#### create_router_with_limits_and_server_config()
+
+Create the API router with custom size limits and server configuration.
+
+This function provides full control over request limits, CORS, and server settings via ServerConfig.
+
+**Signature:**
+
+```elixir
+@spec create_router_with_limits_and_server_config(config, limits, server_config) :: {:ok, term()} | {:error, term()}
+def create_router_with_limits_and_server_config(config, limits, server_config)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `config` | `ExtractionConfig` | Yes | Default extraction configuration. Per-request configs override these defaults. |
+| `limits` | `ApiSizeLimits` | Yes | Size limits for request bodies and multipart uploads. |
+| `server_config` | `ServerConfig` | Yes | Server configuration including host, port, and CORS settings. |
+
+**Returns:** `Router`
+
+
+---
+
+#### serve()
+
+Start the API server with config file discovery.
+
+Searches for kreuzberg.toml/yaml/json in current and parent directories.
+If no config file is found, uses default configuration.
+
+# Environment Variables
+
+```bash
+# Python/Docker usage
+export KREUZBERG_HOST=0.0.0.0
+export KREUZBERG_PORT=8000
+
+# CORS configuration (IMPORTANT for production security)
+# Default: allows all origins (permits CSRF attacks)
+# Production: set to comma-separated list of allowed origins
+export KREUZBERG_CORS_ORIGINS="<https://app.example.com,https://api.example.com">
+
+# Upload size limits (default: 100 MB)
+# Modern approach (in bytes):
+export KREUZBERG_MAX_REQUEST_BODY_BYTES=104857600       # 100 MB
+export KREUZBERG_MAX_MULTIPART_FIELD_BYTES=104857600    # 100 MB per file
+
+python -m kreuzberg.api
+```
+
+**Signature:**
+
+```elixir
+@spec serve(host, port) :: {:ok, term()} | {:error, term()}
+def serve(host, port)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `host` | `Str` | Yes | IP address to bind to (e.g., "127.0.0.1" or "0.0.0.0") |
+| `port` | `integer()` | Yes | Port number to bind to (e.g., 8000) |
+
+**Returns:** `:ok`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### serve_with_config()
+
+Start the API server with explicit config.
+
+Uses default size limits (100 MB). For custom limits, use `serve_with_config_and_limits`.
+
+**Signature:**
+
+```elixir
+@spec serve_with_config(host, port, config) :: {:ok, term()} | {:error, term()}
+def serve_with_config(host, port, config)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `host` | `Str` | Yes | IP address to bind to (e.g., "127.0.0.1" or "0.0.0.0") |
+| `port` | `integer()` | Yes | Port number to bind to (e.g., 8000) |
+| `config` | `ExtractionConfig` | Yes | Default extraction configuration for all requests |
+
+**Returns:** `:ok`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### serve_with_config_and_limits()
+
+Start the API server with explicit config and size limits.
+
+**Signature:**
+
+```elixir
+@spec serve_with_config_and_limits(host, port, config, limits) :: {:ok, term()} | {:error, term()}
+def serve_with_config_and_limits(host, port, config, limits)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `host` | `Str` | Yes | IP address to bind to (e.g., "127.0.0.1" or "0.0.0.0") |
+| `port` | `integer()` | Yes | Port number to bind to (e.g., 8000) |
+| `config` | `ExtractionConfig` | Yes | Default extraction configuration for all requests |
+| `limits` | `ApiSizeLimits` | Yes | Size limits for request bodies and multipart uploads |
+
+**Returns:** `:ok`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### serve_with_server_config()
+
+Start the API server with explicit extraction config and server config.
+
+This function accepts a fully-configured ServerConfig, including CORS origins,
+size limits, host, and port. It respects all ServerConfig fields without
+re-parsing environment variables, making it ideal for CLI usage where
+configuration precedence has already been applied.
+
+**Signature:**
+
+```elixir
+@spec serve_with_server_config(extraction_config, server_config) :: {:ok, term()} | {:error, term()}
+def serve_with_server_config(extraction_config, server_config)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `extraction_config` | `ExtractionConfig` | Yes | Default extraction configuration for all requests |
+| `server_config` | `ServerConfig` | Yes | Server configuration including host, port, CORS, and size limits |
+
+**Returns:** `:ok`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### serve_default()
+
+Start the API server with default host and port.
+
+Defaults: host = "127.0.0.1", port = 8000
+
+Uses config file discovery (searches current/parent directories for kreuzberg.toml/yaml/json).
+Validates plugins at startup to help diagnose configuration issues.
+
+**Signature:**
+
+```elixir
+@spec serve_default() :: {:ok, term()} | {:error, term()}
+def serve_default()
+```
+
+**Returns:** `:ok`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### map_kreuzberg_error_to_mcp()
+
+Map Kreuzberg errors to MCP error responses with appropriate error codes.
+
+This function ensures different error types are properly differentiated in MCP responses:
+- `Validation` errors → `INVALID_PARAMS` (-32602)
+- `UnsupportedFormat` errors → `INVALID_PARAMS` (-32602)
+- `Parsing` errors → `PARSE_ERROR` (-32700)
+- `Io` errors → `INTERNAL_ERROR` (-32603) with context preserved
+- `Cancelled` errors → `REQUEST_CANCELLED` (-32800)
+- All other errors → `INTERNAL_ERROR` (-32603)
+
+The error message and source chain are preserved to aid debugging.
+
+**Signature:**
+
+```elixir
+@spec map_kreuzberg_error_to_mcp(error) :: {:ok, term()} | {:error, term()}
+def map_kreuzberg_error_to_mcp(error)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `error` | `KreuzbergError` | Yes | The kreuzberg error |
+
+**Returns:** `McpError`
+
+
+---
+
+#### start_mcp_server()
+
+Start the Kreuzberg MCP server.
+
+This function initializes and runs the MCP server using stdio transport.
+It will block until the server is shut down.
+
+**Errors:**
+
+Returns an error if the server fails to start or encounters a fatal error.
+
+**Signature:**
+
+```elixir
+@spec start_mcp_server() :: {:ok, term()} | {:error, term()}
+def start_mcp_server()
+```
+
+**Returns:** `:ok`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### start_mcp_server_with_config()
+
+Start MCP server with custom extraction config.
+
+This variant allows specifying a custom extraction configuration
+(e.g., loaded from a file) instead of using defaults.
+
+**Signature:**
+
+```elixir
+@spec start_mcp_server_with_config(config) :: {:ok, term()} | {:error, term()}
+def start_mcp_server_with_config(config)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `config` | `ExtractionConfig` | Yes | The configuration options |
+
+**Returns:** `:ok`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### validate_page_boundaries()
+
+Validates the consistency and correctness of page boundaries.
+
+# Validation Rules
+
+1. Boundaries must be sorted by byte_start (monotonically increasing)
+2. Boundaries must not overlap (byte_end[i] <= byte_start[i+1])
+3. Each boundary must have byte_start < byte_end
+
+**Returns:**
+
+Returns `Ok(())` if all boundaries are valid.
+Returns `KreuzbergError.Validation` if any boundary is invalid.
+
+**Signature:**
+
+```elixir
+@spec validate_page_boundaries(boundaries) :: {:ok, term()} | {:error, term()}
+def validate_page_boundaries(boundaries)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `boundaries` | `list(PageBoundary)` | Yes | Page boundary markers to validate |
+
+**Returns:** `:ok`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### calculate_page_range()
+
+Calculate which pages a byte range spans.
+
+**Returns:**
+
+A tuple of (first_page, last_page) where page numbers are 1-indexed.
+Returns (None, None) if boundaries are empty or chunk doesn't overlap any page.
+
+**Errors:**
+
+Returns `KreuzbergError.Validation` if boundaries are invalid.
+
+**Signature:**
+
+```elixir
+@spec calculate_page_range(byte_start, byte_end, boundaries) :: {:ok, term()} | {:error, term()}
+def calculate_page_range(byte_start, byte_end, boundaries)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `byte_start` | `integer()` | Yes | Starting byte offset of the chunk |
+| `byte_end` | `integer()` | Yes | Ending byte offset of the chunk |
+| `boundaries` | `list(PageBoundary)` | Yes | Page boundary markers from the document |
+
+**Returns:** `OptionUsizeOptionUsize`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### detect_plain_text_boundaries()
+
+Detect structural boundaries in plain text.
+
+Iterates lines and checks each against heuristics for ALL-CAPS headers,
+numbered sections, and title lines. Returns boundaries sorted by byte offset.
+
+**Signature:**
+
+```elixir
+@spec detect_plain_text_boundaries(text) :: {:ok, term()} | {:error, term()}
+def detect_plain_text_boundaries(text)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `text` | `String.t()` | Yes | The text |
+
+**Returns:** `list(DetectedBoundary)`
+
+
+---
+
+#### classify_chunk()
+
+Classify a single chunk based on its content and optional heading context.
+
+Rules are evaluated in priority order. The first matching rule determines
+the returned `ChunkType`. When no rule matches, `ChunkType.Unknown`
+is returned.
+
+  (only available when using `ChunkerType.Markdown`).
+
+**Signature:**
+
+```elixir
+@spec classify_chunk(content, heading_context) :: {:ok, term()} | {:error, term()}
+def classify_chunk(content, heading_context)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `content` | `String.t()` | Yes | The text content of the chunk (may be trimmed or raw). |
+| `heading_context` | `HeadingContext | nil` | No | Optional heading hierarchy this chunk falls under |
+
+**Returns:** `ChunkType`
+
+
+---
+
+#### chunk_text()
+
+Split text into chunks with optional page boundary tracking.
+
+This is the primary API function for chunking text. It supports both plain text
+and Markdown with configurable chunk size, overlap, and page boundary mapping.
+
+**Returns:**
+
+A ChunkingResult containing all chunks and their metadata.
+
+**Signature:**
+
+```elixir
+@spec chunk_text(text, config, page_boundaries) :: {:ok, term()} | {:error, term()}
+def chunk_text(text, config, page_boundaries)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `text` | `String.t()` | Yes | The text to split into chunks |
+| `config` | `ChunkingConfig` | Yes | Chunking configuration (max size, overlap, type) |
+| `page_boundaries` | `list(PageBoundary) | nil` | No | Optional page boundary markers for mapping chunks to pages |
+
+**Returns:** `ChunkingResult`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### chunk_text_with_heading_source()
+
+Chunk text with an optional separate markdown source for heading context resolution.
+
+When `heading_source` is provided, it is used instead of `text` for building the
+heading map. This is needed when `text` is plain text (no markdown headings) but
+the original document had headings that were stripped during rendering.
+
+**Signature:**
+
+```elixir
+@spec chunk_text_with_heading_source(text, config, page_boundaries, heading_source) :: {:ok, term()} | {:error, term()}
+def chunk_text_with_heading_source(text, config, page_boundaries, heading_source)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `text` | `String.t()` | Yes | The text |
+| `config` | `ChunkingConfig` | Yes | The configuration options |
+| `page_boundaries` | `list(PageBoundary) | nil` | No | The page boundaries |
+| `heading_source` | `String.t() | nil` | No | The heading source |
+
+**Returns:** `ChunkingResult`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### chunk_text_with_type()
+
+Chunk text with explicit type specification.
+
+This is a convenience function that constructs a ChunkingConfig from individual
+parameters and calls `chunk_text`.
+
+**Returns:**
+
+A ChunkingResult containing all chunks and their metadata.
+
+**Signature:**
+
+```elixir
+@spec chunk_text_with_type(text, max_characters, overlap, trim, chunker_type) :: {:ok, term()} | {:error, term()}
+def chunk_text_with_type(text, max_characters, overlap, trim, chunker_type)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `text` | `String.t()` | Yes | The text to split into chunks |
+| `max_characters` | `integer()` | Yes | Maximum characters per chunk |
+| `overlap` | `integer()` | Yes | Character overlap between consecutive chunks |
+| `trim` | `boolean()` | Yes | Whether to trim whitespace from boundaries |
+| `chunker_type` | `ChunkerType` | Yes | Type of chunker to use (Text or Markdown) |
+
+**Returns:** `ChunkingResult`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### chunk_texts_batch()
+
+Batch process multiple texts with the same configuration.
+
+This convenience function applies the same chunking configuration to multiple
+texts in sequence.
+
+**Returns:**
+
+A vector of ChunkingResult objects, one per input text.
+
+**Errors:**
+
+Returns an error if chunking any individual text fails.
+
+**Signature:**
+
+```elixir
+@spec chunk_texts_batch(texts, config) :: {:ok, term()} | {:error, term()}
+def chunk_texts_batch(texts, config)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `texts` | `list(String.t())` | Yes | Slice of text strings to chunk |
+| `config` | `ChunkingConfig` | Yes | Chunking configuration to apply to all texts |
+
+**Returns:** `list(ChunkingResult)`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### merge_segments()
+
+Merge segments into chunks guided by topic boundaries.
+
+  starts a new topic group.
+* `max_characters` – maximum characters per output chunk.
+* `overlap` – number of characters from the tail of the previous group to
+  prepend to the next group's first chunk.
+
+# Panics (debug)
+
+Debug-asserts that `segments.len() == boundaries.len()`.
+
+**Signature:**
+
+```elixir
+@spec merge_segments(source_text, segments, boundaries, max_characters, overlap) :: {:ok, term()} | {:error, term()}
+def merge_segments(source_text, segments, boundaries, max_characters, overlap)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `source_text` | `String.t()` | Yes | The source text |
+| `segments` | `list(Segment)` | Yes | The segments |
+| `boundaries` | `list(boolean())` | Yes | The boundaries |
+| `max_characters` | `integer()` | Yes | The max characters |
+| `overlap` | `integer()` | Yes | The overlap |
+
+**Returns:** `list(MergedChunk)`
+
+
+---
+
+#### cosine_similarity()
+
+Compute cosine similarity between two vectors.
+
+Returns a value in `[-1.0, 1.0]`. If either vector has near-zero magnitude
+the function returns `0.0` rather than producing `NaN`.
+
+**Signature:**
+
+```elixir
+@spec cosine_similarity(a, b) :: {:ok, term()} | {:error, term()}
+def cosine_similarity(a, b)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `a` | `list(float())` | Yes | The a |
+| `b` | `list(float())` | Yes | The b |
+
+**Returns:** `float()`
+
+
+---
+
+#### detect_topic_boundaries()
+
+Detect topic boundaries across a sequence of text segments.
+
+Embeds all segments in a single batch, then marks a boundary wherever the
+cosine similarity between consecutive embeddings drops below `threshold`.
+Pre-existing forced boundaries (e.g. from structural cues) are preserved.
+
+  decided and should not be overridden
+* `embedding_config` — model and batch-size configuration forwarded to
+  `crate.embeddings.embed_texts`
+* `threshold` — similarity below this value triggers a new boundary
+
+**Returns:**
+
+A `Vec<bool>` of the same length as `segment_texts` where `true` marks the
+start of a new topic group.
+
+**Signature:**
+
+```elixir
+@spec detect_topic_boundaries(segment_texts, forced_boundaries, embedding_config, threshold) :: {:ok, term()} | {:error, term()}
+def detect_topic_boundaries(segment_texts, forced_boundaries, embedding_config, threshold)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `segment_texts` | `list(String.t())` | Yes | The segment texts |
+| `forced_boundaries` | `list(boolean())` | Yes | The forced boundaries |
+| `embedding_config` | `EmbeddingConfig` | Yes | The embedding config |
+| `threshold` | `float()` | Yes | The threshold |
+
+**Returns:** `list(boolean())`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### chunk_semantic()
+
+Split text into semantically coherent chunks.
+
+Splits text into fine-grained segments, detects structural (and optionally
+embedding-based) topic boundaries, then merges segments into chunks that
+respect those boundaries and the configured size budget.
+
+**Signature:**
+
+```elixir
+@spec chunk_semantic(text, config, page_boundaries) :: {:ok, term()} | {:error, term()}
+def chunk_semantic(text, config, page_boundaries)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `text` | `String.t()` | Yes | The text |
+| `config` | `ChunkingConfig` | Yes | The configuration options |
+| `page_boundaries` | `list(PageBoundary) | nil` | No | The page boundaries |
+
+**Returns:** `ChunkingResult`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### precompute_utf8_boundaries()
+
+Pre-computes valid UTF-8 character boundaries for a text string.
+
+This function performs a single O(n) pass through the text to identify all valid
+UTF-8 character boundaries, storing them in a BitVec for O(1) lookups.
+
+**Returns:**
+
+A BitVec where each bit represents whether a byte offset is a valid UTF-8 character boundary.
+The BitVec has length `text.len() + 1` (includes the end position).
+
+**Signature:**
+
+```elixir
+@spec precompute_utf8_boundaries(text) :: {:ok, term()} | {:error, term()}
+def precompute_utf8_boundaries(text)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `text` | `String.t()` | Yes | The text to analyze |
+
+**Returns:** `BitVec`
+
+
+---
+
+#### validate_utf8_boundaries()
+
+Validates that byte offsets in page boundaries fall on valid UTF-8 character boundaries.
+
+This function ensures that all page boundary positions are at valid UTF-8 character
+boundaries within the text. This is CRITICAL to prevent text corruption when boundaries
+are created from language bindings or external sources, particularly with multibyte
+UTF-8 characters (emoji, CJK characters, combining marks, etc.).
+
+**Performance Strategy**: Uses adaptive validation to optimize for different boundary counts:
+- **Small sets (≤10 boundaries)**: O(k) approach using Rust's native `is_char_boundary()` for each position
+- **Large sets (>10 boundaries)**: O(n) precomputation with O(1) lookups via BitVec
+
+For typical PDF documents with 1-10 page boundaries, the fast path provides 30-50% faster
+validation than always precomputing. For documents with 100+ boundaries, batch precomputation
+is 2-4% faster overall due to amortized costs. This gives ~2-4% improvement across all scenarios.
+
+**Returns:**
+
+Returns `Ok(())` if all boundaries are at valid UTF-8 character boundaries.
+Returns `KreuzbergError.Validation` if any boundary is at an invalid position.
+
+# UTF-8 Boundary Safety
+
+Rust strings use UTF-8 encoding where characters can be 1-4 bytes. For example:
+- ASCII letters: 1 byte each
+- Emoji (🌍): 4 bytes but 1 character
+- CJK characters (中): 3 bytes but 1 character
+
+This function checks that all byte_start and byte_end values are at character boundaries
+using an adaptive strategy: direct calls for small boundary sets, or precomputed BitVec
+for large sets.
+
+**Signature:**
+
+```elixir
+@spec validate_utf8_boundaries(text, boundaries) :: {:ok, term()} | {:error, term()}
+def validate_utf8_boundaries(text, boundaries)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `text` | `String.t()` | Yes | The text being chunked |
+| `boundaries` | `list(PageBoundary)` | Yes | Page boundary markers to validate |
+
+**Returns:** `:ok`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### register_chunking_processor()
+
+Register the chunking processor with the global registry.
+
+This function should be called once at application startup to register
+the chunking post-processor.
+
+**Note:** This is called automatically on first use.
+Explicit calling is optional.
+
+**Signature:**
+
+```elixir
+@spec register_chunking_processor() :: {:ok, term()} | {:error, term()}
+def register_chunking_processor()
+```
+
+**Returns:** `:ok`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### create_client()
+
+Create a liter-llm `DefaultClient` from kreuzberg's `LlmConfig`.
+
+The `model` field from the config is passed as a model hint so that
+liter-llm can resolve the correct provider automatically.
+
+When `api_key` is `nil`, liter-llm falls back to the provider's standard
+environment variable (e.g., `OPENAI_API_KEY`).
+
+**Signature:**
+
+```elixir
+@spec create_client(config) :: {:ok, term()} | {:error, term()}
+def create_client(config)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `config` | `LlmConfig` | Yes | The configuration options |
+
+**Returns:** `DefaultClient`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### render_template()
+
+Render a Jinja2 template with the given context variables.
+
+**Signature:**
+
+```elixir
+@spec render_template(template, context) :: {:ok, term()} | {:error, term()}
+def render_template(template, context)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `template` | `String.t()` | Yes | The template |
+| `context` | `Value` | Yes | The value |
+
+**Returns:** `String.t()`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### extract_structured()
+
+Extract structured data from document content using an LLM with JSON schema.
+
+Sends the document content to the configured LLM with a JSON schema constraint,
+returning structured data that conforms to the schema.
+
+**Returns:**
+
+A `serde_json.Value` conforming to the provided JSON schema.
+
+**Errors:**
+
+Returns an error if:
+- The LLM client cannot be created (invalid provider/credentials).
+- The LLM request fails (network, rate-limit, etc.).
+- The LLM response cannot be parsed as valid JSON.
+
+**Signature:**
+
+```elixir
+@spec extract_structured(content, config) :: {:ok, term()} | {:error, term()}
+def extract_structured(content, config)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `content` | `String.t()` | Yes | The extracted document text to send to the LLM. |
+| `config` | `StructuredExtractionConfig` | Yes | Structured extraction configuration including schema and LLM settings. |
+
+**Returns:** `LlmUsage`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### vlm_ocr()
+
+Perform OCR on an image using a vision language model.
+
+Sends the image to a VLM (e.g., GPT-4o, Claude) which extracts text.
+The language hint is included in the prompt when the document language
+is not English.
+
+  (e.g., `"eng"`, `"de"`, `"fra"`)
+* `config` - LLM provider/model configuration
+
+**Returns:**
+
+Extracted text from the image, or an error if the VLM call fails.
+
+**Errors:**
+
+- `KreuzbergError.Ocr` if the VLM returns no content or the API call fails
+- `KreuzbergError.MissingDependency` if the liter-llm client cannot be created
+
+**Signature:**
+
+```elixir
+@spec vlm_ocr(image_bytes, image_mime_type, language, config) :: {:ok, term()} | {:error, term()}
+def vlm_ocr(image_bytes, image_mime_type, language, config)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `image_bytes` | `binary()` | Yes | Raw image data (JPEG, PNG, WebP, etc.) |
+| `image_mime_type` | `String.t()` | Yes | MIME type of the image (e.g., `"image/png"`) |
+| `language` | `String.t()` | Yes | ISO 639 language code or Tesseract language name |
+| `config` | `LlmConfig` | Yes | LLM provider/model configuration |
+
+**Returns:** `LlmUsage`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### normalize()
+
+L2-normalize a vector.
+
+**Signature:**
+
+```elixir
+@spec normalize(v) :: {:ok, term()} | {:error, term()}
+def normalize(v)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `v` | `list(float())` | Yes | The v |
+
+**Returns:** `list(float())`
+
+
+---
+
+#### get_preset()
+
+Get a preset by name.
+
+**Signature:**
+
+```elixir
+@spec get_preset(name) :: {:ok, term()} | {:error, term()}
+def get_preset(name)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `name` | `String.t()` | Yes | The name |
+
+**Returns:** `EmbeddingPreset | nil`
+
+
+---
+
+#### preset_chunk_size()
+
+Get the chunk_size for a preset by name.
+
+**Signature:**
+
+```elixir
+@spec preset_chunk_size(name) :: {:ok, term()} | {:error, term()}
+def preset_chunk_size(name)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `name` | `String.t()` | Yes | The name |
+
+**Returns:** `integer() | nil`
+
+
+---
+
+#### list_presets()
+
+List all available preset names.
+
+**Signature:**
+
+```elixir
+@spec list_presets() :: {:ok, term()} | {:error, term()}
+def list_presets()
+```
+
+**Returns:** `list(String.t())`
+
+
+---
+
+#### warm_model()
+
+Eagerly download and cache an embedding model without returning the handle.
+
+This triggers the same download and initialization as `get_or_init_engine`
+but discards the result, making it suitable for cache-warming scenarios
+where the caller doesn't need to use the model immediately.
+
+**Note**: This function downloads AND initializes the ONNX model, which
+requires ONNX Runtime and uses significant memory. For download-only
+scenarios (e.g., init containers), use `download_model` instead.
+
+**Signature:**
+
+```elixir
+@spec warm_model(model_type, cache_dir) :: {:ok, term()} | {:error, term()}
+def warm_model(model_type, cache_dir)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `model_type` | `EmbeddingModelType` | Yes | The embedding model type |
+| `cache_dir` | `String.t() | nil` | No | The cache dir |
+
+**Returns:** `:ok`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### download_model()
+
+Download an embedding model's files without initializing ONNX Runtime.
+
+Downloads the model files (ONNX model, tokenizer, config) from HuggingFace
+to the cache directory. Subsequent calls to `warm_model` or
+`get_or_init_engine` will find the files cached and skip the download step.
+
+This is ideal for init containers or CI environments where you want to
+pre-populate the cache without loading models into memory.
+
+**Signature:**
+
+```elixir
+@spec download_model(model_type, cache_dir) :: {:ok, term()} | {:error, term()}
+def download_model(model_type, cache_dir)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `model_type` | `EmbeddingModelType` | Yes | The embedding model type |
+| `cache_dir` | `String.t() | nil` | No | The cache dir |
+
+**Returns:** `:ok`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### generate_embeddings_for_chunks()
+
+Generate embeddings for text chunks using the specified configuration.
+
+This function modifies chunks in-place, populating their `embedding` field
+with generated embedding vectors. It uses batch processing for efficiency.
+
+**Returns:**
+
+Returns `Ok(())` if embeddings were generated successfully, or an error if
+model initialization or embedding generation fails.
+
+**Signature:**
+
+```elixir
+@spec generate_embeddings_for_chunks(chunks, config) :: {:ok, term()} | {:error, term()}
+def generate_embeddings_for_chunks(chunks, config)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `chunks` | `list(Chunk)` | Yes | Mutable reference to vector of chunks to generate embeddings for |
+| `config` | `EmbeddingConfig` | Yes | Embedding configuration specifying model and parameters |
+
+**Returns:** `:ok`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### calculate_smart_dpi()
+
+Calculate smart DPI based on page dimensions, memory constraints, and target DPI
+
+**Signature:**
+
+```elixir
+@spec calculate_smart_dpi(page_width, page_height, target_dpi, max_dimension, max_memory_mb) :: {:ok, term()} | {:error, term()}
+def calculate_smart_dpi(page_width, page_height, target_dpi, max_dimension, max_memory_mb)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `page_width` | `float()` | Yes | The page width |
+| `page_height` | `float()` | Yes | The page height |
+| `target_dpi` | `integer()` | Yes | The target dpi |
+| `max_dimension` | `integer()` | Yes | The max dimension |
+| `max_memory_mb` | `float()` | Yes | The max memory mb |
+
+**Returns:** `integer()`
+
+
+---
+
+#### calculate_optimal_dpi()
+
+Calculate optimal DPI with min/max constraints
+
+**Signature:**
+
+```elixir
+@spec calculate_optimal_dpi(page_width, page_height, target_dpi, max_dimension, min_dpi, max_dpi) :: {:ok, term()} | {:error, term()}
+def calculate_optimal_dpi(page_width, page_height, target_dpi, max_dimension, min_dpi, max_dpi)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `page_width` | `float()` | Yes | The page width |
+| `page_height` | `float()` | Yes | The page height |
+| `target_dpi` | `integer()` | Yes | The target dpi |
+| `max_dimension` | `integer()` | Yes | The max dimension |
+| `min_dpi` | `integer()` | Yes | The min dpi |
+| `max_dpi` | `integer()` | Yes | The max dpi |
+
+**Returns:** `integer()`
+
+
+---
+
+#### normalize_image_dpi()
+
+Normalize image DPI based on extraction configuration
+
+**Returns:**
+* `NormalizeResult` containing processed image data and metadata
+
+**Signature:**
+
+```elixir
+@spec normalize_image_dpi(rgb_data, width, height, config, current_dpi) :: {:ok, term()} | {:error, term()}
+def normalize_image_dpi(rgb_data, width, height, config, current_dpi)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `rgb_data` | `binary()` | Yes | RGB image data as a flat `Vec<u8>` (height * width * 3 bytes, row-major) |
+| `width` | `integer()` | Yes | Image width in pixels |
+| `height` | `integer()` | Yes | Image height in pixels |
+| `config` | `ExtractionConfig` | Yes | Extraction configuration containing DPI settings |
+| `current_dpi` | `float() | nil` | No | Optional current DPI of the image (defaults to 72 if None) |
+
+**Returns:** `NormalizeResult`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### resize_image()
+
+Resize an image using fast_image_resize with appropriate algorithm based on scale factor
+
+**Signature:**
+
+```elixir
+@spec resize_image(image, new_width, new_height, scale_factor) :: {:ok, term()} | {:error, term()}
+def resize_image(image, new_width, new_height, scale_factor)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `image` | `DynamicImage` | Yes | The dynamic image |
+| `new_width` | `integer()` | Yes | The new width |
+| `new_height` | `integer()` | Yes | The new height |
+| `scale_factor` | `float()` | Yes | The scale factor |
+
+**Returns:** `DynamicImage`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### detect_languages()
+
+Detect languages in text using whatlang.
+
+Returns a list of detected language codes (ISO 639-3 format).
+Returns `nil` if no languages could be detected with sufficient confidence.
+
+**Signature:**
+
+```elixir
+@spec detect_languages(text, config) :: {:ok, term()} | {:error, term()}
+def detect_languages(text, config)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `text` | `String.t()` | Yes | The text to analyze for language detection |
+| `config` | `LanguageDetectionConfig` | Yes | Optional configuration for language detection |
+
+**Returns:** `list(String.t()) | nil`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### register_language_detection_processor()
+
+Register the language detection processor with the global registry.
+
+This function should be called once at application startup to register
+the language detection post-processor.
+
+**Note:** This is called automatically on first use.
+Explicit calling is optional.
+
+**Signature:**
+
+```elixir
+@spec register_language_detection_processor() :: {:ok, term()} | {:error, term()}
+def register_language_detection_processor()
+```
+
+**Returns:** `:ok`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### get_stopwords()
+
+Get stopwords for a language with normalization.
+
+This function provides a user-friendly interface to the stopwords registry with:
+- **Case-insensitive lookup**: "EN", "en", "En" all work
+- **Locale normalization**: "en-US", "en_GB", "es-ES" extract to "en", "es"
+- **Consistent behavior**: Returns `nil` for unsupported languages
+
+# Language Code Format
+
+Accepts multiple formats:
+- ISO 639-1 two-letter codes: `"en"`, `"es"`, `"de"`, etc.
+- Uppercase variants: `"EN"`, `"ES"`, `"DE"`
+- Locale codes with hyphen: `"en-US"`, `"es-ES"`, `"pt-BR"`
+- Locale codes with underscore: `"en_US"`, `"es_ES"`, `"pt_BR"`
+
+All formats are normalized to lowercase two-letter ISO 639-1 codes.
+
+**Returns:**
+
+- `Some(&HashSet<String>)` if the language is supported (64 languages available)
+- `nil` if the language is not supported
+
+# Performance
+
+This function performs two operations:
+1. String normalization (lowercase + truncate) - O(1) for typical language codes
+2. HashMap lookup in STOPWORDS - O(1) average case
+
+Total overhead is negligible (~10-50ns on modern CPUs).
+
+**Signature:**
+
+```elixir
+@spec get_stopwords(lang) :: {:ok, term()} | {:error, term()}
+def get_stopwords(lang)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `lang` | `String.t()` | Yes | The lang |
+
+**Returns:** `AHashSet | nil`
+
+
+---
+
+#### get_stopwords_with_fallback()
+
+Get stopwords for a language with fallback support.
+
+This function attempts to retrieve stopwords for the primary language,
+and if not available, falls back to a secondary language. This is useful
+for handling scenarios where:
+- A detected language isn't supported
+- You want to use English as a fallback for unknown languages
+- You need graceful degradation for multilingual content
+
+Both language codes support the same normalization as `get_stopwords()`:
+- Case-insensitive lookup (EN, en, En all work)
+- Locale codes normalized (en-US, en_GB extract to "en")
+
+**Returns:**
+
+- `Some(&HashSet<String>)` if either language is supported
+- `nil` if neither language is supported
+
+# Common Patterns
+
+
+# Performance
+
+This function performs at most two HashMap lookups:
+1. Try primary language (O(1) average case)
+2. If None, try fallback language (O(1) average case)
+
+Total overhead is negligible (~10-100ns on modern CPUs).
+
+**Signature:**
+
+```elixir
+@spec get_stopwords_with_fallback(language, fallback) :: {:ok, term()} | {:error, term()}
+def get_stopwords_with_fallback(language, fallback)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `language` | `String.t()` | Yes | Primary language code to try first |
+| `fallback` | `String.t()` | Yes | Fallback language code to use if primary not available |
+
+**Returns:** `AHashSet | nil`
+
+
+---
+
+#### extract_keywords()
+
+Extract keywords from text using the specified algorithm.
+
+This is the unified entry point for keyword extraction. The algorithm
+used is determined by `config.algorithm`.
+
+**Returns:**
+
+A vector of keywords sorted by relevance (highest score first).
+
+**Errors:**
+
+Returns an error if:
+- The specified algorithm feature is not enabled
+- Keyword extraction fails
+
+**Signature:**
+
+```elixir
+@spec extract_keywords(text, config) :: {:ok, term()} | {:error, term()}
+def extract_keywords(text, config)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `text` | `String.t()` | Yes | The text to extract keywords from |
+| `config` | `KeywordConfig` | Yes | Keyword extraction configuration |
+
+**Returns:** `list(Keyword)`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### register_keyword_processor()
+
+Register the keyword extraction processor with the global registry.
+
+This function should be called once at application startup to register
+the keyword extraction post-processor.
+
+**Note:** This is called automatically on first use.
+Explicit calling is optional.
+
+**Signature:**
+
+```elixir
+@spec register_keyword_processor() :: {:ok, term()} | {:error, term()}
+def register_keyword_processor()
+```
+
+**Returns:** `:ok`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### tsv_row_to_element()
+
+Convert a Tesseract TSV row to a unified OcrElement.
+
+Preserves:
+- Axis-aligned bounding box
+- Recognition confidence (Tesseract doesn't have separate detection confidence)
+- Hierarchical level information
+
+**Returns:**
+
+An `OcrElement` with rectangle geometry and Tesseract metadata.
+
+**Signature:**
+
+```elixir
+@spec tsv_row_to_element(row) :: {:ok, term()} | {:error, term()}
+def tsv_row_to_element(row)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `row` | `TsvRow` | Yes | Parsed TSV row from Tesseract output |
+
+**Returns:** `OcrElement`
+
+
+---
+
+#### element_to_hocr_word()
+
+Convert an OcrElement to an HocrWord for table reconstruction.
+
+This enables reuse of the existing table detection algorithms from
+html-to-markdown-rs with PaddleOCR results.
+
+**Returns:**
+
+An `HocrWord` suitable for table reconstruction algorithms.
+
+**Signature:**
+
+```elixir
+@spec element_to_hocr_word(element) :: {:ok, term()} | {:error, term()}
+def element_to_hocr_word(element)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `element` | `OcrElement` | Yes | Unified OCR element with geometry and text |
+
+**Returns:** `HocrWord`
+
+
+---
+
+#### elements_to_hocr_words()
+
+Convert a vector of OcrElements to HocrWords for batch table processing.
+
+Filters to word-level elements only, as table reconstruction
+works best with word-level granularity.
+
+**Returns:**
+
+A vector of HocrWords filtered by confidence and element level.
+
+**Signature:**
+
+```elixir
+@spec elements_to_hocr_words(elements, min_confidence) :: {:ok, term()} | {:error, term()}
+def elements_to_hocr_words(elements, min_confidence)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `elements` | `list(OcrElement)` | Yes | Slice of OCR elements to convert |
+| `min_confidence` | `float()` | Yes | Minimum recognition confidence threshold (0.0-1.0) |
+
+**Returns:** `list(HocrWord)`
+
+
+---
+
+#### parse_hocr_to_internal_document()
+
+Parse hOCR HTML into an `InternalDocument` with full spatial and confidence metadata.
+
+This is the primary entry point. It replaces the older `convert_hocr_to_markdown` path
+by producing structured `InternalElement`s directly, preserving OCR geometry and
+confidence that the markdown conversion discards.
+
+# Output mapping
+
+| hOCR element   | kreuzberg element                             |
+|---------------|-----------------------------------------------|
+| `ocr_page`    | `PageBreak` between consecutive pages         |
+| `ocr_par`     | `OcrText { level: Block }` with union bbox    |
+| `ocr_line`    | newline separator within a paragraph          |
+| `ocrx_word`   | word text, bbox, `x_wconf` → `OcrConfidence` |
+
+Page numbers come from the `ppageno` title property (converted to 1-indexed).
+
+**Signature:**
+
+```elixir
+@spec parse_hocr_to_internal_document(hocr_html) :: {:ok, term()} | {:error, term()}
+def parse_hocr_to_internal_document(hocr_html)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `hocr_html` | `String.t()` | Yes | The hocr html |
+
+**Returns:** `InternalDocument`
+
+
+---
+
+#### assemble_ocr_markdown()
+
+Assemble structured markdown from OCR elements using layout detection results.
+
+Both inputs must be in the same pixel coordinate space (from the same
+rendered page image). Returns plain text join when `detection` is `nil`.
+
+`recognized_tables` provides pre-computed markdown for Table regions
+(from TATR or other table structure recognizer). When empty, Table
+regions fall back to heuristic grid reconstruction from OCR elements.
+
+**Signature:**
+
+```elixir
+@spec assemble_ocr_markdown(elements, detection, img_width, img_height, recognized_tables) :: {:ok, term()} | {:error, term()}
+def assemble_ocr_markdown(elements, detection, img_width, img_height, recognized_tables)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `elements` | `list(OcrElement)` | Yes | The elements |
+| `detection` | `DetectionResult | nil` | No | The detection result |
+| `img_width` | `integer()` | Yes | The img width |
+| `img_height` | `integer()` | Yes | The img height |
+| `recognized_tables` | `list(RecognizedTable)` | Yes | The recognized tables |
+
+**Returns:** `String.t()`
+
+
+---
+
+#### recognize_page_tables()
+
+Run TATR table recognition for all Table regions in a page.
+
+For each Table detection, crops the page image, runs TATR inference,
+matches OCR elements to cells, and produces markdown tables.
+
+**Signature:**
+
+```elixir
+@spec recognize_page_tables(page_image, detection, elements, tatr_model) :: {:ok, term()} | {:error, term()}
+def recognize_page_tables(page_image, detection, elements, tatr_model)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `page_image` | `RgbImage` | Yes | The rgb image |
+| `detection` | `DetectionResult` | Yes | The detection result |
+| `elements` | `list(OcrElement)` | Yes | The elements |
+| `tatr_model` | `TatrModel` | Yes | The tatr model |
+
+**Returns:** `list(RecognizedTable)`
+
+
+---
+
+#### extract_words_from_tsv()
+
+Extract words from Tesseract TSV output and convert to HocrWord format.
+
+This parses Tesseract's TSV format (level, page_num, block_num, ...) and
+converts it to the HocrWord format used for table reconstruction.
+
+**Signature:**
+
+```elixir
+@spec extract_words_from_tsv(tsv_data, min_confidence) :: {:ok, term()} | {:error, term()}
+def extract_words_from_tsv(tsv_data, min_confidence)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `tsv_data` | `String.t()` | Yes | The tsv data |
+| `min_confidence` | `float()` | Yes | The min confidence |
+
+**Returns:** `list(HocrWord)`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### compute_hash()
+
+Compute a blake3 hash string from input data.
+
+Returns a 32-character hex string (128 bits of blake3 output).
+
+**Signature:**
+
+```elixir
+@spec compute_hash(data) :: {:ok, term()} | {:error, term()}
+def compute_hash(data)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `data` | `String.t()` | Yes | The data |
+
+**Returns:** `String.t()`
+
+
+---
+
+#### validate_tesseract_version()
+
+**Signature:**
+
+```elixir
+@spec validate_tesseract_version(version) :: {:ok, term()} | {:error, term()}
+def validate_tesseract_version(version)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `version` | `integer()` | Yes | The version |
+
+**Returns:** `:ok`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### ensure_ort_available()
+
+Ensure ONNX Runtime is discoverable. Safe to call multiple times (no-op after first).
+
+When the `ort-bundled` feature is enabled the ORT binaries are embedded via the
+official Microsoft release and no system library search is needed.
+
+**Signature:**
+
+```elixir
+@spec ensure_ort_available() :: {:ok, term()} | {:error, term()}
+def ensure_ort_available()
+```
+
+**Returns:** `:ok`
+
+
+---
+
+#### is_language_supported()
+
+Check if a language code is supported by PaddleOCR.
+
+**Signature:**
+
+```elixir
+@spec is_language_supported(lang) :: {:ok, term()} | {:error, term()}
+def is_language_supported(lang)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `lang` | `String.t()` | Yes | The lang |
+
+**Returns:** `boolean()`
+
+
+---
+
+#### language_to_script_family()
+
+Map a PaddleOCR language code to its script family.
+
+Script families group languages that share a single recognition model.
+For example, French, German, and Spanish all use the `latin` rec model.
+Chinese simplified, traditional, and Japanese share the `chinese` rec model.
+
+# Script Families (11, all PP-OCRv5)
+
+| Family | Languages |
+|---|---|
+| `english` | English |
+| `chinese` | Chinese (simplified+traditional), Japanese |
+| `latin` | French, German, Spanish, Italian, 40+ more |
+| `korean` | Korean |
+| `eslav` | Russian, Ukrainian, Belarusian |
+| `thai` | Thai |
+| `greek` | Greek |
+| `arabic` | Arabic, Persian, Urdu |
+| `devanagari` | Hindi, Marathi, Sanskrit, Nepali |
+| `tamil` | Tamil |
+| `telugu` | Telugu |
+
+**Signature:**
+
+```elixir
+@spec language_to_script_family(paddle_lang) :: {:ok, term()} | {:error, term()}
+def language_to_script_family(paddle_lang)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `paddle_lang` | `String.t()` | Yes | The paddle lang |
+
+**Returns:** `String.t()`
+
+
+---
+
+#### map_language_code()
+
+Map Kreuzberg language codes to PaddleOCR language codes.
+
+**Signature:**
+
+```elixir
+@spec map_language_code(kreuzberg_code) :: {:ok, term()} | {:error, term()}
+def map_language_code(kreuzberg_code)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `kreuzberg_code` | `String.t()` | Yes | The kreuzberg code |
+
+**Returns:** `String.t() | nil`
+
+
+---
+
+#### resolve_cache_dir()
+
+Resolve the cache directory for the auto-rotate model.
+
+**Signature:**
+
+```elixir
+@spec resolve_cache_dir() :: {:ok, term()} | {:error, term()}
+def resolve_cache_dir()
+```
+
+**Returns:** `String.t()`
+
+
+---
+
+#### detect_and_rotate()
+
+Detect orientation and return a corrected image if rotation is needed.
+
+Returns `Ok(Some(rotated_bytes))` if rotation was applied,
+`Ok(None)` if no rotation needed (0° or low confidence).
+
+**Signature:**
+
+```elixir
+@spec detect_and_rotate(detector, image_bytes) :: {:ok, term()} | {:error, term()}
+def detect_and_rotate(detector, image_bytes)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `detector` | `DocOrientationDetector` | Yes | The doc orientation detector |
+| `image_bytes` | `binary()` | Yes | The image bytes |
+
+**Returns:** `binary() | nil`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### build_cell_grid()
+
+Build a 2D cell grid from TATR detections.
+
+The grid is `[num_rows][num_cols]` where each cell is the intersection
+of a row bounding box and a column bounding box.
+
+Processing steps:
+1. Widen all rows to span the full table width (min x1 to max x2 across rows)
+2. Apply NMS using IoB: sort by confidence descending, remove detections
+   whose IoB with any higher-confidence detection exceeds `NMS_IOB_THRESHOLD`
+3. For each (row, column) pair, compute the intersection rectangle
+
+If `table_bbox` is provided, it is used to clip the row widening bounds.
+
+**Signature:**
+
+```elixir
+@spec build_cell_grid(result, table_bbox) :: {:ok, term()} | {:error, term()}
+def build_cell_grid(result, table_bbox)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `result` | `TatrResult` | Yes | The tatr result |
+| `table_bbox` | `F324 | nil` | No | The [f32;4] |
+
+**Returns:** `list(list(CellBBox))`
+
+
+---
+
+#### apply_heuristics()
+
+Apply Docling-style postprocessing heuristics to raw detections.
+
+This implements the key heuristics from `docling/utils/layout_postprocessor.py`:
+1. Per-class confidence thresholds
+2. Full-page picture removal (>90% page area)
+3. Overlap resolution (IoU > 0.8 or containment > 0.8)
+4. Cross-type overlap handling (KVR vs Table)
+
+**Signature:**
+
+```elixir
+@spec apply_heuristics(detections, page_width, page_height) :: {:ok, term()} | {:error, term()}
+def apply_heuristics(detections, page_width, page_height)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `detections` | `list(LayoutDetection)` | Yes | The detections |
+| `page_width` | `float()` | Yes | The page width |
+| `page_height` | `float()` | Yes | The page height |
+
+**Returns:** `list(LayoutDetection)`
+
+
+---
+
+#### greedy_nms()
+
+Standard greedy Non-Maximum Suppression.
+
+Sorts detections by confidence (descending), then iteratively removes
+detections that have IoU > `iou_threshold` with any higher-confidence detection.
+
+This is required for YOLO models. RT-DETR is NMS-free.
+
+**Signature:**
+
+```elixir
+@spec greedy_nms(detections, iou_threshold) :: {:ok, term()} | {:error, term()}
+def greedy_nms(detections, iou_threshold)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `detections` | `list(LayoutDetection)` | Yes | The detections |
+| `iou_threshold` | `float()` | Yes | The iou threshold |
+
+**Returns:** `list(LayoutDetection)`
+
+
+---
+
+#### preprocess_imagenet()
+
+Preprocess an image for models using ImageNet normalization (e.g., RT-DETR).
+
+Pipeline: resize to target_size x target_size (bilinear) -> rescale /255 -> ImageNet normalize -> NCHW f32.
+
+Uses a single vectorized pass over contiguous pixel data for maximum throughput.
+
+**Signature:**
+
+```elixir
+@spec preprocess_imagenet(img, target_size) :: {:ok, term()} | {:error, term()}
+def preprocess_imagenet(img, target_size)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `img` | `RgbImage` | Yes | The rgb image |
+| `target_size` | `integer()` | Yes | The target size |
+
+**Returns:** `Array4`
+
+
+---
+
+#### preprocess_imagenet_letterbox()
+
+Preprocess with aspect-preserving letterbox and ImageNet normalization.
+
+Pipeline: letterbox-resize to target_size × target_size (Lanczos3, aspect-preserving)
+          → rescale /255 → ImageNet normalize → NCHW f32.
+
+Unlike `preprocess_imagenet` which squashes the image to a square (distorting
+aspect ratio), this preserves the original proportions and pads with the ImageNet
+mean color. This produces more accurate detection coordinates because the model
+sees undistorted geometry.
+
+Returns `(tensor, scale, pad_x, pad_y)`:
+- `scale`: resize factor applied (for mapping detections back)
+- `pad_x`, `pad_y`: top-left offset of the resized image within the padded square
+
+**Signature:**
+
+```elixir
+@spec preprocess_imagenet_letterbox(img, target_size) :: {:ok, term()} | {:error, term()}
+def preprocess_imagenet_letterbox(img, target_size)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `img` | `RgbImage` | Yes | The rgb image |
+| `target_size` | `integer()` | Yes | The target size |
+
+**Returns:** `Array4F32F32U32U32`
+
+
+---
+
+#### preprocess_rescale()
+
+Preprocess with rescale only (no ImageNet normalization).
+
+Pipeline: resize to target_size x target_size -> rescale /255 -> NCHW f32.
+
+**Signature:**
+
+```elixir
+@spec preprocess_rescale(img, target_size) :: {:ok, term()} | {:error, term()}
+def preprocess_rescale(img, target_size)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `img` | `RgbImage` | Yes | The rgb image |
+| `target_size` | `integer()` | Yes | The target size |
+
+**Returns:** `Array4`
+
+
+---
+
+#### preprocess_letterbox()
+
+Letterbox preprocessing for YOLOX-style models.
+
+Resizes the image to fit within (target_width x target_height) while maintaining
+aspect ratio, padding the remaining area with value 114.0 (raw pixel value).
+No normalization — values are 0-255 as YOLOX expects.
+
+Returns the NCHW tensor and the scale ratio (for rescaling detections back).
+
+**Signature:**
+
+```elixir
+@spec preprocess_letterbox(img, target_width, target_height) :: {:ok, term()} | {:error, term()}
+def preprocess_letterbox(img, target_width, target_height)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `img` | `RgbImage` | Yes | The rgb image |
+| `target_width` | `integer()` | Yes | The target width |
+| `target_height` | `integer()` | Yes | The target height |
+
+**Returns:** `Array4F32F32`
+
+
+---
+
+#### build_session()
+
+Build an optimized ORT session from an ONNX model file.
+
+`thread_budget` controls the number of intra-op threads for this session.
+Pass the result of `crate.core.config.concurrency.resolve_thread_budget`
+to respect the user's `ConcurrencyConfig`.
+
+When `accel` is `nil` or `Auto`, uses platform defaults:
+- macOS: CoreML (Neural Engine / GPU)
+- Linux: CUDA (GPU)
+- Others: CPU only
+
+ORT silently falls back to CPU if the requested EP is unavailable.
+
+**Signature:**
+
+```elixir
+@spec build_session(path, accel, thread_budget) :: {:ok, term()} | {:error, term()}
+def build_session(path, accel, thread_budget)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `path` | `String.t()` | Yes | Path to the file |
+| `accel` | `AccelerationConfig | nil` | No | The acceleration config |
+| `thread_budget` | `integer()` | Yes | The thread budget |
+
+**Returns:** `Session`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### config_from_extraction()
+
+Convert a `LayoutDetectionConfig` into a `LayoutEngineConfig`.
+
+**Signature:**
+
+```elixir
+@spec config_from_extraction(layout_config) :: {:ok, term()} | {:error, term()}
+def config_from_extraction(layout_config)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `layout_config` | `LayoutDetectionConfig` | Yes | The layout detection config |
+
+**Returns:** `LayoutEngineConfig`
+
+
+---
+
+#### create_engine()
+
+Create a `LayoutEngine` from a `LayoutDetectionConfig`.
+
+Ensures ORT is available, then creates the engine with model download.
+
+**Signature:**
+
+```elixir
+@spec create_engine(layout_config) :: {:ok, term()} | {:error, term()}
+def create_engine(layout_config)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `layout_config` | `LayoutDetectionConfig` | Yes | The layout detection config |
+
+**Returns:** `LayoutEngine`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### take_or_create_engine()
+
+Take the cached layout engine, or create a new one if the cache is empty.
+
+The caller owns the engine for the duration of its work and should
+return it via `return_engine` when done. This avoids holding the
+global mutex during inference.
+
+**Signature:**
+
+```elixir
+@spec take_or_create_engine(layout_config) :: {:ok, term()} | {:error, term()}
+def take_or_create_engine(layout_config)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `layout_config` | `LayoutDetectionConfig` | Yes | The layout detection config |
+
+**Returns:** `LayoutEngine`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### return_engine()
+
+Return a layout engine to the global cache for reuse by future extractions.
+
+**Signature:**
+
+```elixir
+@spec return_engine(engine) :: {:ok, term()} | {:error, term()}
+def return_engine(engine)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `engine` | `LayoutEngine` | Yes | The layout engine |
+
+**Returns:** `:ok`
+
+
+---
+
+#### take_or_create_tatr()
+
+Take the cached TATR model, or create a new one if the cache is empty.
+
+Returns `nil` if the model cannot be loaded. Once a load attempt fails,
+subsequent calls return `nil` immediately without retrying, avoiding
+repeated download attempts and redundant warning logs.
+
+**Signature:**
+
+```elixir
+@spec take_or_create_tatr(accel) :: {:ok, term()} | {:error, term()}
+def take_or_create_tatr(accel)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `accel` | `AccelerationConfig | nil` | No | The acceleration config |
+
+**Returns:** `TatrModel | nil`
+
+
+---
+
+#### return_tatr()
+
+Return a TATR model to the global cache for reuse.
+
+**Signature:**
+
+```elixir
+@spec return_tatr(model) :: {:ok, term()} | {:error, term()}
+def return_tatr(model)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `model` | `TatrModel` | Yes | The tatr model |
+
+**Returns:** `:ok`
+
+
+---
+
+#### take_or_create_slanet()
+
+Take a cached SLANeXT model for the given variant, or create a new one.
+
+**Signature:**
+
+```elixir
+@spec take_or_create_slanet(variant, accel) :: {:ok, term()} | {:error, term()}
+def take_or_create_slanet(variant, accel)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `variant` | `String.t()` | Yes | The variant |
+| `accel` | `AccelerationConfig | nil` | No | The acceleration config |
+
+**Returns:** `SlanetModel | nil`
+
+
+---
+
+#### return_slanet()
+
+Return a SLANeXT model to the global cache for reuse.
+
+**Signature:**
+
+```elixir
+@spec return_slanet(variant, model) :: {:ok, term()} | {:error, term()}
+def return_slanet(variant, model)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `variant` | `String.t()` | Yes | The variant |
+| `model` | `SlanetModel` | Yes | The slanet model |
+
+**Returns:** `:ok`
+
+
+---
+
+#### take_or_create_table_classifier()
+
+Take a cached table classifier, or create a new one.
+
+**Signature:**
+
+```elixir
+@spec take_or_create_table_classifier(accel) :: {:ok, term()} | {:error, term()}
+def take_or_create_table_classifier(accel)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `accel` | `AccelerationConfig | nil` | No | The acceleration config |
+
+**Returns:** `TableClassifier | nil`
+
+
+---
+
+#### return_table_classifier()
+
+Return a table classifier to the global cache for reuse.
+
+**Signature:**
+
+```elixir
+@spec return_table_classifier(model) :: {:ok, term()} | {:error, term()}
+def return_table_classifier(model)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `model` | `TableClassifier` | Yes | The table classifier |
+
+**Returns:** `:ok`
+
+
+---
+
+#### extract_annotations_from_document()
+
+Extract annotations from all pages of a PDF document.
+
+Iterates over every page and every annotation on each page, mapping
+pdfium annotation subtypes to `PdfAnnotationType` and collecting
+content text and bounding boxes where available.
+
+Annotations that cannot be read are silently skipped.
+
+**Returns:**
+
+A `Vec<PdfAnnotation>` containing all successfully extracted annotations.
+
+**Signature:**
+
+```elixir
+@spec extract_annotations_from_document(document) :: {:ok, term()} | {:error, term()}
+def extract_annotations_from_document(document)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `document` | `PdfDocument` | Yes | A reference to the loaded pdfium `PdfDocument`. |
+
+**Returns:** `list(PdfAnnotation)`
+
+
+---
+
+#### extract_bookmarks()
+
+Extract bookmarks (outlines) from a PDF document loaded via lopdf.
+
+Walks the `/Outlines` tree in the document catalog, collecting each bookmark's
+title and destination. Returns an empty `Vec` if the document has no outlines.
+
+**Signature:**
+
+```elixir
+@spec extract_bookmarks(document) :: {:ok, term()} | {:error, term()}
+def extract_bookmarks(document)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `document` | `Document` | Yes | The document |
+
+**Returns:** `list(Uri)`
+
+
+---
+
+#### extract_bundled_pdfium()
+
+Extract bundled PDFium library to temporary directory.
+
+# Behavior
+
+- Embeds PDFium library using `include_bytes!`
+- Extracts to `$TMPDIR/kreuzberg-pdfium/` (non-WASM only)
+- Reuses extracted library if size matches
+- Sets permissions to 0755 on Unix
+- Returns path to extracted library
+- **Thread-safe**: Synchronized with a global `Mutex` to prevent concurrent writes
+
+# Concurrency
+
+This function is fully thread-safe. When multiple threads call it simultaneously,
+only the first thread performs the actual extraction while others wait. This prevents
+the "file too short" error that occurs when one thread reads a partially-written file.
+
+# WASM Handling
+
+On WASM targets (wasm32-*), this function returns an error with a helpful
+message directing users to use WASM-specific initialization. WASM PDFium
+is initialized through the runtime, not via file extraction.
+
+**Errors:**
+
+Returns `std.io.Error` if:
+- Cannot create extraction directory
+- Cannot write library file
+- Cannot set file permissions (Unix only)
+- Target is WASM (filesystem access not available)
+
+# Platform-Specific Library Names
+
+- Linux: `libpdfium.so`
+- macOS: `libpdfium.dylib`
+- Windows: `pdfium.dll`
+
+**Signature:**
+
+```elixir
+@spec extract_bundled_pdfium() :: {:ok, term()} | {:error, term()}
+def extract_bundled_pdfium()
+```
+
+**Returns:** `String.t()`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### extract_embedded_files()
+
+Extract embedded file descriptors from a PDF document loaded via lopdf.
+
+Walks the `/Names` → `/EmbeddedFiles` name tree in the catalog.
+Returns an empty `Vec` if the document has no embedded files.
+
+**Signature:**
+
+```elixir
+@spec extract_embedded_files(document) :: {:ok, term()} | {:error, term()}
+def extract_embedded_files(document)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `document` | `Document` | Yes | The document |
+
+**Returns:** `list(EmbeddedFile)`
+
+
+---
+
+#### extract_and_process_embedded_files()
+
+Extract embedded files from PDF bytes and recursively process them.
+
+Returns `(children, warnings)`. The children are `ArchiveEntry` values
+suitable for attaching to `InternalDocument.children`.
+
+**Signature:**
+
+```elixir
+@spec extract_and_process_embedded_files(pdf_bytes, config) :: {:ok, term()} | {:error, term()}
+def extract_and_process_embedded_files(pdf_bytes, config)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `pdf_bytes` | `binary()` | Yes | The pdf bytes |
+| `config` | `ExtractionConfig` | Yes | The configuration options |
+
+**Returns:** `VecArchiveEntryVecProcessingWarning`
+
+
+---
+
+#### initialize_font_cache()
+
+Initialize the global font cache.
+
+On first call, discovers and loads all system fonts. Subsequent calls are no-ops.
+Caching is thread-safe via RwLock; concurrent reads during PDF processing are efficient.
+
+**Returns:**
+
+Ok if initialization succeeds or cache is already initialized, or PdfError if font discovery fails.
+
+# Performance
+
+- First call: 50-100ms (system font discovery + loading)
+- Subsequent calls: < 1μs (no-op, just checks initialized flag)
+
+**Signature:**
+
+```elixir
+@spec initialize_font_cache() :: {:ok, term()} | {:error, term()}
+def initialize_font_cache()
+```
+
+**Returns:** `:ok`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### get_font_descriptors()
+
+Get cached font descriptors for Pdfium configuration.
+
+Ensures the font cache is initialized, then returns font descriptors
+derived from the cached fonts. This call is fast after the first invocation.
+
+**Returns:**
+
+A Vec of FontDescriptor objects suitable for `PdfiumConfig.set_font_provider()`.
+
+# Performance
+
+- First call: ~50-100ms (includes font discovery)
+- Subsequent calls: < 1ms (reads from cache)
+
+**Signature:**
+
+```elixir
+@spec get_font_descriptors() :: {:ok, term()} | {:error, term()}
+def get_font_descriptors()
+```
+
+**Returns:** `list(FontDescriptor)`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### cached_font_count()
+
+Get the number of cached fonts.
+
+Useful for diagnostics and testing.
+
+**Returns:**
+
+Number of fonts in the cache, or 0 if not initialized.
+
+**Signature:**
+
+```elixir
+@spec cached_font_count() :: {:ok, term()} | {:error, term()}
+def cached_font_count()
+```
+
+**Returns:** `integer()`
+
+
+---
+
+#### cluster_font_sizes()
+
+Cluster text blocks by font size using k-means algorithm.
+
+Uses k-means clustering to group text blocks by their font size, which helps
+identify document hierarchy levels (H1, H2, Body, etc.). The algorithm:
+1. Extracts font sizes from text blocks
+2. Applies k-means clustering to group similar font sizes
+3. Sorts clusters by centroid size in descending order (largest = H1)
+4. Returns clusters with their member blocks
+
+**Returns:**
+
+Result with vector of FontSizeCluster ordered by size (descending),
+or an error if clustering fails
+
+**Signature:**
+
+```elixir
+@spec cluster_font_sizes(blocks, k) :: {:ok, term()} | {:error, term()}
+def cluster_font_sizes(blocks, k)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `blocks` | `list(TextBlock)` | Yes | Slice of TextBlock objects to cluster |
+| `k` | `integer()` | Yes | Number of clusters to create |
+
+**Returns:** `list(FontSizeCluster)`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### assign_heading_levels_smart()
+
+Assign heading levels using the "most frequent cluster = Body" rule.
+
+Instead of naively mapping the largest font size to H1, this function
+identifies the cluster with the most members as body text. Only clusters
+with fewer members AND sufficiently larger font size than body become headings.
+
+**Returns:**
+
+Vector of tuples `(centroid, heading_level)` where `nil` means body text
+and `Some(1..=6)` means H1-H6. Sorted by centroid descending.
+
+**Signature:**
+
+```elixir
+@spec assign_heading_levels_smart(clusters, min_heading_ratio, min_heading_gap) :: {:ok, term()} | {:error, term()}
+def assign_heading_levels_smart(clusters, min_heading_ratio, min_heading_gap)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `clusters` | `list(FontSizeCluster)` | Yes | Slice of FontSizeCluster objects (sorted by centroid descending) |
+| `min_heading_ratio` | `float()` | Yes | Minimum ratio of heading centroid to body centroid (e.g. 1.15) |
+| `min_heading_gap` | `float()` | Yes | Minimum absolute font-size difference in points (e.g. 1.5) |
+
+**Returns:** `list(F32OptionU8)`
+
+
+---
+
+#### assign_hierarchy_levels()
+
+Assign hierarchy levels to text blocks based on KMeans clustering results.
+
+Maps cluster indices to HTML heading levels (H1-H6) and body text:
+- Cluster 0 → H1 (top-level heading)
+- Cluster 1 → H2 (secondary heading)
+- Cluster 2 → H3 (tertiary heading)
+- Cluster 3 → H4 (quaternary heading)
+- Cluster 4 → H5 (quinary heading)
+- Cluster 5 → H6 (senary heading)
+- Cluster 6+ → Body (body text)
+
+**Returns:**
+
+Vector of tuples containing (original block info, hierarchy level)
+
+**Signature:**
+
+```elixir
+@spec assign_hierarchy_levels(blocks, kmeans_result) :: {:ok, term()} | {:error, term()}
+def assign_hierarchy_levels(blocks, kmeans_result)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `blocks` | `list(TextBlock)` | Yes | Slice of TextBlock objects to assign hierarchy levels to |
+| `kmeans_result` | `KMeansResult` | Yes | KMeansResult containing cluster labels for each block |
+
+**Returns:** `list(HierarchyBlock)`
+
+
+---
+
+#### assign_hierarchy_levels_from_clusters()
+
+Assign hierarchy levels to text blocks based on font size clusters.
+
+Maps font size clusters to heading levels (H1-H6) and body text.
+Larger font sizes are assigned higher hierarchy levels.
+
+**Returns:**
+
+Vector of tuples containing (TextBlock, HierarchyLevel).
+If blocks is empty or clusters is empty, returns empty vector.
+All blocks get Body level if only one cluster exists.
+
+**Signature:**
+
+```elixir
+@spec assign_hierarchy_levels_from_clusters(blocks, clusters) :: {:ok, term()} | {:error, term()}
+def assign_hierarchy_levels_from_clusters(blocks, clusters)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `blocks` | `list(TextBlock)` | Yes | Vector of TextBlock objects to assign levels to |
+| `clusters` | `list(FontSizeCluster)` | Yes | Vector of FontSizeCluster objects from clustering |
+
+**Returns:** `list(TextBlockHierarchyLevel)`
+
+
+---
+
+#### extract_chars_with_fonts()
+
+Extract characters with fonts from a PDF page.
+
+Iterates through all characters on a page, extracting text, position,
+and font size information. Characters are returned in page order.
+
+**Returns:**
+
+Vector of CharData objects containing text and positioning information.
+
+**Signature:**
+
+```elixir
+@spec extract_chars_with_fonts(page) :: {:ok, term()} | {:error, term()}
+def extract_chars_with_fonts(page)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `page` | `PdfPage` | Yes | PDF page to extract characters from |
+
+**Returns:** `list(CharData)`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### extract_segments_from_page()
+
+Extract text segments from a PDF page using pdfium's segment merging.
+
+Instead of extracting individual characters and reconstructing words from gap heuristics,
+this function uses pdfium's `PdfPageTextSegments` which automatically merge characters
+sharing the same baseline and font settings into contiguous text runs.
+
+Font metadata (bold, italic, font size) is sampled from the first character of each segment.
+
+# Performance
+
+Typically 10-50x fewer items than character-level extraction, with far fewer FFI calls
+per item (one segment.text() + one segment.chars() sample vs N chars with 4+ FFI calls each).
+
+**Signature:**
+
+```elixir
+@spec extract_segments_from_page(page) :: {:ok, term()} | {:error, term()}
+def extract_segments_from_page(page)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `page` | `PdfPage` | Yes | The pdf page |
+
+**Returns:** `list(SegmentData)`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### merge_chars_into_blocks()
+
+Merge characters into text blocks using a greedy clustering algorithm.
+
+Groups characters based on spatial proximity using weighted distance and
+intersection ratio metrics. Characters are merged greedily based on their
+proximity and overlap.
+
+**Returns:**
+
+Vector of TextBlock objects containing merged characters
+
+# Algorithm
+
+The function uses a greedy approach:
+1. Create bounding boxes for each character
+2. Use weighted_distance (5.0 * dx + 1.0 * dy) with maximum threshold of ~2.5x font size
+3. Use intersection_ratio to detect overlapping or very close characters
+4. Merge characters into blocks based on proximity thresholds
+5. Return sorted blocks by position (top to bottom, left to right)
+
+**Signature:**
+
+```elixir
+@spec merge_chars_into_blocks(chars) :: {:ok, term()} | {:error, term()}
+def merge_chars_into_blocks(chars)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `chars` | `list(CharData)` | Yes | Vector of CharData to merge into blocks |
+
+**Returns:** `list(TextBlock)`
+
+
+---
+
+#### should_trigger_ocr()
+
+Determine whether OCR should be triggered based on text block coverage.
+
+Analyzes the coverage of text blocks on a PDF page and decides if OCR
+should be run. OCR is triggered when the text blocks cover less than a
+certain percentage (default 50%) of the page area.
+
+**Returns:**
+
+`true` if OCR should be triggered (coverage below threshold), `false` otherwise.
+
+**Signature:**
+
+```elixir
+@spec should_trigger_ocr(page, blocks, config) :: {:ok, term()} | {:error, term()}
+def should_trigger_ocr(page, blocks, config)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `page` | `PdfPage` | Yes | The PDF page to analyze |
+| `blocks` | `list(TextBlock)` | Yes | Slice of TextBlock objects present on the page |
+| `config` | `ExtractionConfig` | Yes | Extraction configuration containing OCR and PDF settings |
+
+**Returns:** `boolean()`
+
+
+---
+
+#### extract_images_from_pdf()
+
+**Signature:**
+
+```elixir
+@spec extract_images_from_pdf(pdf_bytes) :: {:ok, term()} | {:error, term()}
+def extract_images_from_pdf(pdf_bytes)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `pdf_bytes` | `binary()` | Yes | The pdf bytes |
+
+**Returns:** `list(PdfImage)`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### extract_images_from_pdf_with_password()
+
+**Signature:**
+
+```elixir
+@spec extract_images_from_pdf_with_password(pdf_bytes, password) :: {:ok, term()} | {:error, term()}
+def extract_images_from_pdf_with_password(pdf_bytes, password)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `pdf_bytes` | `binary()` | Yes | The pdf bytes |
+| `password` | `String.t()` | Yes | The password |
+
+**Returns:** `list(PdfImage)`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### detect_layout_for_document()
+
+Run layout detection on all pages of a PDF document.
+
+Under the hood, this uses batched layout detection to prevent holding too many
+full-resolution page images in memory simultaneously before detection.
+
+**Signature:**
+
+```elixir
+@spec detect_layout_for_document(pdf_bytes, engine) :: {:ok, term()} | {:error, term()}
+def detect_layout_for_document(pdf_bytes, engine)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `pdf_bytes` | `binary()` | Yes | The pdf bytes |
+| `engine` | `LayoutEngine` | Yes | The layout engine |
+
+**Returns:** `DynamicImage`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### detect_layout_for_images()
+
+Run layout detection on pre-rendered images.
+
+Returns pixel-space `DetectionResult`s — no PDF coordinate conversion.
+Use this when images are already available (e.g., from the OCR rendering
+path) to avoid redundant PDF re-rendering.
+
+**Signature:**
+
+```elixir
+@spec detect_layout_for_images(images, engine) :: {:ok, term()} | {:error, term()}
+def detect_layout_for_images(images, engine)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `images` | `list(DynamicImage)` | Yes | The images |
+| `engine` | `LayoutEngine` | Yes | The layout engine |
+
+**Returns:** `list(DetectionResult)`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### extract_metadata()
+
+Extract PDF-specific metadata from raw bytes.
+
+Returns only PDF-specific metadata (version, producer, encryption status, dimensions).
+
+**Signature:**
+
+```elixir
+@spec extract_metadata(pdf_bytes) :: {:ok, term()} | {:error, term()}
+def extract_metadata(pdf_bytes)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `pdf_bytes` | `binary()` | Yes | The pdf bytes |
+
+**Returns:** `PdfMetadata`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### extract_metadata_with_password()
+
+Extract PDF-specific metadata from raw bytes with optional password.
+
+Returns only PDF-specific metadata (version, producer, encryption status, dimensions).
+
+**Signature:**
+
+```elixir
+@spec extract_metadata_with_password(pdf_bytes, password) :: {:ok, term()} | {:error, term()}
+def extract_metadata_with_password(pdf_bytes, password)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `pdf_bytes` | `binary()` | Yes | The pdf bytes |
+| `password` | `String.t() | nil` | No | The password |
+
+**Returns:** `PdfMetadata`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### extract_metadata_with_passwords()
+
+**Signature:**
+
+```elixir
+@spec extract_metadata_with_passwords(pdf_bytes, passwords) :: {:ok, term()} | {:error, term()}
+def extract_metadata_with_passwords(pdf_bytes, passwords)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `pdf_bytes` | `binary()` | Yes | The pdf bytes |
+| `passwords` | `list(String.t())` | Yes | The passwords |
+
+**Returns:** `PdfMetadata`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### extract_metadata_from_document()
+
+Extract complete PDF metadata from a document.
+
+Extracts common fields (title, subject, authors, keywords, dates, creator),
+PDF-specific metadata, and optionally builds a PageStructure with boundaries.
+
+  If provided, a PageStructure will be built with these boundaries.
+* `content` - Optional extracted text content, used for blank page detection.
+  If provided, `PageInfo.is_blank` will be populated based on text content analysis.
+  If `nil`, `is_blank` will be `nil` for all pages.
+
+**Returns:**
+
+Returns a `PdfExtractionMetadata` struct containing all extracted metadata,
+including page structure if boundaries were provided.
+
+**Signature:**
+
+```elixir
+@spec extract_metadata_from_document(document, page_boundaries, content) :: {:ok, term()} | {:error, term()}
+def extract_metadata_from_document(document, page_boundaries, content)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `document` | `PdfDocument` | Yes | The PDF document to extract metadata from |
+| `page_boundaries` | `list(PageBoundary) | nil` | No | Optional vector of PageBoundary entries for building PageStructure. |
+| `content` | `String.t() | nil` | No | Optional extracted text content, used for blank page detection. |
+
+**Returns:** `PdfExtractionMetadata`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### extract_common_metadata_from_document()
+
+Extract common metadata from a PDF document.
+
+Returns common fields (title, authors, keywords, dates) that are now stored
+in the base `Metadata` struct instead of format-specific metadata.
+
+This function uses batch fetching with caching to optimize metadata extraction
+by reducing repeated dictionary lookups. All metadata tags are fetched once and
+cached in a single pass.
+
+**Signature:**
+
+```elixir
+@spec extract_common_metadata_from_document(document) :: {:ok, term()} | {:error, term()}
+def extract_common_metadata_from_document(document)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `document` | `PdfDocument` | Yes | The pdf document |
+
+**Returns:** `CommonPdfMetadata`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### render_page_to_image()
+
+**Signature:**
+
+```elixir
+@spec render_page_to_image(pdf_bytes, page_index, options) :: {:ok, term()} | {:error, term()}
+def render_page_to_image(pdf_bytes, page_index, options)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `pdf_bytes` | `binary()` | Yes | The pdf bytes |
+| `page_index` | `integer()` | Yes | The page index |
+| `options` | `PageRenderOptions` | Yes | The options to use |
+
+**Returns:** `DynamicImage`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### render_pdf_page_to_png()
+
+Render a single PDF page to a PNG-encoded byte buffer.
+
+**Errors:**
+
+Returns an error if the PDF is invalid, the page index is out of bounds,
+or if the page fails to render.
+
+**Signature:**
+
+```elixir
+@spec render_pdf_page_to_png(pdf_bytes, page_index, dpi, password) :: {:ok, term()} | {:error, term()}
+def render_pdf_page_to_png(pdf_bytes, page_index, dpi, password)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `pdf_bytes` | `binary()` | Yes | The pdf bytes |
+| `page_index` | `integer()` | Yes | The page index |
+| `dpi` | `integer() | nil` | No | The dpi |
+| `password` | `String.t() | nil` | No | The password |
+
+**Returns:** `binary()`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### extract_words_from_page()
+
+Extract words with positions from PDF page for table detection.
+
+Groups adjacent characters into words based on spacing heuristics,
+then converts to HocrWord format for table reconstruction.
+
+**Returns:**
+
+Vector of HocrWord objects with text and bounding box information.
+
+**Note:**
+This function requires the "ocr" feature to be enabled. Without it, returns an error.
+
+**Signature:**
+
+```elixir
+@spec extract_words_from_page(page, min_confidence) :: {:ok, term()} | {:error, term()}
+def extract_words_from_page(page, min_confidence)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `page` | `PdfPage` | Yes | PDF page to extract words from |
+| `min_confidence` | `float()` | Yes | Minimum confidence threshold (0.0-100.0). PDF text has high confidence (95.0). |
+
+**Returns:** `list(HocrWord)`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### segment_to_hocr_word()
+
+Convert a PDF `SegmentData` to an `HocrWord` for table reconstruction.
+
+`SegmentData` uses PDF coordinates (y=0 at bottom, increases upward).
+`HocrWord` uses image coordinates (y=0 at top, increases downward).
+
+**Signature:**
+
+```elixir
+@spec segment_to_hocr_word(seg, page_height) :: {:ok, term()} | {:error, term()}
+def segment_to_hocr_word(seg, page_height)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `seg` | `SegmentData` | Yes | The segment data |
+| `page_height` | `float()` | Yes | The page height |
+
+**Returns:** `HocrWord`
+
+
+---
+
+#### split_segment_to_words()
+
+Split a `SegmentData` into word-level `HocrWord`s for table reconstruction.
+
+Pdfium segments can contain multiple whitespace-separated words (merged by
+shared baseline + font). For table cell matching, each word needs its own
+bounding box so it can be assigned to the correct column/cell.
+
+Single-word segments use `segment_to_hocr_word` directly (fast path).
+Multi-word segments get proportional bbox estimation per word based on
+byte offset within the segment text.
+
+**Signature:**
+
+```elixir
+@spec split_segment_to_words(seg, page_height) :: {:ok, term()} | {:error, term()}
+def split_segment_to_words(seg, page_height)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `seg` | `SegmentData` | Yes | The segment data |
+| `page_height` | `float()` | Yes | The page height |
+
+**Returns:** `list(HocrWord)`
+
+
+---
+
+#### segments_to_words()
+
+Convert a page's segments to word-level `HocrWord`s for table extraction.
+
+Splits multi-word segments into individual words with proportional bounding
+boxes, ensuring each word can be independently matched to table cells.
+
+**Signature:**
+
+```elixir
+@spec segments_to_words(segments, page_height) :: {:ok, term()} | {:error, term()}
+def segments_to_words(segments, page_height)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `segments` | `list(SegmentData)` | Yes | The segments |
+| `page_height` | `float()` | Yes | The page height |
+
+**Returns:** `list(HocrWord)`
+
+
+---
+
+#### post_process_table()
+
+Post-process a raw table grid to validate structure and clean up.
+
+Returns `nil` if the table fails structural validation.
+
+When `layout_guided` is true, the layout model already confirmed this is
+a table, so validation thresholds are relaxed:
+- Minimum columns: 3 → 2
+- Column sparsity: 75% → 95%
+- Overall density: 40% → 15%
+- Prose detection: reject if >70% cells >100 chars (vs >50% >60 chars)
+- Prose detection: reject if avg cell >80 chars (vs >50 chars)
+- Single-word cell: reject if >85% single-word (vs >70%)
+- Content asymmetry: reject if one col >92% of text (vs >85%)
+- Column-text-flow: applied equally (reject if >60% rows flow through)
+
+**Signature:**
+
+```elixir
+@spec post_process_table(table, layout_guided, allow_single_column) :: {:ok, term()} | {:error, term()}
+def post_process_table(table, layout_guided, allow_single_column)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `table` | `list(list(String.t()))` | Yes | The table |
+| `layout_guided` | `boolean()` | Yes | The layout guided |
+| `allow_single_column` | `boolean()` | Yes | The allow single column |
+
+**Returns:** `list(list(String.t())) | nil`
+
+
+---
+
+#### is_well_formed_table()
+
+Validate whether a reconstructed table grid represents a well-formed table
+rather than multi-column prose or a repeated page element.
+
+Returns `true` if the grid looks like a real table, `false` if it should be
+rejected and its content emitted as paragraph text instead.
+
+The checks catch cases the layout model misidentifies as tables:
+- Multi-column prose split into a grid (detected via row coherence and column uniformity)
+- Repeated page elements (headers/footers detected as tables on every page)
+- Low-vocabulary repetitive content (same few words in every row)
+
+**Signature:**
+
+```elixir
+@spec is_well_formed_table(grid) :: {:ok, term()} | {:error, term()}
+def is_well_formed_table(grid)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `grid` | `list(list(String.t()))` | Yes | The grid |
+
+**Returns:** `boolean()`
+
+
+---
+
+#### extract_text_from_pdf()
+
+**Signature:**
+
+```elixir
+@spec extract_text_from_pdf(pdf_bytes) :: {:ok, term()} | {:error, term()}
+def extract_text_from_pdf(pdf_bytes)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `pdf_bytes` | `binary()` | Yes | The pdf bytes |
+
+**Returns:** `String.t()`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### extract_text_from_pdf_with_password()
+
+**Signature:**
+
+```elixir
+@spec extract_text_from_pdf_with_password(pdf_bytes, password) :: {:ok, term()} | {:error, term()}
+def extract_text_from_pdf_with_password(pdf_bytes, password)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `pdf_bytes` | `binary()` | Yes | The pdf bytes |
+| `password` | `String.t()` | Yes | The password |
+
+**Returns:** `String.t()`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### extract_text_from_pdf_with_passwords()
+
+**Signature:**
+
+```elixir
+@spec extract_text_from_pdf_with_passwords(pdf_bytes, passwords) :: {:ok, term()} | {:error, term()}
+def extract_text_from_pdf_with_passwords(pdf_bytes, passwords)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `pdf_bytes` | `binary()` | Yes | The pdf bytes |
+| `passwords` | `list(String.t())` | Yes | The passwords |
+
+**Returns:** `String.t()`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### extract_text_and_metadata_from_pdf_document()
+
+Extract text and metadata from PDF document in a single pass.
+
+This is an optimized function that extracts both text and metadata in one pass
+through the document, avoiding redundant document parsing. It combines the
+functionality of `extract_text_from_pdf_document` and
+`extract_metadata_from_document` into a single unified operation.
+
+**Returns:**
+
+A tuple containing:
+- The extracted text content (String)
+- Optional page boundaries when page tracking is enabled (Vec<PageBoundary>)
+- Optional per-page content when extract_pages is enabled (Vec<PageContent>)
+- Complete extraction metadata (PdfExtractionMetadata)
+
+# Performance
+
+This function is optimized for single-pass extraction. It performs all document
+scanning in one iteration, avoiding redundant pdfium operations compared to
+calling text and metadata extraction separately.
+
+**Signature:**
+
+```elixir
+@spec extract_text_and_metadata_from_pdf_document(document, extraction_config) :: {:ok, term()} | {:error, term()}
+def extract_text_and_metadata_from_pdf_document(document, extraction_config)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `document` | `PdfDocument` | Yes | The PDF document to extract from |
+| `extraction_config` | `ExtractionConfig | nil` | No | Optional extraction configuration for hierarchy and page tracking |
+
+**Returns:** `PdfUnifiedExtractionResult`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### extract_text_from_pdf_document()
+
+Extract text from PDF document with optional page boundary tracking.
+
+**Returns:**
+
+A tuple containing:
+- The extracted text content (String)
+- Optional page boundaries when page tracking is enabled (Vec<PageBoundary>)
+- Optional per-page content when extract_pages is enabled (Vec<PageContent>)
+
+# Implementation Details
+
+Uses lazy page-by-page iteration to reduce memory footprint. Pages are processed
+one at a time and released after extraction, rather than accumulating all pages
+in memory. This approach saves 40-50MB for large documents while improving
+performance by 15-25% through reduced upfront work.
+
+When page_config is None, uses fast path with minimal overhead.
+When page_config is Some, tracks byte offsets using .len() for O(1) performance (UTF-8 valid boundaries).
+
+**Signature:**
+
+```elixir
+@spec extract_text_from_pdf_document(document, page_config, extraction_config) :: {:ok, term()} | {:error, term()}
+def extract_text_from_pdf_document(document, page_config, extraction_config)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `document` | `PdfDocument` | Yes | The PDF document to extract text from |
+| `page_config` | `PageConfig | nil` | No | Optional page configuration for boundary tracking and page markers |
+| `extraction_config` | `ExtractionConfig | nil` | No | Optional extraction configuration for hierarchy detection |
+
+**Returns:** `PdfTextExtractionResult`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### serialize_to_toon()
+
+Serialize an `ExtractionResult` to TOON (Token-Oriented Object Notation).
+
+TOON is a token-efficient alternative to JSON for LLM prompts.
+Losslessly convertible to/from JSON but uses fewer tokens.
+
+**Signature:**
+
+```elixir
+@spec serialize_to_toon(result) :: {:ok, term()} | {:error, term()}
+def serialize_to_toon(result)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `result` | `ExtractionResult` | Yes | The extraction result |
+
+**Returns:** `String.t()`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+#### serialize_to_json()
+
+Serialize an `ExtractionResult` to pretty-printed JSON.
+
+**Signature:**
+
+```elixir
+@spec serialize_to_json(result) :: {:ok, term()} | {:error, term()}
+def serialize_to_json(result)
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `result` | `ExtractionResult` | Yes | The extraction result |
+
+**Returns:** `String.t()`
+
+**Errors:** Returns `{:error, reason}`
+
+
+---
+
+### Types
+
+#### AccelerationConfig
+
+Hardware acceleration configuration for ONNX Runtime models.
+
+Controls which execution provider (CPU, CoreML, CUDA, TensorRT) is used
+for inference in layout detection and embedding generation.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `provider` | `ExecutionProviderType` | `:auto` | Execution provider to use for ONNX inference. |
+| `device_id` | `integer()` | — | GPU device ID (for CUDA/TensorRT). Ignored for CPU/CoreML/Auto. |
+
+
+---
+
+#### AnchorProperties
+
+Properties for anchored drawings.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `behind_doc` | `boolean()` | — | Behind doc |
+| `layout_in_cell` | `boolean()` | — | Layout in cell |
+| `relative_height` | `integer() | nil` | `nil` | Relative height |
+| `position_h` | `Position | nil` | `nil` | Position h (position) |
+| `position_v` | `Position | nil` | `nil` | Position v (position) |
+| `wrap_type` | `WrapType` | `:none` | Wrap type (wrap type) |
+
+
+---
+
+#### ApiDoc
+
+OpenAPI documentation structure.
+
+Defines all endpoints, request/response schemas, and examples
+for the Kreuzberg document extraction API.
+
+
+---
+
+#### ApiError
+
+API-specific error wrapper.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `status` | `StatusCode` | — | HTTP status code |
+| `body` | `ErrorResponse` | — | Error response body |
+
+##### Functions
+
+###### validation()
+
+Create a validation error (400).
+
+**Signature:**
+
+```elixir
+def validation(error)
+```
+
+###### unprocessable()
+
+Create an unprocessable entity error (422).
+
+**Signature:**
+
+```elixir
+def unprocessable(error)
+```
+
+###### internal()
+
+Create an internal server error (500).
+
+**Signature:**
+
+```elixir
+def internal(error)
+```
+
+###### bad_gateway()
+
+Create a bad gateway error (502).
+
+Use when an upstream service (e.g., model download from HuggingFace) fails.
+
+**Signature:**
+
+```elixir
+def bad_gateway(error)
+```
+
+###### into_response()
+
+**Signature:**
+
+```elixir
+def into_response()
+```
+
+###### from()
+
+**Signature:**
+
+```elixir
+def from(error)
+```
+
+
+---
+
+#### ApiSizeLimits
+
+API server size limit configuration.
+
+Controls maximum sizes for request bodies and multipart uploads.
+Default limits are set to 100 MB to accommodate typical document processing workloads.
+
+# Default Values
+
+- `max_request_body_bytes`: 100 MB (104,857,600 bytes)
+- `max_multipart_field_bytes`: 100 MB (104,857,600 bytes)
+
+# Configuration via Environment Variables
+
+You can override the defaults using these environment variables:
+
+```bash
+# Modern approach (in bytes):
+export KREUZBERG_MAX_REQUEST_BODY_BYTES=104857600     # 100 MB
+export KREUZBERG_MAX_MULTIPART_FIELD_BYTES=104857600  # 100 MB
+```
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `max_request_body_bytes` | `integer()` | — | Maximum size of the entire request body in bytes. This applies to the total size of all uploaded files and form data in a single request. Default: 100 MB (104,857,600 bytes). |
+| `max_multipart_field_bytes` | `integer()` | — | Maximum size of a single multipart field in bytes. This applies to individual files in a multipart upload. Default: 100 MB (104,857,600 bytes). |
+
+##### Functions
+
+###### default()
+
+**Signature:**
+
+```elixir
+def default()
+```
+
+###### from_mb()
+
+Create size limits from MB values (convenience method).
+
+**Signature:**
+
+```elixir
+def from_mb(max_request_body_mb, max_multipart_field_mb)
+```
+
+
+---
+
+#### ApiState
+
+API server state.
+
+Holds the default extraction configuration loaded from config file
+(via discovery or explicit path). Per-request configs override these defaults.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `default_config` | `ExtractionConfig` | — | Default extraction configuration |
+| `extraction_service` | `Mutex` | — | Tower service for extraction requests. Wrapped in `Arc<Mutex>` because `BoxCloneService` is `Send` but not `Sync`, while `ApiState` must be `Clone + Sync` for Axum's state requirement. The lock is held only long enough to clone the service. |
+
+
+---
+
+#### ArchiveEntry
+
+A single file extracted from an archive.
+
+When archives (ZIP, TAR, 7Z, GZIP) are extracted with recursive extraction
+enabled, each processable file produces its own full `ExtractionResult`.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `path` | `String.t()` | — | Archive-relative file path (e.g. "folder/document.pdf"). |
+| `mime_type` | `String.t()` | — | Detected MIME type of the file. |
+| `result` | `ExtractionResult` | — | Full extraction result for this file. |
+
+
+---
+
+#### ArchiveMetadata
+
+Archive (ZIP/TAR/7Z) metadata.
+
+Extracted from compressed archive files containing file lists and size information.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `format` | `Str` | — | Archive format ("ZIP", "TAR", "7Z", etc.) |
+| `file_count` | `integer()` | — | Total number of files in the archive |
+| `file_list` | `list(String.t())` | `[]` | List of file paths within the archive |
+| `total_size` | `integer()` | — | Total uncompressed size in bytes |
+| `compressed_size` | `integer() | nil` | `nil` | Compressed size in bytes (if available) |
+
+
+---
+
+#### Attributes
+
+Element attributes in Djot.
+
+Represents the attributes attached to elements using {.class #id key="value"} syntax.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `id` | `String.t() | nil` | `nil` | Element ID (#identifier) |
+| `classes` | `list(String.t())` | `[]` | CSS classes (.class1 .class2) |
+| `key_values` | `list(StringString)` | `[]` | Key-value pairs (key="value") |
+
+
+---
+
+#### BBox
+
+Bounding box in original image coordinates (x1, y1) top-left, (x2, y2) bottom-right.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `x1` | `float()` | — | X1 |
+| `y1` | `float()` | — | Y1 |
+| `x2` | `float()` | — | X2 |
+| `y2` | `float()` | — | Y2 |
+
+##### Functions
+
+###### width()
+
+**Signature:**
+
+```elixir
+def width()
+```
+
+###### height()
+
+**Signature:**
+
+```elixir
+def height()
+```
+
+###### area()
+
+**Signature:**
+
+```elixir
+def area()
+```
+
+###### center()
+
+**Signature:**
+
+```elixir
+def center()
+```
+
+###### intersection_area()
+
+Area of intersection with another bounding box.
+
+**Signature:**
+
+```elixir
+def intersection_area(other)
+```
+
+###### iou()
+
+Intersection over Union with another bounding box.
+
+**Signature:**
+
+```elixir
+def iou(other)
+```
+
+###### containment_of()
+
+Fraction of `other` that is contained within `self`.
+Returns 0.0..=1.0 where 1.0 means `other` is fully inside `self`.
+
+**Signature:**
+
+```elixir
+def containment_of(other)
+```
+
+###### page_coverage()
+
+Fraction of page area this bbox covers.
+
+**Signature:**
+
+```elixir
+def page_coverage(page_width, page_height)
+```
+
+###### fmt()
+
+**Signature:**
+
+```elixir
+def fmt(f)
+```
+
+
+---
+
+#### BatchExtractFilesParams
+
+Request parameters for batch file extraction.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `paths` | `list(String.t())` | — | Paths to files to extract |
+| `config` | `term() | nil` | `nil` | Extraction configuration (JSON object) |
+| `pdf_password` | `String.t() | nil` | `nil` | Password for encrypted PDFs |
+| `file_configs` | `list(term() | nil) | nil` | `nil` | Per-file extraction configuration overrides (parallel array to paths). Each entry is either null (use default) or a FileExtractionConfig JSON object. |
+| `response_format` | `String.t() | nil` | `nil` | Wire format for the response: "json" (default) or "toon" |
+
+
+---
+
+#### BatchItemResult
+
+Batch item result for processing multiple files
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `file_path` | `String.t()` | — | File path |
+| `success` | `boolean()` | — | Success |
+| `result` | `OcrExtractionResult | nil` | `nil` | Result (ocr extraction result) |
+| `error` | `String.t() | nil` | `nil` | Error |
+
+
+---
+
+#### BatchProcessor
+
+Batch processor that manages object pools for optimized extraction.
+
+This struct manages the lifecycle of reusable object pools used during
+batch extraction. Pools are created lazily on first use and reused across
+all documents processed by this batch processor.
+
+# Lazy Initialization
+
+Pools are initialized on demand to reduce memory usage for applications
+that may not use batch processing immediately or at all.
+
+##### Functions
+
+###### with_config()
+
+Create a new batch processor with custom pool configuration.
+
+Pools are not created immediately but lazily on first access.
+
+**Returns:**
+
+A new `BatchProcessor` configured with the provided settings.
+
+**Signature:**
+
+```elixir
+def with_config(config)
+```
+
+###### with_pool_hint()
+
+Create a batch processor with pool sizes optimized for a specific document.
+
+This method uses a `PoolSizeHint` (derived from file size and MIME type)
+to create a batch processor with appropriately sized pools. This reduces
+memory waste by tailoring pool allocation to actual document complexity.
+
+**Returns:**
+
+A new `BatchProcessor` configured with the hint-based pool sizes
+
+**Signature:**
+
+```elixir
+def with_pool_hint(hint)
+```
+
+###### string_pool()
+
+Get a reference to the string buffer pool.
+
+Creates the pool lazily on first access.
+Useful for custom pooling implementations that need direct pool access.
+
+**Signature:**
+
+```elixir
+def string_pool()
+```
+
+###### byte_pool()
+
+Get a reference to the byte buffer pool.
+
+Creates the pool lazily on first access.
+Useful for custom pooling implementations that need direct pool access.
+
+**Signature:**
+
+```elixir
+def byte_pool()
+```
+
+###### config()
+
+Get the current configuration.
+
+**Signature:**
+
+```elixir
+def config()
+```
+
+###### string_pool_size()
+
+Get the number of pooled string buffers currently available.
+
+**Signature:**
+
+```elixir
+def string_pool_size()
+```
+
+###### byte_pool_size()
+
+Get the number of pooled byte buffers currently available.
+
+**Signature:**
+
+```elixir
+def byte_pool_size()
+```
+
+###### clear_pools()
+
+Clear all pooled objects, forcing new allocations on next acquire.
+
+Useful for memory-constrained environments or to reclaim memory
+after processing large batches.
+
+**Signature:**
+
+```elixir
+def clear_pools()
+```
+
+###### default()
+
+**Signature:**
+
+```elixir
+def default()
+```
+
+
+---
+
+#### BatchProcessorConfig
+
+Configuration for batch processing with pooling optimizations.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `string_pool_size` | `integer()` | `10` | Maximum number of string buffers to maintain in the pool |
+| `string_buffer_capacity` | `integer()` | `8192` | Initial capacity for pooled string buffers in bytes |
+| `byte_pool_size` | `integer()` | `10` | Maximum number of byte buffers to maintain in the pool |
+| `byte_buffer_capacity` | `integer()` | `65536` | Initial capacity for pooled byte buffers in bytes |
+| `max_concurrent` | `integer() | nil` | `nil` | Maximum concurrent extractions (for concurrency control) |
+
+##### Functions
+
+###### default()
+
+**Signature:**
+
+```elixir
+def default()
+```
+
+
+---
+
+#### BibtexExtractor
+
+BibTeX bibliography extractor.
+
+Parses BibTeX files and extracts structured bibliography data including
+entries, authors, publication years, and entry type distribution.
+
+##### Functions
+
+###### default()
+
+**Signature:**
+
+```elixir
+def default()
+```
+
+###### name()
+
+**Signature:**
+
+```elixir
+def name()
+```
+
+###### version()
+
+**Signature:**
+
+```elixir
+def version()
+```
+
+###### initialize()
+
+**Signature:**
+
+```elixir
+def initialize()
+```
+
+###### shutdown()
+
+**Signature:**
+
+```elixir
+def shutdown()
+```
+
+###### description()
+
+**Signature:**
+
+```elixir
+def description()
+```
+
+###### author()
+
+**Signature:**
+
+```elixir
+def author()
+```
+
+###### extract_bytes()
+
+**Signature:**
+
+```elixir
+def extract_bytes(content, mime_type, config)
+```
+
+###### supported_mime_types()
+
+**Signature:**
+
+```elixir
+def supported_mime_types()
+```
+
+###### priority()
+
+**Signature:**
+
+```elixir
+def priority()
+```
+
+
+---
+
+#### BibtexMetadata
+
+BibTeX bibliography metadata.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `entry_count` | `integer()` | — | Number of entry |
+| `citation_keys` | `list(String.t())` | `[]` | Citation keys |
+| `authors` | `list(String.t())` | `[]` | Authors |
+| `year_range` | `YearRange | nil` | `nil` | Year range (year range) |
+| `entry_types` | `map() | nil` | `%{}` | Entry types |
+
+
+---
+
+#### BorderStyle
+
+A single border specification.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `style` | `String.t()` | — | Style |
+| `size` | `integer() | nil` | `nil` | Size in bytes |
+| `color` | `String.t() | nil` | `nil` | Color |
+| `space` | `integer() | nil` | `nil` | Space |
+
+
+---
+
+#### BoundingBox
+
+Bounding box coordinates for element positioning.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `x0` | `float()` | — | Left x-coordinate |
+| `y0` | `float()` | — | Bottom y-coordinate |
+| `x1` | `float()` | — | Right x-coordinate |
+| `y1` | `float()` | — | Top y-coordinate |
+
+
+---
+
+#### ByteBufferPool
+
+Convenience type alias for a pooled Vec<u8>.
+
+
+---
+
+#### CacheClearResponse
+
+Cache clear response.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `directory` | `String.t()` | — | Cache directory path |
+| `removed_files` | `integer()` | — | Number of files removed |
+| `freed_mb` | `float()` | — | Space freed in MB |
+
+
+---
+
+#### CacheStats
+
+Cache statistics.
+
+Provides information about the extraction result cache,
+including size, file count, and age distribution.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `total_files` | `integer()` | — | Total number of cached files |
+| `total_size_mb` | `float()` | — | Total cache size in megabytes |
+| `available_space_mb` | `float()` | — | Available disk space in megabytes |
+| `oldest_file_age_days` | `float()` | — | Age of the oldest cached file in days |
+| `newest_file_age_days` | `float()` | — | Age of the newest cached file in days |
+
+
+---
+
+#### CacheStatsResponse
+
+Cache statistics response.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `directory` | `String.t()` | — | Cache directory path |
+| `total_files` | `integer()` | — | Total number of cache files |
+| `total_size_mb` | `float()` | — | Total cache size in MB |
+| `available_space_mb` | `float()` | — | Available disk space in MB |
+| `oldest_file_age_days` | `float()` | — | Age of oldest file in days |
+| `newest_file_age_days` | `float()` | — | Age of newest file in days |
+
+
+---
+
+#### CacheWarmParams
+
+Request parameters for cache warm (model download).
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `all_embeddings` | `boolean()` | — | Download all embedding model presets |
+| `embedding_model` | `String.t() | nil` | `nil` | Specific embedding preset name to download (e.g. "balanced", "speed", "quality") |
+
+
+---
+
+#### CancellationToken
+
+A lightweight, cloneable cancellation token.
+
+Create one with `CancellationToken.new`, pass clones to the extraction
+call (via `ExtractionConfig.cancel_token`) and to the caller. Call
+`CancellationToken.cancel` from the caller side when the operation
+should be aborted. The extraction code polls
+`CancellationToken.is_cancelled` at safe checkpoints and returns
+`KreuzbergError.Cancelled` if set.
+
+Cloning is cheap (increments the `Arc` reference count only).
+
+##### Functions
+
+###### cancel()
+
+Signal cancellation.
+
+All clones of this token will observe `is_cancelled` returning `true`
+on their next check. This operation is idempotent.
+
+**Signature:**
+
+```elixir
+def cancel()
+```
+
+###### is_cancelled()
+
+Returns `true` if `cancel` has been called on any clone of this token.
+
+**Signature:**
+
+```elixir
+def is_cancelled()
+```
+
+
+---
+
+#### CellBBox
+
+A cell bounding box within the reconstructed table grid.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `x1` | `float()` | — | X1 |
+| `y1` | `float()` | — | Y1 |
+| `x2` | `float()` | — | X2 |
+| `y2` | `float()` | — | Y2 |
+
+
+---
+
+#### CellBorders
+
+Per-cell borders (4 sides).
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `top` | `BorderStyle | nil` | `nil` | Top (border style) |
+| `bottom` | `BorderStyle | nil` | `nil` | Bottom (border style) |
+| `left` | `BorderStyle | nil` | `nil` | Left (border style) |
+| `right` | `BorderStyle | nil` | `nil` | Right (border style) |
+
+
+---
+
+#### CellMargins
+
+Cell margins (used for both table-level defaults and per-cell overrides).
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `top` | `integer() | nil` | `nil` | Top |
+| `bottom` | `integer() | nil` | `nil` | Bottom |
+| `left` | `integer() | nil` | `nil` | Left |
+| `right` | `integer() | nil` | `nil` | Right |
+
+
+---
+
+#### CellProperties
+
+Cell-level properties from `<w:tcPr>`.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `width` | `TableWidth | nil` | `nil` | Width (table width) |
+| `grid_span` | `integer() | nil` | `nil` | Grid span |
+| `v_merge` | `VerticalMerge | nil` | `nil` | V merge (vertical merge) |
+| `borders` | `CellBorders | nil` | `nil` | Borders (cell borders) |
+| `shading` | `CellShading | nil` | `nil` | Shading (cell shading) |
+| `margins` | `CellMargins | nil` | `nil` | Margins (cell margins) |
+| `vertical_align` | `String.t() | nil` | `nil` | Vertical align |
+| `text_direction` | `String.t() | nil` | `nil` | Text direction |
+| `no_wrap` | `boolean()` | — | No wrap |
+
+
+---
+
+#### CellShading
+
+Cell shading/background.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `fill` | `String.t() | nil` | `nil` | Fill |
+| `color` | `String.t() | nil` | `nil` | Color |
+| `val` | `String.t() | nil` | `nil` | Val |
+
+
+---
+
+#### CfbReader
+
+##### Functions
+
+###### from_bytes()
+
+Open a CFB compound file from raw bytes.
+
+**Signature:**
+
+```elixir
+def from_bytes(bytes)
+```
+
+
+---
+
+#### CharData
+
+Character information extracted from PDF with font metrics.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `text` | `String.t()` | — | The character text content |
+| `x` | `float()` | — | X position in PDF units |
+| `y` | `float()` | — | Y position in PDF units |
+| `font_size` | `float()` | — | Font size in points |
+| `width` | `float()` | — | Character width in PDF units |
+| `height` | `float()` | — | Character height in PDF units |
+| `is_bold` | `boolean()` | — | Whether the font is bold (from pdfium force-bold flag) |
+| `is_italic` | `boolean()` | — | Whether the font is italic |
+| `baseline_y` | `float()` | — | Baseline Y position (from character origin, falls back to bounds bottom) |
+
+
+---
+
+#### Chunk
+
+A text chunk with optional embedding and metadata.
+
+Chunks are created when chunking is enabled in `ExtractionConfig`. Each chunk
+contains the text content, optional embedding vector (if embedding generation
+is configured), and metadata about its position in the document.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `content` | `String.t()` | — | The text content of this chunk. |
+| `chunk_type` | `ChunkType` | — | Semantic structural classification of this chunk. Assigned by the heuristic classifier based on content patterns and heading context. Defaults to `ChunkType.Unknown` when no rule matches. |
+| `embedding` | `list(float()) | nil` | `nil` | Optional embedding vector for this chunk. Only populated when `EmbeddingConfig` is provided in chunking configuration. The dimensionality depends on the chosen embedding model. |
+| `metadata` | `ChunkMetadata` | — | Metadata about this chunk's position and properties. |
+
+
+---
+
+#### ChunkMetadata
+
+Metadata about a chunk's position in the original document.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `byte_start` | `integer()` | — | Byte offset where this chunk starts in the original text (UTF-8 valid boundary). |
+| `byte_end` | `integer()` | — | Byte offset where this chunk ends in the original text (UTF-8 valid boundary). |
+| `token_count` | `integer() | nil` | `nil` | Number of tokens in this chunk (if available). This is calculated by the embedding model's tokenizer if embeddings are enabled. |
+| `chunk_index` | `integer()` | — | Zero-based index of this chunk in the document. |
+| `total_chunks` | `integer()` | — | Total number of chunks in the document. |
+| `first_page` | `integer() | nil` | `nil` | First page number this chunk spans (1-indexed). Only populated when page tracking is enabled in extraction configuration. |
+| `last_page` | `integer() | nil` | `nil` | Last page number this chunk spans (1-indexed, equal to first_page for single-page chunks). Only populated when page tracking is enabled in extraction configuration. |
+| `heading_context` | `HeadingContext | nil` | `nil` | Heading context when using Markdown chunker. Contains the heading hierarchy this chunk falls under. Only populated when `ChunkerType.Markdown` is used. |
+
+
+---
+
+#### ChunkRequest
+
+Chunk request with text and configuration.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `text` | `String.t()` | — | Text to chunk (must not be empty) |
+| `config` | `ChunkingConfigRequest | nil` | `nil` | Optional chunking configuration |
+| `chunker_type` | `String.t()` | — | Chunker type (text, markdown, yaml, or semantic) |
+
+
+---
+
+#### ChunkResponse
+
+Chunk response with chunks and metadata.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `chunks` | `list(ChunkItem)` | — | List of chunks |
+| `chunk_count` | `integer()` | — | Total number of chunks |
+| `config` | `ChunkingConfigResponse` | — | Configuration used for chunking |
+| `input_size_bytes` | `integer()` | — | Input text size in bytes |
+| `chunker_type` | `String.t()` | — | Chunker type used for chunking |
+
+
+---
+
+#### ChunkTextParams
+
+Request parameters for text chunking.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `text` | `String.t()` | — | Text content to split into chunks |
+| `max_characters` | `integer() | nil` | `nil` | Maximum characters per chunk (default: 2000) |
+| `overlap` | `integer() | nil` | `nil` | Number of overlapping characters between chunks (default: 100) |
+| `chunker_type` | `String.t() | nil` | `nil` | Chunker type: "text", "markdown", "yaml", or "semantic" (default: "text") |
+| `topic_threshold` | `float() | nil` | `nil` | Topic threshold for semantic chunking (0.0-1.0, default: 0.75) |
+
+
+---
+
+#### ChunkingConfig
+
+Chunking configuration.
+
+Configures text chunking for document content, including chunk size,
+overlap, trimming behavior, and optional embeddings.
+
+Use `..the default constructor` when constructing to allow for future field additions:
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `max_characters` | `integer()` | `1000` | Maximum size per chunk (in units determined by `sizing`). When `sizing` is `Characters` (default), this is the max character count. When using token-based sizing, this is the max token count. Default: 1000 |
+| `overlap` | `integer()` | `200` | Overlap between chunks (in units determined by `sizing`). Default: 200 |
+| `trim` | `boolean()` | `true` | Whether to trim whitespace from chunk boundaries. Default: true |
+| `chunker_type` | `ChunkerType` | `:text` | Type of chunker to use (Text or Markdown). Default: Text |
+| `embedding` | `EmbeddingConfig | nil` | `nil` | Optional embedding configuration for chunk embeddings. |
+| `preset` | `String.t() | nil` | `nil` | Use a preset configuration (overrides individual settings if provided). |
+| `sizing` | `ChunkSizing` | `:characters` | How to measure chunk size. Default: `Characters` (Unicode character count). Enable `chunking-tiktoken` or `chunking-tokenizers` features for token-based sizing. |
+| `prepend_heading_context` | `boolean()` | `false` | When `True` and `chunker_type` is `Markdown`, prepend the heading hierarchy path (e.g. `"# Title > ## Section\n\n"`) to each chunk's content string. This is useful for RAG pipelines where each chunk needs self-contained context about its position in the document structure. Default: `False` |
+| `topic_threshold` | `float() | nil` | `nil` | Optional cosine similarity threshold for semantic topic boundary detection. Only used when `chunker_type` is `Semantic` and an `EmbeddingConfig` is provided. You almost never need to set this. When omitted, defaults to `0.75` which works well for most documents. Lower values detect more topic boundaries (more, smaller chunks); higher values detect fewer. Range: `0.0..=1.0`. |
+
+##### Functions
+
+###### with_chunker_type()
+
+Set the chunker type.
+
+**Signature:**
+
+```elixir
+def with_chunker_type(chunker_type)
+```
+
+###### with_sizing()
+
+Set the sizing strategy.
+
+**Signature:**
+
+```elixir
+def with_sizing(sizing)
+```
+
+###### with_prepend_heading_context()
+
+Enable or disable prepending heading context to chunk content.
+
+**Signature:**
+
+```elixir
+def with_prepend_heading_context(prepend)
+```
+
+###### with_topic_threshold()
+
+Set the cosine similarity threshold for semantic topic boundary detection.
+
+**Panics:**
+
+Panics if `threshold` is outside `[0.0, 1.0]`.
+
+**Signature:**
+
+```elixir
+def with_topic_threshold(threshold)
+```
+
+###### default()
+
+**Signature:**
+
+```elixir
+def default()
+```
+
+
+---
+
+#### ChunkingProcessor
+
+Post-processor that chunks text in document content.
+
+This processor:
+- Runs in the Middle processing stage
+- Only processes when `config.chunking` is configured
+- Stores chunks in `result.chunks`
+- Uses configurable chunk size and overlap
+
+##### Functions
+
+###### name()
+
+**Signature:**
+
+```elixir
+def name()
+```
+
+###### version()
+
+**Signature:**
+
+```elixir
+def version()
+```
+
+###### initialize()
+
+**Signature:**
+
+```elixir
+def initialize()
+```
+
+###### shutdown()
+
+**Signature:**
+
+```elixir
+def shutdown()
+```
+
+###### process()
+
+**Signature:**
+
+```elixir
+def process(result, config)
+```
+
+###### processing_stage()
+
+**Signature:**
+
+```elixir
+def processing_stage()
+```
+
+###### should_process()
+
+**Signature:**
+
+```elixir
+def should_process(result, config)
+```
+
+###### estimated_duration_ms()
+
+**Signature:**
+
+```elixir
+def estimated_duration_ms(result)
+```
+
+
+---
+
+#### ChunkingResult
+
+Result of a text chunking operation.
+
+Contains the generated chunks and metadata about the chunking.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `chunks` | `list(Chunk)` | — | List of text chunks |
+| `chunk_count` | `integer()` | — | Total number of chunks generated |
+
+
+---
+
+#### CitationExtractor
+
+Citation format extractor for RIS, PubMed/MEDLINE, and EndNote XML formats.
+
+Parses citation files and extracts structured bibliography data including
+entries, authors, publication years, and format-specific metadata.
+
+##### Functions
+
+###### default()
+
+**Signature:**
+
+```elixir
+def default()
+```
+
+###### name()
+
+**Signature:**
+
+```elixir
+def name()
+```
+
+###### version()
+
+**Signature:**
+
+```elixir
+def version()
+```
+
+###### initialize()
+
+**Signature:**
+
+```elixir
+def initialize()
+```
+
+###### shutdown()
+
+**Signature:**
+
+```elixir
+def shutdown()
+```
+
+###### description()
+
+**Signature:**
+
+```elixir
+def description()
+```
+
+###### author()
+
+**Signature:**
+
+```elixir
+def author()
+```
+
+###### extract_bytes()
+
+**Signature:**
+
+```elixir
+def extract_bytes(content, mime_type, config)
+```
+
+###### supported_mime_types()
+
+**Signature:**
+
+```elixir
+def supported_mime_types()
+```
+
+###### priority()
+
+**Signature:**
+
+```elixir
+def priority()
+```
+
+
+---
+
+#### CitationMetadata
+
+Citation file metadata (RIS, PubMed, EndNote).
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `citation_count` | `integer()` | — | Number of citation |
+| `format` | `String.t() | nil` | `nil` | Format |
+| `authors` | `list(String.t())` | `[]` | Authors |
+| `year_range` | `YearRange | nil` | `nil` | Year range (year range) |
+| `dois` | `list(String.t())` | `[]` | Dois |
+| `keywords` | `list(String.t())` | `[]` | Keywords |
+
+
+---
+
+#### CodeExtractor
+
+Source code extractor using tree-sitter language pack.
+
+Detects the programming language from the file extension or shebang line,
+then uses tree-sitter to parse and extract structural information.
+
+##### Functions
+
+###### default()
+
+**Signature:**
+
+```elixir
+def default()
+```
+
+###### name()
+
+**Signature:**
+
+```elixir
+def name()
+```
+
+###### version()
+
+**Signature:**
+
+```elixir
+def version()
+```
+
+###### initialize()
+
+**Signature:**
+
+```elixir
+def initialize()
+```
+
+###### shutdown()
+
+**Signature:**
+
+```elixir
+def shutdown()
+```
+
+###### description()
+
+**Signature:**
+
+```elixir
+def description()
+```
+
+###### author()
+
+**Signature:**
+
+```elixir
+def author()
+```
+
+###### extract_bytes()
+
+**Signature:**
+
+```elixir
+def extract_bytes(content, mime_type, config)
+```
+
+###### extract_file()
+
+**Signature:**
+
+```elixir
+def extract_file(path, mime_type, config)
+```
+
+###### supported_mime_types()
+
+**Signature:**
+
+```elixir
+def supported_mime_types()
+```
+
+###### priority()
+
+**Signature:**
+
+```elixir
+def priority()
+```
+
+###### as_sync_extractor()
+
+**Signature:**
+
+```elixir
+def as_sync_extractor()
+```
+
+###### extract_sync()
+
+**Signature:**
+
+```elixir
+def extract_sync(content, mime_type, config)
+```
+
+
+---
+
+#### ColorScheme
+
+Color scheme containing all 12 standard Office theme colors.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `name` | `String.t()` | — | Color scheme name. |
+| `dk1` | `ThemeColor | nil` | `nil` | Dark 1 (dark background) color. |
+| `lt1` | `ThemeColor | nil` | `nil` | Light 1 (light background) color. |
+| `dk2` | `ThemeColor | nil` | `nil` | Dark 2 color. |
+| `lt2` | `ThemeColor | nil` | `nil` | Light 2 color. |
+| `accent1` | `ThemeColor | nil` | `nil` | Accent color 1. |
+| `accent2` | `ThemeColor | nil` | `nil` | Accent color 2. |
+| `accent3` | `ThemeColor | nil` | `nil` | Accent color 3. |
+| `accent4` | `ThemeColor | nil` | `nil` | Accent color 4. |
+| `accent5` | `ThemeColor | nil` | `nil` | Accent color 5. |
+| `accent6` | `ThemeColor | nil` | `nil` | Accent color 6. |
+| `hlink` | `ThemeColor | nil` | `nil` | Hyperlink color. |
+| `fol_hlink` | `ThemeColor | nil` | `nil` | Followed hyperlink color. |
+
+
+---
+
+#### ColumnLayout
+
+Column layout configuration.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `count` | `integer() | nil` | `nil` | Number of columns. |
+| `space_twips` | `integer() | nil` | `nil` | Space between columns in twips. |
+| `equal_width` | `boolean() | nil` | `nil` | Whether columns have equal width. |
+
+
+---
+
+#### CommonPdfMetadata
+
+Common metadata fields extracted from a PDF.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `title` | `String.t() | nil` | `nil` | Title |
+| `subject` | `String.t() | nil` | `nil` | Subject |
+| `authors` | `list(String.t()) | nil` | `nil` | Authors |
+| `keywords` | `list(String.t()) | nil` | `nil` | Keywords |
+| `created_at` | `String.t() | nil` | `nil` | Created at |
+| `modified_at` | `String.t() | nil` | `nil` | Modified at |
+| `created_by` | `String.t() | nil` | `nil` | Created by |
+
+
+---
+
+#### ConcurrencyConfig
+
+Controls thread usage for constrained environments.
+
+Set `max_threads` to cap all internal thread pools (Rayon, ONNX Runtime
+intra-op) and batch concurrency to a single limit.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `max_threads` | `integer() | nil` | `nil` | Maximum number of threads for all internal thread pools. Caps Rayon global pool size, ONNX Runtime intra-op threads, and (when `max_concurrent_extractions` is unset) the batch concurrency semaphore. When `None`, system defaults are used. |
+
+
+---
+
+#### ContentFilterConfig
+
+Cross-extractor content filtering configuration.
+
+Controls whether "furniture" content (headers, footers, page numbers,
+watermarks, repeating text) is included in or stripped from extraction
+results. Applies across all extractors (PDF, DOCX, RTF, ODT, HTML, etc.)
+with format-specific implementation.
+
+When `nil` on `ExtractionConfig`, each extractor uses its current
+default behavior unchanged.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `include_headers` | `boolean()` | `false` | Include running headers in extraction output. - PDF: Disables top-margin furniture stripping and prevents the layout model from treating `PageHeader`-classified regions as furniture. - DOCX: Includes document headers in text output. - RTF/ODT: Headers already included; this is a no-op when true. - HTML/EPUB: Keeps `<header>` element content. Default: `False` (headers are stripped or excluded). |
+| `include_footers` | `boolean()` | `false` | Include running footers in extraction output. - PDF: Disables bottom-margin furniture stripping and prevents the layout model from treating `PageFooter`-classified regions as furniture. - DOCX: Includes document footers in text output. - RTF/ODT: Footers already included; this is a no-op when true. - HTML/EPUB: Keeps `<footer>` element content. Default: `False` (footers are stripped or excluded). |
+| `strip_repeating_text` | `boolean()` | `true` | Enable the heuristic cross-page repeating text detector. When `True` (default), text that repeats verbatim across a supermajority of pages is classified as furniture and stripped.  Disable this if brand names or repeated headings are being incorrectly removed by the heuristic. Note: when a layout-detection model is active, the model may independently classify page-header / page-footer regions as furniture on a per-page basis. To preserve those regions, set `include_headers = true` and/or `include_footers = true` in addition to disabling this flag. Primarily affects PDF extraction. Default: `True`. |
+| `include_watermarks` | `boolean()` | `false` | Include watermark text in extraction output. - PDF: Keeps watermark artifacts and arXiv identifiers. - Other formats: No effect currently. Default: `False` (watermarks are stripped). |
+
+##### Functions
+
+###### default()
+
+**Signature:**
+
+```elixir
+def default()
+```
+
+
+---
+
+#### ContributorRole
+
+JATS contributor with role.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `name` | `String.t()` | — | The name |
+| `role` | `String.t() | nil` | `nil` | Role |
+
+
+---
+
+#### CoreProperties
+
+Dublin Core metadata from docProps/core.xml
+
+Contains standard metadata fields defined by the Dublin Core standard
+and Office-specific extensions.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `title` | `String.t() | nil` | `nil` | Document title |
+| `subject` | `String.t() | nil` | `nil` | Document subject/topic |
+| `creator` | `String.t() | nil` | `nil` | Document creator/author |
+| `keywords` | `String.t() | nil` | `nil` | Keywords or tags |
+| `description` | `String.t() | nil` | `nil` | Document description/abstract |
+| `last_modified_by` | `String.t() | nil` | `nil` | User who last modified the document |
+| `revision` | `String.t() | nil` | `nil` | Revision number |
+| `created` | `String.t() | nil` | `nil` | Creation timestamp (ISO 8601) |
+| `modified` | `String.t() | nil` | `nil` | Last modification timestamp (ISO 8601) |
+| `category` | `String.t() | nil` | `nil` | Document category |
+| `content_status` | `String.t() | nil` | `nil` | Content status (Draft, Final, etc.) |
+| `language` | `String.t() | nil` | `nil` | Document language |
+| `identifier` | `String.t() | nil` | `nil` | Unique identifier |
+| `version` | `String.t() | nil` | `nil` | Document version |
+| `last_printed` | `String.t() | nil` | `nil` | Last print timestamp (ISO 8601) |
+
+
+---
+
+#### CsvExtractor
+
+CSV/TSV extractor with proper field parsing.
+
+Replaces raw text passthrough with structured CSV parsing,
+producing space-separated text output and populated `tables` field.
+
+##### Functions
+
+###### default()
+
+**Signature:**
+
+```elixir
+def default()
+```
+
+###### name()
+
+**Signature:**
+
+```elixir
+def name()
+```
+
+###### version()
+
+**Signature:**
+
+```elixir
+def version()
+```
+
+###### initialize()
+
+**Signature:**
+
+```elixir
+def initialize()
+```
+
+###### shutdown()
+
+**Signature:**
+
+```elixir
+def shutdown()
+```
+
+###### description()
+
+**Signature:**
+
+```elixir
+def description()
+```
+
+###### author()
+
+**Signature:**
+
+```elixir
+def author()
+```
+
+###### extract_bytes()
+
+**Signature:**
+
+```elixir
+def extract_bytes(content, mime_type, config)
+```
+
+###### supported_mime_types()
+
+**Signature:**
+
+```elixir
+def supported_mime_types()
+```
+
+###### priority()
+
+**Signature:**
+
+```elixir
+def priority()
+```
+
+
+---
+
+#### CsvMetadata
+
+CSV/TSV file metadata.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `row_count` | `integer()` | — | Number of row |
+| `column_count` | `integer()` | — | Number of column |
+| `delimiter` | `String.t() | nil` | `nil` | Delimiter |
+| `has_header` | `boolean()` | — | Whether header |
+| `column_types` | `list(String.t()) | nil` | `[]` | Column types |
+
+
+---
+
+#### CustomProperties
+
+Custom properties from docProps/custom.xml
+
+Maps property names to their values. Values are converted to JSON types
+based on the VT (Variant Type) specified in the XML.
+
+
+---
+
+#### DbfExtractor
+
+Extractor for dBASE (.dbf) files.
+
+Reads all records and formats them as a markdown table with
+column headers derived from field names.
+
+##### Functions
+
+###### default()
+
+**Signature:**
+
+```elixir
+def default()
+```
+
+###### name()
+
+**Signature:**
+
+```elixir
+def name()
+```
+
+###### version()
+
+**Signature:**
+
+```elixir
+def version()
+```
+
+###### initialize()
+
+**Signature:**
+
+```elixir
+def initialize()
+```
+
+###### shutdown()
+
+**Signature:**
+
+```elixir
+def shutdown()
+```
+
+###### description()
+
+**Signature:**
+
+```elixir
+def description()
+```
+
+###### author()
+
+**Signature:**
+
+```elixir
+def author()
+```
+
+###### extract_bytes()
+
+**Signature:**
+
+```elixir
+def extract_bytes(content, mime_type, config)
+```
+
+###### supported_mime_types()
+
+**Signature:**
+
+```elixir
+def supported_mime_types()
+```
+
+###### priority()
+
+**Signature:**
+
+```elixir
+def priority()
+```
+
+
+---
+
+#### DbfFieldInfo
+
+dBASE field information.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `name` | `String.t()` | — | The name |
+| `field_type` | `String.t()` | — | Field type |
+
+
+---
+
+#### DbfMetadata
+
+dBASE (DBF) file metadata.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `record_count` | `integer()` | — | Number of record |
+| `field_count` | `integer()` | — | Number of field |
+| `fields` | `list(DbfFieldInfo)` | `[]` | Fields |
+
+
+---
+
+#### DepthValidator
+
+Helper struct for validating nesting depth.
+
+##### Functions
+
+###### push()
+
+Push a level (increase depth).
+
+**Returns:**
+* `Ok(())` if depth is within limits
+* `Err(SecurityError)` if depth exceeds limit
+
+**Signature:**
+
+```elixir
+def push()
+```
+
+###### pop()
+
+Pop a level (decrease depth).
+
+**Signature:**
+
+```elixir
+def pop()
+```
+
+###### current_depth()
+
+Get current depth.
+
+**Signature:**
+
+```elixir
+def current_depth()
+```
+
+
+---
+
+#### DetectMimeTypeParams
+
+Request parameters for MIME type detection.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `path` | `String.t()` | — | Path to the file |
+| `use_content` | `boolean()` | — | Use content-based detection (default: true) |
+
+
+---
+
+#### DetectResponse
+
+MIME type detection response.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `mime_type` | `String.t()` | — | Detected MIME type |
+| `filename` | `String.t() | nil` | `nil` | Original filename (if provided) |
+
+
+---
+
+#### DetectTimings
+
+Granular timing breakdown for a single `detect()` call.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `preprocess_ms` | `float()` | — | Time spent in image preprocessing (resize, letterbox, normalize, tensor allocation). |
+| `onnx_ms` | `float()` | — | Time for the ONNX `session.run()` call (actual neural network computation). |
+| `model_total_ms` | `float()` | — | Total time from start of model call to end of raw output decoding. |
+| `postprocess_ms` | `float()` | — | Time spent in postprocessing heuristics (confidence filtering, overlap resolution). |
+
+
+---
+
+#### DetectedBoundary
+
+A detected structural boundary in the text.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `byte_offset` | `integer()` | — | Byte offset of the start of the line in the original text. |
+| `is_header` | `boolean()` | — | Whether this boundary looks like a header/section title. |
+
+
+---
+
+#### DetectionResult
+
+Page-level detection result containing all detections and page metadata.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `page_width` | `integer()` | — | Page width |
+| `page_height` | `integer()` | — | Page height |
+| `detections` | `list(LayoutDetection)` | — | Detections |
+
+
+---
+
+#### DjotContent
+
+Comprehensive Djot document structure with semantic preservation.
+
+This type captures the full richness of Djot markup, including:
+- Block-level structures (headings, lists, blockquotes, code blocks, etc.)
+- Inline formatting (emphasis, strong, highlight, subscript, superscript, etc.)
+- Attributes (classes, IDs, key-value pairs)
+- Links, images, footnotes
+- Math expressions (inline and display)
+- Tables with full structure
+
+Available when the `djot` feature is enabled.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `plain_text` | `String.t()` | — | Plain text representation for backwards compatibility |
+| `blocks` | `list(FormattedBlock)` | — | Structured block-level content |
+| `metadata` | `Metadata` | — | Metadata from YAML frontmatter |
+| `tables` | `list(Table)` | — | Extracted tables as structured data |
+| `images` | `list(DjotImage)` | — | Extracted images with metadata |
+| `links` | `list(DjotLink)` | — | Extracted links with URLs |
+| `footnotes` | `list(Footnote)` | — | Footnote definitions |
+| `attributes` | `list(StringAttributes)` | — | Attributes mapped by element identifier (if present) |
+
+
+---
+
+#### DjotExtractor
+
+Djot markup extractor with metadata and table support.
+
+Parses Djot documents with YAML frontmatter, extracting:
+- Metadata from YAML frontmatter
+- Plain text content
+- Tables as structured data
+- Document structure (headings, links, code blocks)
+
+##### Functions
+
+###### build_internal_document()
+
+Build an `InternalDocument` from jotdown events.
+
+**Signature:**
+
+```elixir
+def build_internal_document(events)
+```
+
+###### default()
+
+**Signature:**
+
+```elixir
+def default()
+```
+
+###### name()
+
+**Signature:**
+
+```elixir
+def name()
+```
+
+###### version()
+
+**Signature:**
+
+```elixir
+def version()
+```
+
+###### initialize()
+
+**Signature:**
+
+```elixir
+def initialize()
+```
+
+###### shutdown()
+
+**Signature:**
+
+```elixir
+def shutdown()
+```
+
+###### description()
+
+**Signature:**
+
+```elixir
+def description()
+```
+
+###### author()
+
+**Signature:**
+
+```elixir
+def author()
+```
+
+###### extract_bytes()
+
+**Signature:**
+
+```elixir
+def extract_bytes(content, mime_type, config)
+```
+
+###### extract_file()
+
+**Signature:**
+
+```elixir
+def extract_file(path, mime_type, config)
+```
+
+###### supported_mime_types()
+
+**Signature:**
+
+```elixir
+def supported_mime_types()
+```
+
+###### priority()
+
+**Signature:**
+
+```elixir
+def priority()
+```
+
+
+---
+
+#### DjotImage
+
+Image element in Djot.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `src` | `String.t()` | — | Image source URL or path |
+| `alt` | `String.t()` | — | Alternative text |
+| `title` | `String.t() | nil` | `nil` | Optional title |
+| `attributes` | `Attributes | nil` | `nil` | Element attributes |
+
+
+---
+
+#### DjotLink
+
+Link element in Djot.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `url` | `String.t()` | — | Link URL |
+| `text` | `String.t()` | — | Link text content |
+| `title` | `String.t() | nil` | `nil` | Optional title |
+| `attributes` | `Attributes | nil` | `nil` | Element attributes |
+
+
+---
+
+#### DocExtractionResult
+
+Result of DOC text extraction.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `text` | `String.t()` | — | Extracted text content. |
+| `metadata` | `DocMetadata` | — | Document metadata. |
+
+
+---
+
+#### DocExtractor
+
+Native DOC extractor using OLE/CFB parsing.
+
+This extractor handles Word 97-2003 binary (.doc) files without
+requiring LibreOffice, providing ~50x faster extraction.
+
+##### Functions
+
+###### default()
+
+**Signature:**
+
+```elixir
+def default()
+```
+
+###### name()
+
+**Signature:**
+
+```elixir
+def name()
+```
+
+###### version()
+
+**Signature:**
+
+```elixir
+def version()
+```
+
+###### initialize()
+
+**Signature:**
+
+```elixir
+def initialize()
+```
+
+###### shutdown()
+
+**Signature:**
+
+```elixir
+def shutdown()
+```
+
+###### description()
+
+**Signature:**
+
+```elixir
+def description()
+```
+
+###### author()
+
+**Signature:**
+
+```elixir
+def author()
+```
+
+###### extract_bytes()
+
+**Signature:**
+
+```elixir
+def extract_bytes(content, mime_type, config)
+```
+
+###### supported_mime_types()
+
+**Signature:**
+
+```elixir
+def supported_mime_types()
+```
+
+###### priority()
+
+**Signature:**
+
+```elixir
+def priority()
+```
+
+
+---
+
+#### DocMetadata
+
+Metadata extracted from DOC files.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `title` | `String.t() | nil` | `nil` | Title |
+| `subject` | `String.t() | nil` | `nil` | Subject |
+| `author` | `String.t() | nil` | `nil` | Author |
+| `last_author` | `String.t() | nil` | `nil` | Last author |
+| `created` | `String.t() | nil` | `nil` | Created |
+| `modified` | `String.t() | nil` | `nil` | Modified |
+| `revision_number` | `String.t() | nil` | `nil` | Revision number |
+
+
+---
+
+#### DocOrientationDetector
+
+Detects document page orientation using the PP-LCNet model.
+
+Thread-safe: uses unsafe pointer cast for ONNX session (same pattern as embedding engine).
+The model is downloaded from HuggingFace on first use and cached locally.
+
+##### Functions
+
+###### with_acceleration()
+
+Creates a new detector with the given cache directory and acceleration config.
+
+**Signature:**
+
+```elixir
+def with_acceleration(cache_dir, accel)
+```
+
+###### detect()
+
+Detect document page orientation.
+
+Returns the detected orientation (0°, 90°, 180°, 270°) and confidence.
+Thread-safe: can be called concurrently from multiple pages.
+
+**Signature:**
+
+```elixir
+def detect(image)
+```
+
+
+---
+
+#### DocProperties
+
+Document properties from `<wp:docPr>`.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `id` | `String.t() | nil` | `nil` | Unique identifier |
+| `name` | `String.t() | nil` | `nil` | The name |
+| `description` | `String.t() | nil` | `nil` | Human-readable description |
+
+
+---
+
+#### DocbookExtractor
+
+DocBook document extractor.
+
+Supports both DocBook 4.x (no namespace) and 5.x (with namespace) formats.
+
+##### Functions
+
+###### default()
+
+**Signature:**
+
+```elixir
+def default()
+```
+
+###### name()
+
+**Signature:**
+
+```elixir
+def name()
+```
+
+###### version()
+
+**Signature:**
+
+```elixir
+def version()
+```
+
+###### initialize()
+
+**Signature:**
+
+```elixir
+def initialize()
+```
+
+###### shutdown()
+
+**Signature:**
+
+```elixir
+def shutdown()
+```
+
+###### extract_bytes()
+
+**Signature:**
+
+```elixir
+def extract_bytes(content, mime_type, config)
+```
+
+###### supported_mime_types()
+
+**Signature:**
+
+```elixir
+def supported_mime_types()
+```
+
+###### priority()
+
+**Signature:**
+
+```elixir
+def priority()
+```
+
+
+---
+
+#### DoclingCompatDocument
+
+Document content in the docling-serve response format.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `md_content` | `String.t()` | — | Markdown content of the converted document |
+
+
+---
+
+#### DoclingCompatResponse
+
+OpenWebUI "Docling" engine response format.
+
+Returned by `POST /v1/convert/file` for docling-serve compatibility.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `document` | `DoclingCompatDocument` | — | Converted document content |
+| `status` | `String.t()` | — | Processing status |
+
+
+---
+
+#### Document
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `paragraphs` | `list(Paragraph)` | `[]` | Paragraphs |
+| `tables` | `list(Table)` | `[]` | Tables extracted from the document |
+| `headers` | `list(HeaderFooter)` | `[]` | Headers |
+| `footers` | `list(HeaderFooter)` | `[]` | Footers |
+| `footnotes` | `list(Note)` | `[]` | Footnotes |
+| `endnotes` | `list(Note)` | `[]` | Endnotes |
+| `numbering_defs` | `AHashMap` | — | Numbering defs (a hash map) |
+| `elements` | `list(DocumentElement)` | `[]` | Document elements in their original order. |
+| `style_catalog` | `StyleCatalog | nil` | `nil` | Parsed style catalog from `word/styles.xml`, if available. |
+| `theme` | `Theme | nil` | `nil` | Parsed theme from `word/theme/theme1.xml`, if available. |
+| `sections` | `list(SectionProperties)` | `[]` | Section properties parsed from `w:sectPr` elements. |
+| `drawings` | `list(Drawing)` | `[]` | Drawing objects parsed from `w:drawing` elements. |
+| `image_relationships` | `AHashMap` | — | Image relationships (rId → target path) for image extraction. |
+
+##### Functions
+
+###### resolve_heading_level()
+
+Resolve heading level for a paragraph style using the StyleCatalog.
+
+Walks the style inheritance chain to find `outline_level`.
+Falls back to string-matching on style name/ID if no StyleCatalog is available.
+Returns 1-6 (markdown heading levels).
+
+**Signature:**
+
+```elixir
+def resolve_heading_level(style_id)
+```
+
+###### extract_text()
+
+**Signature:**
+
+```elixir
+def extract_text()
+```
+
+###### to_markdown()
+
+Render the document as markdown.
+
+When `inject_placeholders` is `true`, drawings that reference an image
+emit `![alt](image)` placeholders. When `false` they are silently
+skipped, which is useful when the caller only wants text.
+
+**Signature:**
+
+```elixir
+def to_markdown(inject_placeholders)
+```
+
+###### to_plain_text()
+
+Render the document as plain text (no markdown formatting).
+
+**Signature:**
+
+```elixir
+def to_plain_text()
+```
+
+
+---
+
+#### DocumentExtractorRegistry
+
+Registry for document extractor plugins.
+
+Manages extractors with MIME type and priority-based selection.
+
+# Thread Safety
+
+The registry is thread-safe and can be accessed concurrently from multiple threads.
+
+##### Functions
+
+###### register()
+
+Register a document extractor.
+
+The extractor is registered for all MIME types it supports.
+
+**Returns:**
+
+- `Ok(())` if registration succeeded
+- `Err(...)` if initialization failed
+
+**Signature:**
+
+```elixir
+def register(extractor)
+```
+
+###### get()
+
+Get the highest priority extractor for a MIME type.
+
+**Returns:**
+
+The highest priority extractor, or an error if none found.
+
+**Signature:**
+
+```elixir
+def get(mime_type)
+```
+
+###### list()
+
+List all registered extractors.
+
+**Signature:**
+
+```elixir
+def list()
+```
+
+###### remove()
+
+Remove an extractor from the registry.
+
+**Signature:**
+
+```elixir
+def remove(name)
+```
+
+###### shutdown_all()
+
+Shutdown all extractors and clear the registry.
+
+**Signature:**
+
+```elixir
+def shutdown_all()
+```
+
+###### default()
+
+**Signature:**
+
+```elixir
+def default()
+```
+
+
+---
+
+#### DocumentNode
+
+A single node in the document tree.
+
+Each node has deterministic `id`, typed `content`, optional `parent`/`children`
+for tree structure, and metadata like page number, bounding box, and content layer.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `id` | `NodeId` | — | Deterministic identifier (hash of content + position). |
+| `content` | `NodeContent` | — | Node content — tagged enum, type-specific data only. |
+| `parent` | `integer() | nil` | `nil` | Parent node index (`None` = root-level node). |
+| `children` | `list(integer())` | — | Child node indices in reading order. |
+| `content_layer` | `ContentLayer` | — | Content layer classification. |
+| `page` | `integer() | nil` | `nil` | Page number where this node starts (1-indexed). |
+| `page_end` | `integer() | nil` | `nil` | Page number where this node ends (for multi-page tables/sections). |
+| `bbox` | `BoundingBox | nil` | `nil` | Bounding box in document coordinates. |
+| `annotations` | `list(TextAnnotation)` | — | Inline annotations (formatting, links) on this node's text content. Only meaningful for text-carrying nodes; empty for containers. |
+| `attributes` | `map() | nil` | `nil` | Format-specific key-value attributes. Extensible bag for data that doesn't warrant a typed field: CSS classes, LaTeX environment names, Excel cell formulas, slide layout names, etc. |
+
+
+---
+
+#### DocumentRelationship
+
+A resolved relationship between two nodes in the document tree.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `source` | `integer()` | — | Source node index (the referencing node). |
+| `target` | `integer()` | — | Target node index (the referenced node). |
+| `kind` | `RelationshipKind` | — | Semantic kind of the relationship. |
+
+
+---
+
+#### DocumentStructure
+
+Top-level structured document representation.
+
+A flat array of nodes with index-based parent/child references forming a tree.
+Root-level nodes have `parent: None`. Use `body_roots()` and `furniture_roots()`
+to iterate over top-level content by layer.
+
+# Validation
+
+Call `validate()` after construction to verify all node indices are in bounds
+and parent-child relationships are bidirectionally consistent.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `nodes` | `list(DocumentNode)` | `[]` | All nodes in document/reading order. |
+| `source_format` | `String.t() | nil` | `nil` | Origin format identifier (e.g. "docx", "pptx", "html", "pdf"). Allows renderers to apply format-aware heuristics when converting the document tree to output formats. |
+| `relationships` | `list(DocumentRelationship)` | `[]` | Resolved relationships between nodes (footnote refs, citations, anchor links, etc.). Populated during derivation from the internal document representation. Empty when no relationships are detected. |
+
+##### Functions
+
+###### with_capacity()
+
+Create a `DocumentStructure` with pre-allocated capacity.
+
+**Signature:**
+
+```elixir
+def with_capacity(capacity)
+```
+
+###### push_node()
+
+Push a node and return its `NodeIndex`.
+
+**Signature:**
+
+```elixir
+def push_node(node)
+```
+
+###### add_child()
+
+Add a child to an existing parent node.
+
+Updates both the parent's `children` list and the child's `parent` field.
+
+**Panics:**
+
+Panics if either index is out of bounds.
+
+**Signature:**
+
+```elixir
+def add_child(parent, child)
+```
+
+###### validate()
+
+Validate all node indices are in bounds and parent-child relationships
+are bidirectionally consistent.
+
+**Errors:**
+
+Returns a descriptive error string if validation fails.
+
+**Signature:**
+
+```elixir
+def validate()
+```
+
+###### body_roots()
+
+Iterate over root-level body nodes (content_layer == Body, parent == None).
+
+**Signature:**
+
+```elixir
+def body_roots()
+```
+
+###### furniture_roots()
+
+Iterate over root-level furniture nodes (non-Body content_layer, parent == None).
+
+**Signature:**
+
+```elixir
+def furniture_roots()
+```
+
+###### get()
+
+Get a node by index.
+
+**Signature:**
+
+```elixir
+def get(index)
+```
+
+###### len()
+
+Get the total number of nodes.
+
+**Signature:**
+
+```elixir
+def len()
+```
+
+###### is_empty()
+
+Check if the document structure is empty.
+
+**Signature:**
+
+```elixir
+def is_empty()
+```
+
+###### default()
+
+**Signature:**
+
+```elixir
+def default()
+```
+
+
+---
+
+#### DocumentStructureBuilder
+
+Builder for constructing `DocumentStructure` trees with automatic
+heading-driven section nesting.
+
+The builder maintains an internal section stack: when you push a heading,
+it automatically creates a `Group` container and nests subsequent content
+under it. Higher-level headings pop deeper sections off the stack.
+
+##### Functions
+
+###### with_capacity()
+
+Create a builder with pre-allocated node capacity.
+
+**Signature:**
+
+```elixir
+def with_capacity(capacity)
+```
+
+###### source_format()
+
+Set the source format identifier (e.g. "docx", "html", "pptx").
+
+**Signature:**
+
+```elixir
+def source_format(format)
+```
+
+###### build()
+
+Consume the builder and return the constructed `DocumentStructure`.
+
+**Signature:**
+
+```elixir
+def build()
+```
+
+###### push_heading()
+
+Push a heading, creating a `Group` container with automatic section nesting.
+
+Headings at the same or deeper level pop existing sections. Content
+pushed after this heading will be nested under its `Group` node.
+
+Returns the `NodeIndex` of the `Group` node (not the heading child).
+
+**Signature:**
+
+```elixir
+def push_heading(level, text, page, bbox)
+```
+
+###### push_paragraph()
+
+Push a paragraph node. Nested under current section if one exists.
+
+**Signature:**
+
+```elixir
+def push_paragraph(text, annotations, page, bbox)
+```
+
+###### push_list()
+
+Push a list container. Returns the `NodeIndex` to use with `push_list_item`.
+
+**Signature:**
+
+```elixir
+def push_list(ordered, page)
+```
+
+###### push_list_item()
+
+Push a list item as a child of the given list node.
+
+**Signature:**
+
+```elixir
+def push_list_item(list, text, page)
+```
+
+###### push_table()
+
+Push a table node with a structured grid.
+
+**Signature:**
+
+```elixir
+def push_table(grid, page, bbox)
+```
+
+###### push_table_from_cells()
+
+Push a table from a simple cell grid (`Vec<Vec<String>>`).
+
+Assumes the first row is the header row.
+
+**Signature:**
+
+```elixir
+def push_table_from_cells(cells, page)
+```
+
+###### push_code()
+
+Push a code block.
+
+**Signature:**
+
+```elixir
+def push_code(text, language, page)
+```
+
+###### push_formula()
+
+Push a math formula node.
+
+**Signature:**
+
+```elixir
+def push_formula(text, page)
+```
+
+###### push_image()
+
+Push an image reference node.
+
+**Signature:**
+
+```elixir
+def push_image(description, image_index, page, bbox)
+```
+
+###### push_image_with_src()
+
+Push an image node with source URL.
+
+**Signature:**
+
+```elixir
+def push_image_with_src(description, src, image_index, page, bbox)
+```
+
+###### push_quote()
+
+Push a block quote container and enter it.
+
+Subsequent body nodes will be parented under this quote until
+`exit_container` is called.
+
+**Signature:**
+
+```elixir
+def push_quote(page)
+```
+
+###### push_footnote()
+
+Push a footnote node.
+
+**Signature:**
+
+```elixir
+def push_footnote(text, page)
+```
+
+###### push_page_break()
+
+Push a page break marker (always root-level, never nested under sections).
+
+**Signature:**
+
+```elixir
+def push_page_break(page)
+```
+
+###### push_slide()
+
+Push a slide container (PPTX) and enter it.
+
+Clears the section stack and container stack so the slide starts
+fresh. Subsequent body nodes will be parented under this slide
+until `exit_container` is called or a new
+slide is pushed.
+
+**Signature:**
+
+```elixir
+def push_slide(number, title)
+```
+
+###### push_definition_list()
+
+Push a definition list container. Use `push_definition_item` for entries.
+
+**Signature:**
+
+```elixir
+def push_definition_list(page)
+```
+
+###### push_definition_item()
+
+Push a definition item as a child of the given definition list.
+
+**Signature:**
+
+```elixir
+def push_definition_item(list, term, definition, page)
+```
+
+###### push_citation()
+
+Push a citation / bibliographic reference.
+
+**Signature:**
+
+```elixir
+def push_citation(key, text, page)
+```
+
+###### push_admonition()
+
+Push an admonition container (note, warning, tip, etc.) and enter it.
+
+Subsequent body nodes will be parented under this admonition until
+`exit_container` is called.
+
+**Signature:**
+
+```elixir
+def push_admonition(kind, title, page)
+```
+
+###### push_raw_block()
+
+Push a raw block preserved verbatim from the source format.
+
+**Signature:**
+
+```elixir
+def push_raw_block(format, content, page)
+```
+
+###### push_metadata_block()
+
+Push a metadata block (email headers, frontmatter key-value pairs).
+
+**Signature:**
+
+```elixir
+def push_metadata_block(entries, page)
+```
+
+###### push_header()
+
+Push a header paragraph (running page header).
+
+**Signature:**
+
+```elixir
+def push_header(text, page)
+```
+
+###### push_footer()
+
+Push a footer paragraph (running page footer).
+
+**Signature:**
+
+```elixir
+def push_footer(text, page)
+```
+
+###### set_attributes()
+
+Set format-specific attributes on an existing node.
+
+**Signature:**
+
+```elixir
+def set_attributes(index, attrs)
+```
+
+###### add_child()
+
+Add a child node to an existing parent (for container nodes like Quote, Slide, Admonition).
+
+**Signature:**
+
+```elixir
+def add_child(parent, child)
+```
+
+###### push_raw()
+
+Push a raw `NodeContent` with full control over content layer and annotations.
+Nests under current section unless the content type is a root-level type.
+
+**Signature:**
+
+```elixir
+def push_raw(content, page, bbox, layer, annotations)
+```
+
+###### clear_sections()
+
+Reset the section stack (e.g. when starting a new page).
+
+**Signature:**
+
+```elixir
+def clear_sections()
+```
+
+###### enter_container()
+
+Manually push a node onto the container stack.
+
+Subsequent body nodes will be parented under this container
+until `exit_container` is called.
+
+**Signature:**
+
+```elixir
+def enter_container(container)
+```
+
+###### exit_container()
+
+Pop the most recent container from the container stack.
+
+Body nodes will resume parenting under the next container on the
+stack, or under the section stack if the container stack is empty.
+
+**Signature:**
+
+```elixir
+def exit_container()
+```
+
+###### default()
+
+**Signature:**
+
+```elixir
+def default()
+```
+
+
+---
+
+#### DocxAppProperties
+
+Application properties from docProps/app.xml for DOCX
+
+Contains Word-specific document statistics and metadata.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `application` | `String.t() | nil` | `nil` | Application name (e.g., "Microsoft Office Word") |
+| `app_version` | `String.t() | nil` | `nil` | Application version |
+| `template` | `String.t() | nil` | `nil` | Template filename |
+| `total_time` | `integer() | nil` | `nil` | Total editing time in minutes |
+| `pages` | `integer() | nil` | `nil` | Number of pages |
+| `words` | `integer() | nil` | `nil` | Number of words |
+| `characters` | `integer() | nil` | `nil` | Number of characters (excluding spaces) |
+| `characters_with_spaces` | `integer() | nil` | `nil` | Number of characters (including spaces) |
+| `lines` | `integer() | nil` | `nil` | Number of lines |
+| `paragraphs` | `integer() | nil` | `nil` | Number of paragraphs |
+| `company` | `String.t() | nil` | `nil` | Company name |
+| `doc_security` | `integer() | nil` | `nil` | Document security level |
+| `scale_crop` | `boolean() | nil` | `nil` | Scale crop flag |
+| `links_up_to_date` | `boolean() | nil` | `nil` | Links up to date flag |
+| `shared_doc` | `boolean() | nil` | `nil` | Shared document flag |
+| `hyperlinks_changed` | `boolean() | nil` | `nil` | Hyperlinks changed flag |
+
+
+---
+
+#### DocxExtractor
+
+High-performance DOCX extractor.
+
+This extractor provides:
+- Fast text extraction via streaming XML parsing
+- Comprehensive metadata extraction (core.xml, app.xml, custom.xml)
+
+##### Functions
+
+###### default()
+
+**Signature:**
+
+```elixir
+def default()
+```
+
+###### name()
+
+**Signature:**
+
+```elixir
+def name()
+```
+
+###### version()
+
+**Signature:**
+
+```elixir
+def version()
+```
+
+###### initialize()
+
+**Signature:**
+
+```elixir
+def initialize()
+```
+
+###### shutdown()
+
+**Signature:**
+
+```elixir
+def shutdown()
+```
+
+###### description()
+
+**Signature:**
+
+```elixir
+def description()
+```
+
+###### author()
+
+**Signature:**
+
+```elixir
+def author()
+```
+
+###### extract_bytes()
+
+**Signature:**
+
+```elixir
+def extract_bytes(content, mime_type, config)
+```
+
+###### supported_mime_types()
+
+**Signature:**
+
+```elixir
+def supported_mime_types()
+```
+
+###### priority()
+
+**Signature:**
+
+```elixir
+def priority()
+```
+
+
+---
+
+#### DocxMetadata
+
+Word document metadata.
+
+Extracted from DOCX files using shared Office Open XML metadata extraction.
+Integrates with `office_metadata` module for core/app/custom properties.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `core_properties` | `CoreProperties | nil` | `nil` | Core properties from docProps/core.xml (Dublin Core metadata) Contains title, creator, subject, keywords, dates, etc. Shared format across DOCX/PPTX/XLSX documents. |
+| `app_properties` | `DocxAppProperties | nil` | `nil` | Application properties from docProps/app.xml (Word-specific statistics) Contains word count, page count, paragraph count, editing time, etc. DOCX-specific variant of Office application properties. |
+| `custom_properties` | `map() | nil` | `%{}` | Custom properties from docProps/custom.xml (user-defined properties) Contains key-value pairs defined by users or applications. Values can be strings, numbers, booleans, or dates. |
+
+
+---
+
+#### Drawing
+
+A drawing object extracted from `<w:drawing>`.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `drawing_type` | `DrawingType` | `:inline` | Drawing type (drawing type) |
+| `extent` | `Extent | nil` | `nil` | Extent (extent) |
+| `doc_properties` | `DocProperties | nil` | `nil` | Doc properties (doc properties) |
+| `image_ref` | `String.t() | nil` | `nil` | Image ref |
+
+
+---
+
+#### Element
+
+Semantic element extracted from document.
+
+Represents a logical unit of content with semantic classification,
+unique identifier, and metadata for tracking origin and position.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `element_id` | `ElementId` | — | Unique element identifier |
+| `element_type` | `ElementType` | — | Semantic type of this element |
+| `text` | `String.t()` | — | Text content of the element |
+| `metadata` | `ElementMetadata` | — | Metadata about the element |
+
+
+---
+
+#### ElementId
+
+Unique identifier for semantic elements.
+
+Wraps a string identifier that is deterministically generated
+from element type, content, and page number.
+
+##### Functions
+
+###### new()
+
+Create a new ElementId from a string.
+
+**Errors:**
+
+Returns error if the string is not valid.
+
+**Signature:**
+
+```elixir
+def new(hex_str)
+```
+
+###### as_ref()
+
+**Signature:**
+
+```elixir
+def as_ref()
+```
+
+###### fmt()
+
+**Signature:**
+
+```elixir
+def fmt(f)
+```
+
+
+---
+
+#### ElementMetadata
+
+Metadata for a semantic element.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `page_number` | `integer() | nil` | `nil` | Page number (1-indexed) |
+| `filename` | `String.t() | nil` | `nil` | Source filename or document name |
+| `coordinates` | `BoundingBox | nil` | `nil` | Bounding box coordinates if available |
+| `element_index` | `integer() | nil` | `nil` | Position index in the element sequence |
+| `additional` | `map()` | — | Additional custom metadata |
+
+
+---
+
+#### EmailAttachment
+
+Email attachment representation.
+
+Contains metadata and optionally the content of an email attachment.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `name` | `String.t() | nil` | `nil` | Attachment name (from Content-Disposition header) |
+| `filename` | `String.t() | nil` | `nil` | Filename of the attachment |
+| `mime_type` | `String.t() | nil` | `nil` | MIME type of the attachment |
+| `size` | `integer() | nil` | `nil` | Size in bytes |
+| `is_image` | `boolean()` | — | Whether this attachment is an image |
+| `data` | `binary() | nil` | `nil` | Attachment data (if extracted). Uses `bytes.Bytes` for cheap cloning of large buffers. |
+
+
+---
+
+#### EmailConfig
+
+Configuration for email extraction.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `msg_fallback_codepage` | `integer() | nil` | `nil` | Windows codepage number to use when an MSG file contains no codepage property. Defaults to `None`, which falls back to windows-1252. If an unrecognized or invalid codepage number is supplied (including 0), the behavior silently falls back to windows-1252 — the same as when the MSG file itself contains an unrecognized codepage. No error or warning is emitted. Users should verify output when supplying unusual values. Common values: - 1250: Central European (Polish, Czech, Hungarian, etc.) - 1251: Cyrillic (Russian, Ukrainian, Bulgarian, etc.) - 1252: Western European (default) - 1253: Greek - 1254: Turkish - 1255: Hebrew - 1256: Arabic - 932:  Japanese (Shift-JIS) - 936:  Simplified Chinese (GBK) |
+
+
+---
+
+#### EmailExtractionResult
+
+Email extraction result.
+
+Complete representation of an extracted email message (.eml or .msg)
+including headers, body content, and attachments.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `subject` | `String.t() | nil` | `nil` | Email subject line |
+| `from_email` | `String.t() | nil` | `nil` | Sender email address |
+| `to_emails` | `list(String.t())` | — | Primary recipient email addresses |
+| `cc_emails` | `list(String.t())` | — | CC recipient email addresses |
+| `bcc_emails` | `list(String.t())` | — | BCC recipient email addresses |
+| `date` | `String.t() | nil` | `nil` | Email date/timestamp |
+| `message_id` | `String.t() | nil` | `nil` | Message-ID header value |
+| `plain_text` | `String.t() | nil` | `nil` | Plain text version of the email body |
+| `html_content` | `String.t() | nil` | `nil` | HTML version of the email body |
+| `cleaned_text` | `String.t()` | — | Cleaned/processed text content |
+| `attachments` | `list(EmailAttachment)` | — | List of email attachments |
+| `metadata` | `map()` | — | Additional email headers and metadata |
+
+
+---
+
+#### EmailExtractor
+
+Email message extractor.
+
+Supports: .eml, .msg
+
+##### Functions
+
+###### default()
+
+**Signature:**
+
+```elixir
+def default()
+```
+
+###### name()
+
+**Signature:**
+
+```elixir
+def name()
+```
+
+###### version()
+
+**Signature:**
+
+```elixir
+def version()
+```
+
+###### initialize()
+
+**Signature:**
+
+```elixir
+def initialize()
+```
+
+###### shutdown()
+
+**Signature:**
+
+```elixir
+def shutdown()
+```
+
+###### extract_sync()
+
+**Signature:**
+
+```elixir
+def extract_sync(content, mime_type, config)
+```
+
+###### extract_bytes()
+
+**Signature:**
+
+```elixir
+def extract_bytes(content, mime_type, config)
+```
+
+###### supported_mime_types()
+
+**Signature:**
+
+```elixir
+def supported_mime_types()
+```
+
+###### priority()
+
+**Signature:**
+
+```elixir
+def priority()
+```
+
+###### as_sync_extractor()
+
+**Signature:**
+
+```elixir
+def as_sync_extractor()
+```
+
+
+---
+
+#### EmailMetadata
+
+Email metadata extracted from .eml and .msg files.
+
+Includes sender/recipient information, message ID, and attachment list.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `from_email` | `String.t() | nil` | `nil` | Sender's email address |
+| `from_name` | `String.t() | nil` | `nil` | Sender's display name |
+| `to_emails` | `list(String.t())` | `[]` | Primary recipients |
+| `cc_emails` | `list(String.t())` | `[]` | CC recipients |
+| `bcc_emails` | `list(String.t())` | `[]` | BCC recipients |
+| `message_id` | `String.t() | nil` | `nil` | Message-ID header value |
+| `attachments` | `list(String.t())` | `[]` | List of attachment filenames |
+
+
+---
+
+#### EmbedRequest
+
+Embedding request for generating embeddings from text.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `texts` | `list(String.t())` | — | Text strings to generate embeddings for (at least one non-empty string required) |
+| `config` | `EmbeddingConfig | nil` | `nil` | Optional embedding configuration (model, batch size, etc.) |
+
+
+---
+
+#### EmbedResponse
+
+Embedding response containing generated embeddings.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `embeddings` | `list(list(float()))` | — | Generated embeddings (one per input text) |
+| `model` | `String.t()` | — | Model used for embedding generation |
+| `dimensions` | `integer()` | — | Dimensionality of the embeddings |
+| `count` | `integer()` | — | Number of embeddings generated |
+
+
+---
+
+#### EmbedTextParams
+
+Request parameters for embedding generation.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `texts` | `list(String.t())` | — | List of text strings to generate embeddings for |
+| `preset` | `String.t() | nil` | `nil` | Embedding preset name (default: "balanced"). Available: "speed", "balanced", "quality" |
+| `model` | `String.t() | nil` | `nil` | LLM model for provider-hosted embeddings (e.g., "openai/text-embedding-3-small"). When set, overrides preset and uses liter-llm for embedding generation. |
+| `api_key` | `String.t() | nil` | `nil` | API key for the LLM provider (optional, falls back to env). |
+
+
+---
+
+#### EmbeddedFile
+
+Embedded file descriptor extracted from the PDF name tree.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `name` | `String.t()` | — | The filename as stored in the PDF name tree. |
+| `data` | `binary()` | — | Raw file bytes from the embedded stream. |
+| `mime_type` | `String.t() | nil` | `nil` | MIME type if specified in the filespec, otherwise `None`. |
+
+
+---
+
+#### EmbeddingConfig
+
+Embedding configuration for text chunks.
+
+Configures embedding generation using ONNX models via the vendored embedding engine.
+Requires the `embeddings` feature to be enabled.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `model` | `EmbeddingModelType` | `:preset` | The embedding model to use (defaults to "balanced" preset if not specified) |
+| `normalize` | `boolean()` | `true` | Whether to normalize embedding vectors (recommended for cosine similarity) |
+| `batch_size` | `integer()` | `32` | Batch size for embedding generation |
+| `show_download_progress` | `boolean()` | `false` | Show model download progress |
+| `cache_dir` | `String.t() | nil` | `nil` | Custom cache directory for model files Defaults to `~/.cache/kreuzberg/embeddings/` if not specified. Allows full customization of model download location. |
+| `acceleration` | `AccelerationConfig | nil` | `nil` | Hardware acceleration for the embedding ONNX model. When set, controls which execution provider (CPU, CUDA, CoreML, TensorRT) is used for inference. Defaults to `None` (auto-select per platform). |
+
+##### Functions
+
+###### default()
+
+**Signature:**
+
+```elixir
+def default()
+```
+
+
+---
+
+#### EmbeddingEngine
+
+Text embedding model with thread-safe inference.
+
+The `embed()` method takes `&self` instead of `&mut self`, allowing it to
+be shared across threads via `Arc<EmbeddingEngine>` without mutex contention.
+
+
+---
+
+#### EmbeddingPreset
+
+Preset configurations for common RAG use cases.
+
+Each preset combines chunk size, overlap, and embedding model
+to provide an optimized configuration for specific scenarios.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `name` | `String.t()` | — | The name |
+| `chunk_size` | `integer()` | — | Chunk size |
+| `overlap` | `integer()` | — | Overlap |
+| `model_repo` | `String.t()` | — | HuggingFace repository name for the model. |
+| `pooling` | `String.t()` | — | Pooling strategy: "cls" or "mean". |
+| `model_file` | `String.t()` | — | Path to the ONNX model file within the repo. |
+| `dimensions` | `integer()` | — | Dimensions |
+| `description` | `String.t()` | — | Human-readable description |
+
+
+---
+
+#### EntityValidator
+
+Helper struct for validating entity/string length.
+
+##### Functions
+
+###### validate()
+
+Validate entity length.
+
+**Returns:**
+* `Ok(())` if length is within limits
+* `Err(SecurityError)` if length exceeds limit
+
+**Signature:**
+
+```elixir
+def validate(content)
+```
+
+
+---
+
+#### EpubExtractor
+
+EPUB format extractor using permissive-licensed dependencies.
+
+Extracts content and metadata from EPUB files (both EPUB2 and EPUB3)
+using native Rust parsing without GPL-licensed dependencies.
+
+##### Functions
+
+###### default()
+
+**Signature:**
+
+```elixir
+def default()
+```
+
+###### name()
+
+**Signature:**
+
+```elixir
+def name()
+```
+
+###### version()
+
+**Signature:**
+
+```elixir
+def version()
+```
+
+###### initialize()
+
+**Signature:**
+
+```elixir
+def initialize()
+```
+
+###### shutdown()
+
+**Signature:**
+
+```elixir
+def shutdown()
+```
+
+###### description()
+
+**Signature:**
+
+```elixir
+def description()
+```
+
+###### author()
+
+**Signature:**
+
+```elixir
+def author()
+```
+
+###### extract_bytes()
+
+**Signature:**
+
+```elixir
+def extract_bytes(content, mime_type, config)
+```
+
+###### supported_mime_types()
+
+**Signature:**
+
+```elixir
+def supported_mime_types()
+```
+
+###### priority()
+
+**Signature:**
+
+```elixir
+def priority()
+```
+
+
+---
+
+#### EpubMetadata
+
+EPUB metadata (Dublin Core extensions).
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `coverage` | `String.t() | nil` | `nil` | Coverage |
+| `dc_format` | `String.t() | nil` | `nil` | Dc format |
+| `relation` | `String.t() | nil` | `nil` | Relation |
+| `source` | `String.t() | nil` | `nil` | Source |
+| `dc_type` | `String.t() | nil` | `nil` | Dc type |
+| `cover_image` | `String.t() | nil` | `nil` | Cover image |
+
+
+---
+
+#### ErrorMetadata
+
+Error metadata (for batch operations).
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `error_type` | `String.t()` | — | Error type |
+| `message` | `String.t()` | — | Message |
+
+
+---
+
+#### ErrorResponse
+
+Error response.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `error_type` | `String.t()` | — | Error type name |
+| `message` | `String.t()` | — | Error message |
+| `traceback` | `String.t() | nil` | `nil` | Stack trace (if available) |
+| `status_code` | `integer()` | — | HTTP status code |
+
+
+---
+
+#### ExcelExtractor
+
+Excel spreadsheet extractor using calamine.
+
+Supports: .xlsx, .xlsm, .xlam, .xltm, .xls, .xla, .xlsb, .ods
+
+# Limitations
+
+- **Hyperlinks**: calamine (v0.34) does not expose cell hyperlink data in its
+  public API. Excel files may contain hyperlinks via the `HYPERLINK()` formula
+  or via the relationships XML, but neither is accessible through the crate.
+  This would require either a calamine upstream change or manual OOXML parsing.
+
+##### Functions
+
+###### default()
+
+**Signature:**
+
+```elixir
+def default()
+```
+
+###### name()
+
+**Signature:**
+
+```elixir
+def name()
+```
+
+###### version()
+
+**Signature:**
+
+```elixir
+def version()
+```
+
+###### initialize()
+
+**Signature:**
+
+```elixir
+def initialize()
+```
+
+###### shutdown()
+
+**Signature:**
+
+```elixir
+def shutdown()
+```
+
+###### extract_sync()
+
+**Signature:**
+
+```elixir
+def extract_sync(content, mime_type, config)
+```
+
+###### extract_bytes()
+
+**Signature:**
+
+```elixir
+def extract_bytes(content, mime_type, config)
+```
+
+###### extract_file()
+
+**Signature:**
+
+```elixir
+def extract_file(path, mime_type, config)
+```
+
+###### supported_mime_types()
+
+**Signature:**
+
+```elixir
+def supported_mime_types()
+```
+
+###### priority()
+
+**Signature:**
+
+```elixir
+def priority()
+```
+
+###### as_sync_extractor()
+
+**Signature:**
+
+```elixir
+def as_sync_extractor()
+```
+
+
+---
+
+#### ExcelMetadata
+
+Excel/spreadsheet metadata.
+
+Contains information about sheets in Excel, OpenDocument Calc, and other
+spreadsheet formats (.xlsx, .xls, .ods, etc.).
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `sheet_count` | `integer()` | — | Total number of sheets in the workbook |
+| `sheet_names` | `list(String.t())` | `[]` | Names of all sheets in order |
+
+
+---
+
+#### ExcelSheet
+
+Single Excel worksheet.
+
+Represents one sheet from an Excel workbook with its content
+converted to Markdown format and dimensional statistics.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `name` | `String.t()` | — | Sheet name as it appears in Excel |
+| `markdown` | `String.t()` | — | Sheet content converted to Markdown tables |
+| `row_count` | `integer()` | — | Number of rows |
+| `col_count` | `integer()` | — | Number of columns |
+| `cell_count` | `integer()` | — | Total number of non-empty cells |
+| `table_cells` | `list(list(String.t())) | nil` | `nil` | Pre-extracted table cells (2D vector of cell values) Populated during markdown generation to avoid re-parsing markdown. None for empty sheets. |
+
+
+---
+
+#### ExcelWorkbook
+
+Excel workbook representation.
+
+Contains all sheets from an Excel file (.xlsx, .xls, etc.) with
+extracted content and metadata.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `sheets` | `list(ExcelSheet)` | — | All sheets in the workbook |
+| `metadata` | `map()` | — | Workbook-level metadata (author, creation date, etc.) |
+
+
+---
+
+#### Extent
+
+Size in EMUs (English Metric Units, 1 inch = 914400 EMU).
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `cx` | `integer()` | — | Cx |
+| `cy` | `integer()` | — | Cy |
+
+##### Functions
+
+###### width_inches()
+
+Convert width to inches.
+
+**Signature:**
+
+```elixir
+def width_inches()
+```
+
+###### height_inches()
+
+Convert height to inches.
+
+**Signature:**
+
+```elixir
+def height_inches()
+```
+
+
+---
+
+#### ExtractBytesParams
+
+Request parameters for bytes extraction.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `data` | `String.t()` | — | Base64-encoded file content |
+| `mime_type` | `String.t() | nil` | `nil` | Optional MIME type hint (auto-detected if not provided) |
+| `config` | `term() | nil` | `nil` | Extraction configuration (JSON object) |
+| `pdf_password` | `String.t() | nil` | `nil` | Password for encrypted PDFs |
+| `response_format` | `String.t() | nil` | `nil` | Wire format for the response: "json" (default) or "toon" |
+
+
+---
+
+#### ExtractFileParams
+
+Request parameters for file extraction.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `path` | `String.t()` | — | Path to the file to extract |
+| `mime_type` | `String.t() | nil` | `nil` | Optional MIME type hint (auto-detected if not provided) |
+| `config` | `term() | nil` | `nil` | Extraction configuration (JSON object) |
+| `pdf_password` | `String.t() | nil` | `nil` | Password for encrypted PDFs |
+| `response_format` | `String.t() | nil` | `nil` | Wire format for the response: "json" (default) or "toon" |
+
+
+---
+
+#### ExtractResponse
+
+Extraction response (list of results).
+
+
+---
+
+#### ExtractStructuredParams
+
+Request parameters for LLM-based structured extraction.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `path` | `String.t()` | — | File path to extract from |
+| `schema` | `term()` | — | JSON schema for structured output |
+| `model` | `String.t()` | — | LLM model (e.g., "openai/gpt-4o") |
+| `schema_name` | `String.t()` | — | Schema name (default: "extraction") |
+| `schema_description` | `String.t() | nil` | `nil` | Schema description for the LLM |
+| `prompt` | `String.t() | nil` | `nil` | Custom Jinja2 prompt template |
+| `api_key` | `String.t() | nil` | `nil` | API key (optional, falls back to env) |
+| `strict` | `boolean()` | — | Enable strict mode |
+
+
+---
+
+#### ExtractedImage
+
+Extracted image from a document.
+
+Contains raw image data, metadata, and optional nested OCR results.
+Raw bytes allow cross-language compatibility - users can convert to
+PIL.Image (Python), Sharp (Node.js), or other formats as needed.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `data` | `binary()` | — | Raw image data (PNG, JPEG, WebP, etc. bytes). Uses `bytes.Bytes` for cheap cloning of large buffers. |
+| `format` | `Str` | — | Image format (e.g., "jpeg", "png", "webp") Uses Cow<'static, str> to avoid allocation for static literals. |
+| `image_index` | `integer()` | — | Zero-indexed position of this image in the document/page |
+| `page_number` | `integer() | nil` | `nil` | Page/slide number where image was found (1-indexed) |
+| `width` | `integer() | nil` | `nil` | Image width in pixels |
+| `height` | `integer() | nil` | `nil` | Image height in pixels |
+| `colorspace` | `String.t() | nil` | `nil` | Colorspace information (e.g., "RGB", "CMYK", "Gray") |
+| `bits_per_component` | `integer() | nil` | `nil` | Bits per color component (e.g., 8, 16) |
+| `is_mask` | `boolean()` | — | Whether this image is a mask image |
+| `description` | `String.t() | nil` | `nil` | Optional description of the image |
+| `ocr_result` | `ExtractionResult | nil` | `nil` | Nested OCR extraction result (if image was OCRed) When OCR is performed on this image, the result is embedded here rather than in a separate collection, making the relationship explicit. |
+| `bounding_box` | `BoundingBox | nil` | `nil` | Bounding box of the image on the page (PDF coordinates: x0=left, y0=bottom, x1=right, y1=top). Only populated for PDF-extracted images when position data is available from pdfium. |
+| `source_path` | `String.t() | nil` | `nil` | Original source path of the image within the document archive (e.g., "media/image1.png" in DOCX). Used for rendering image references when the binary data is not extracted. |
+
+
+---
+
+#### ExtractedInlineImage
+
+Extracted inline image with metadata.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `data` | `binary()` | — | Uses `bytes.Bytes` for cheap cloning of large buffers. |
+| `format` | `String.t()` | — | Format |
+| `filename` | `String.t() | nil` | `nil` | Filename |
+| `description` | `String.t() | nil` | `nil` | Human-readable description |
+| `dimensions` | `U32U32 | nil` | `nil` | Dimensions ((u32, u32)) |
+| `attributes` | `list(StringString)` | — | Attributes |
+
+
+---
+
+#### ExtractionConfig
+
+Main extraction configuration.
+
+This struct contains all configuration options for the extraction process.
+It can be loaded from TOML, YAML, or JSON files, or created programmatically.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `use_cache` | `boolean()` | `true` | Enable caching of extraction results |
+| `enable_quality_processing` | `boolean()` | `true` | Enable quality post-processing |
+| `ocr` | `OcrConfig | nil` | `nil` | OCR configuration (None = OCR disabled) |
+| `force_ocr` | `boolean()` | `false` | Force OCR even for searchable PDFs |
+| `force_ocr_pages` | `list(integer()) | nil` | `nil` | Force OCR on specific pages only (1-indexed page numbers, must be >= 1). When set, only the listed pages are OCR'd regardless of text layer quality. Unlisted pages use native text extraction. Ignored when `force_ocr` is `True`. Only applies to PDF documents. Duplicates are automatically deduplicated. An `ocr` config is recommended for backend/language selection; defaults are used if absent. |
+| `disable_ocr` | `boolean()` | `false` | Disable OCR entirely, even for images. When `True`, OCR is skipped for all document types. Images return metadata only (dimensions, format, EXIF) without text extraction. PDFs use only native text extraction without OCR fallback. Cannot be `True` simultaneously with `force_ocr`. *Added in v4.7.0.* |
+| `chunking` | `ChunkingConfig | nil` | `nil` | Text chunking configuration (None = chunking disabled) |
+| `content_filter` | `ContentFilterConfig | nil` | `nil` | Content filtering configuration (None = use extractor defaults). Controls whether document "furniture" (headers, footers, watermarks, repeating text) is included in or stripped from extraction results. See `ContentFilterConfig` for per-field documentation. |
+| `images` | `ImageExtractionConfig | nil` | `nil` | Image extraction configuration (None = no image extraction) |
+| `pdf_options` | `PdfConfig | nil` | `nil` | PDF-specific options (None = use defaults) |
+| `token_reduction` | `TokenReductionOptions | nil` | `nil` | Token reduction configuration (None = no token reduction) |
+| `language_detection` | `LanguageDetectionConfig | nil` | `nil` | Language detection configuration (None = no language detection) |
+| `pages` | `PageConfig | nil` | `nil` | Page extraction configuration (None = no page tracking) |
+| `postprocessor` | `PostProcessorConfig | nil` | `nil` | Post-processor configuration (None = use defaults) |
+| `html_options` | `ConversionOptions | nil` | `nil` | HTML to Markdown conversion options (None = use defaults) Configure how HTML documents are converted to Markdown, including heading styles, list formatting, code block styles, and preprocessing options. |
+| `html_output` | `HtmlOutputConfig | nil` | `nil` | Styled HTML output configuration. When set alongside `output_format = OutputFormat.Html`, the extraction pipeline uses `StyledHtmlRenderer` which emits stable `kb-*` CSS class hooks on every structural element and optionally embeds theme CSS or user-supplied CSS in a `<style>` block. When `None`, the existing plain comrak-based HTML renderer is used. |
+| `extraction_timeout_secs` | `integer() | nil` | `nil` | Default per-file timeout in seconds for batch extraction. When set, each file in a batch will be canceled after this duration unless overridden by `FileExtractionConfig.timeout_secs`. `None` means no timeout (unbounded extraction time). |
+| `max_concurrent_extractions` | `integer() | nil` | `nil` | Maximum concurrent extractions in batch operations (None = (num_cpus × 1.5).ceil()). Limits parallelism to prevent resource exhaustion when processing large batches. Defaults to (num_cpus × 1.5).ceil() when not set. |
+| `result_format` | `OutputFormat` | `:plain` | Result structure format Controls whether results are returned in unified format (default) with all content in the `content` field, or element-based format with semantic elements (for Unstructured-compatible output). |
+| `security_limits` | `SecurityLimits | nil` | `nil` | Security limits for archive extraction. Controls maximum archive size, compression ratio, file count, and other security thresholds to prevent decompression bomb attacks. When `None`, default limits are used (500MB archive, 100:1 ratio, 10K files). |
+| `output_format` | `OutputFormat` | `:plain` | Content text format (default: Plain). Controls the format of the extracted content: - `Plain`: Raw extracted text (default) - `Markdown`: Markdown formatted output - `Djot`: Djot markup format (requires djot feature) - `Html`: HTML formatted output When set to a structured format, extraction results will include formatted output. The `formatted_content` field may be populated when format conversion is applied. |
+| `layout` | `LayoutDetectionConfig | nil` | `nil` | Layout detection configuration (None = layout detection disabled). When set, PDF pages and images are analyzed for document structure (headings, code, formulas, tables, figures, etc.) using RT-DETR models via ONNX Runtime. For PDFs, layout hints override paragraph classification in the markdown pipeline. For images, per-region OCR is performed with markdown formatting based on detected layout classes. Requires the `layout-detection` feature. |
+| `include_document_structure` | `boolean()` | `false` | Enable structured document tree output. When true, populates the `document` field on `ExtractionResult` with a hierarchical `DocumentStructure` containing heading-driven section nesting, table grids, content layer classification, and inline annotations. Independent of `result_format` — can be combined with Unified or ElementBased. |
+| `acceleration` | `AccelerationConfig | nil` | `nil` | Hardware acceleration configuration for ONNX Runtime models. Controls execution provider selection for layout detection and embedding models. When `None`, uses platform defaults (CoreML on macOS, CUDA on Linux, CPU on Windows). |
+| `cache_namespace` | `String.t() | nil` | `nil` | Cache namespace for tenant isolation. When set, cache entries are stored under `{cache_dir}/{namespace}/`. Must be alphanumeric, hyphens, or underscores only (max 64 chars). Different namespaces have isolated cache spaces on the same filesystem. |
+| `cache_ttl_secs` | `integer() | nil` | `nil` | Per-request cache TTL in seconds. Overrides the global `max_age_days` for this specific extraction. When `0`, caching is completely skipped (no read or write). When `None`, the global TTL applies. |
+| `email` | `EmailConfig | nil` | `nil` | Email extraction configuration (None = use defaults). Currently supports configuring the fallback codepage for MSG files that do not specify one. See `crate.core.config.EmailConfig` for details. |
+| `concurrency` | `ConcurrencyConfig | nil` | `nil` | Concurrency limits for constrained environments (None = use defaults). Controls Rayon thread pool size, ONNX Runtime intra-op threads, and (when `max_concurrent_extractions` is unset) the batch concurrency semaphore. See `crate.core.config.ConcurrencyConfig` for details. |
+| `max_archive_depth` | `integer()` | — | Maximum recursion depth for archive extraction (default: 3). Set to 0 to disable recursive extraction (legacy behavior). |
+| `tree_sitter` | `TreeSitterConfig | nil` | `nil` | Tree-sitter language pack configuration (None = tree-sitter disabled). When set, enables code file extraction using tree-sitter parsers. Controls grammar download behavior and code analysis options. |
+| `structured_extraction` | `StructuredExtractionConfig | nil` | `nil` | Structured extraction via LLM (None = disabled). When set, the extracted document content is sent to an LLM with the provided JSON schema. The structured response is stored in `ExtractionResult.structured_output`. |
+| `cancel_token` | `CancellationToken | nil` | `nil` | Cancellation token for this extraction (None = no external cancellation). Pass a `CancellationToken` clone here and call `CancellationToken.cancel` from another thread / task to abort the extraction in progress. The extractor checks the token at safe checkpoints (before lock acquisition, between pages, between batch items) and returns `KreuzbergError.Cancelled` when set. The field is excluded from serialization because `CancellationToken` is a runtime handle, not a configuration value. |
+
+##### Functions
+
+###### default()
+
+**Signature:**
+
+```elixir
+def default()
+```
+
+###### with_file_overrides()
+
+Create a new `ExtractionConfig` by applying per-file overrides from a
+`FileExtractionConfig`. Fields that are `Some` in the override replace the
+corresponding field in `self`; `nil` fields keep the original value.
+
+Batch-level fields (`max_concurrent_extractions`, `use_cache`, `acceleration`,
+`security_limits`) are never affected by overrides.
+
+**Signature:**
+
+```elixir
+def with_file_overrides(overrides)
+```
+
+###### normalized()
+
+Normalize configuration for implicit requirements.
+
+Currently handles:
+- Auto-enabling `extract_pages` when `result_format` is `ElementBased`, because
+  the element transformation requires per-page data to assign correct page numbers.
+  Without this, all elements would incorrectly get `page_number=1`.
+- Auto-enabling `extract_pages` when chunking is configured, because the chunker
+  needs page boundaries to assign correct page numbers to chunks.
+
+**Signature:**
+
+```elixir
+def normalized()
+```
+
+###### validate()
+
+Validate the configuration, returning an error if any settings are invalid.
+
+Checks:
+- OCR backend name is supported (catches typos early)
+- VLM backend config is present when backend is "vlm"
+- Pipeline stage backends and VLM configs are valid
+- Structured extraction schema and LLM model are non-empty
+
+**Signature:**
+
+```elixir
+def validate()
+```
+
+###### effective_disable_ocr()
+
+Returns the effective disable-OCR value, accounting for both the top-level
+`disable_ocr` flag and the `ocr.enabled` shorthand on `OcrConfig`.
+
+Setting `ocr.enabled = false` in configuration is treated as equivalent to
+`disable_ocr = true`. This method is the single source of truth for whether
+OCR should be skipped.
+
+**Signature:**
+
+```elixir
+def effective_disable_ocr()
+```
+
+###### needs_image_processing()
+
+Check if image processing is needed by examining OCR and image extraction settings.
+
+Returns `true` if either OCR is enabled or image extraction is configured,
+indicating that image decompression and processing should occur.
+Returns `false` if both are disabled, allowing optimization to skip unnecessary
+image decompression for text-only extraction workflows.
+
+# Optimization Impact
+For text-only extractions (no OCR, no image extraction), skipping image
+decompression can improve CPU utilization by 5-10% by avoiding wasteful
+image I/O and processing when results won't be used.
+
+**Signature:**
+
+```elixir
+def needs_image_processing()
+```
+
+
+---
+
+#### ExtractionMetrics
+
+Collection of all kreuzberg metric instruments.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `extraction_total` | `Counter` | — | Total extractions (attributes: mime_type, extractor, status). |
+| `cache_hits` | `Counter` | — | Cache hits. |
+| `cache_misses` | `Counter` | — | Cache misses. |
+| `batch_total` | `Counter` | — | Total batch requests (attributes: status). |
+| `extraction_duration_ms` | `Histogram` | — | Extraction wall-clock duration in milliseconds (attributes: mime_type, extractor). |
+| `extraction_input_bytes` | `Histogram` | — | Input document size in bytes (attributes: mime_type). |
+| `extraction_output_bytes` | `Histogram` | — | Output content size in bytes (attributes: mime_type). |
+| `pipeline_duration_ms` | `Histogram` | — | Pipeline stage duration in milliseconds (attributes: stage). |
+| `ocr_duration_ms` | `Histogram` | — | OCR duration in milliseconds (attributes: backend, language). |
+| `batch_duration_ms` | `Histogram` | — | Batch total duration in milliseconds. |
+| `concurrent_extractions` | `UpDownCounter` | — | Currently in-flight extractions. |
+
+
+---
+
+#### ExtractionRequest
+
+A request to extract content from a single document.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `source` | `ExtractionSource` | — | Where to read the document from. |
+| `config` | `ExtractionConfig` | — | Base extraction configuration. |
+| `file_overrides` | `FileExtractionConfig | nil` | `nil` | Optional per-file overrides (merged on top of `config`). |
+
+##### Functions
+
+###### file()
+
+Create a file-based extraction request.
+
+**Signature:**
+
+```elixir
+def file(path, config)
+```
+
+###### file_with_mime()
+
+Create a file-based extraction request with a MIME type hint.
+
+**Signature:**
+
+```elixir
+def file_with_mime(path, mime_hint, config)
+```
+
+###### bytes()
+
+Create a bytes-based extraction request.
+
+**Signature:**
+
+```elixir
+def bytes(data, mime_type, config)
+```
+
+###### with_overrides()
+
+Set per-file overrides on this request.
+
+**Signature:**
+
+```elixir
+def with_overrides(overrides)
+```
+
+
+---
+
+#### ExtractionResult
+
+General extraction result used by the core extraction API.
+
+This is the main result type returned by all extraction functions.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `content` | `String.t()` | — | The extracted text content |
+| `mime_type` | `Str` | — | The detected MIME type |
+| `metadata` | `Metadata` | — | Document metadata |
+| `tables` | `list(Table)` | `[]` | Tables extracted from the document |
+| `detected_languages` | `list(String.t()) | nil` | `[]` | Detected languages |
+| `chunks` | `list(Chunk) | nil` | `[]` | Text chunks when chunking is enabled. When chunking configuration is provided, the content is split into overlapping chunks for efficient processing. Each chunk contains the text, optional embeddings (if enabled), and metadata about its position. |
+| `images` | `list(ExtractedImage) | nil` | `[]` | Extracted images from the document. When image extraction is enabled via `ImageExtractionConfig`, this field contains all images found in the document with their raw data and metadata. Each image may optionally contain a nested `ocr_result` if OCR was performed. |
+| `pages` | `list(PageContent) | nil` | `[]` | Per-page content when page extraction is enabled. When page extraction is configured, the document is split into per-page content with tables and images mapped to their respective pages. |
+| `elements` | `list(Element) | nil` | `[]` | Semantic elements when element-based result format is enabled. When result_format is set to ElementBased, this field contains semantic elements with type classification, unique identifiers, and metadata for Unstructured-compatible element-based processing. |
+| `djot_content` | `DjotContent | nil` | `nil` | Rich Djot content structure (when extracting Djot documents). When extracting Djot documents with structured extraction enabled, this field contains the full semantic structure including: - Block-level elements with nesting - Inline formatting with attributes - Links, images, footnotes - Math expressions - Complete attribute information The `content` field still contains plain text for backward compatibility. Always `None` for non-Djot documents. |
+| `ocr_elements` | `list(OcrElement) | nil` | `[]` | OCR elements with full spatial and confidence metadata. When OCR is performed with element extraction enabled, this field contains the structured representation of detected text including: - Bounding geometry (rectangles or quadrilaterals) - Confidence scores (detection and recognition) - Rotation information - Hierarchical relationships (Tesseract only) This field preserves all metadata that would otherwise be lost when converting to plain text or markdown output formats. Only populated when `OcrElementConfig.include_elements` is true. |
+| `document` | `DocumentStructure | nil` | `nil` | Structured document tree (when document structure extraction is enabled). When `include_document_structure` is true in `ExtractionConfig`, this field contains the full hierarchical representation of the document including: - Heading-driven section nesting - Table grids with cell-level metadata - Content layer classification (body, header, footer, footnote) - Inline text annotations (formatting, links) - Bounding boxes and page numbers Independent of `result_format` — can be combined with Unified or ElementBased. |
+| `quality_score` | `float() | nil` | `nil` | Document quality score from quality analysis. A value between 0.0 and 1.0 indicating the overall text quality. Previously stored in `metadata.additional["quality_score"]`. |
+| `processing_warnings` | `list(ProcessingWarning)` | `[]` | Non-fatal warnings collected during processing pipeline stages. Captures errors from optional pipeline features (embedding, chunking, language detection, output formatting) that don't prevent extraction but may indicate degraded results. Previously stored as individual keys in `metadata.additional`. |
+| `annotations` | `list(PdfAnnotation) | nil` | `[]` | PDF annotations extracted from the document. When annotation extraction is enabled via `PdfConfig.extract_annotations`, this field contains text notes, highlights, links, stamps, and other annotations found in PDF documents. |
+| `children` | `list(ArchiveEntry) | nil` | `[]` | Nested extraction results from archive contents. When extracting archives, each processable file inside produces its own full extraction result. Set to `None` for non-archive formats. Use `max_archive_depth` in config to control recursion depth. |
+| `uris` | `list(Uri) | nil` | `[]` | URIs/links discovered during document extraction. Contains hyperlinks, image references, citations, email addresses, and other URI-like references found in the document. Always extracted when present in the source document. |
+| `structured_output` | `term() | nil` | `nil` | Structured extraction output from LLM-based JSON schema extraction. When `structured_extraction` is configured in `ExtractionConfig`, the extracted document content is sent to a VLM with the provided JSON schema. The response is parsed and stored here as a JSON value matching the schema. |
+| `code_intelligence` | `ProcessResult | nil` | `nil` | Code intelligence results from tree-sitter analysis. Populated when extracting source code files with the `tree-sitter` feature. Contains metrics, structural analysis, imports/exports, comments, docstrings, symbols, diagnostics, and optionally chunked code segments. |
+| `llm_usage` | `list(LlmUsage) | nil` | `[]` | LLM token usage and cost data for all LLM calls made during this extraction. Contains one entry per LLM call. Multiple entries are produced when VLM OCR, structured extraction, and/or LLM embeddings all run during the same extraction. `None` when no LLM was used. |
+| `formatted_content` | `String.t() | nil` | `nil` | Pre-rendered content in the requested output format. Populated during `derive_extraction_result` before tree derivation consumes element data. `apply_output_format` swaps this into `content` at the end of the pipeline, after post-processors have operated on plain text. |
+| `ocr_internal_document` | `InternalDocument | nil` | `nil` | Structured hOCR document for the OCR+layout pipeline. When tesseract produces hOCR output, the parsed `InternalDocument` carries paragraph structure with bounding boxes and confidence scores. The layout classification step enriches these elements before final rendering. |
+
+
+---
+
+#### ExtractionService
+
+A `tower.Service` that dispatches extraction requests to the kreuzberg
+core library.
+
+This service is cheap to clone and can be shared across handlers.
+Concurrency and timeouts are managed by composing Tower layers on top
+(see `super.ExtractionServiceBuilder`).
+
+##### Functions
+
+###### default()
+
+**Signature:**
+
+```elixir
+def default()
+```
+
+###### poll_ready()
+
+**Signature:**
+
+```elixir
+def poll_ready(cx)
+```
+
+###### call()
+
+**Signature:**
+
+```elixir
+def call(req)
+```
+
+
+---
+
+#### ExtractionServiceBuilder
+
+Builder for composing an extraction service with Tower middleware layers.
+
+Layers are applied in the order: Tracing → Metrics → Timeout → ConcurrencyLimit → Service.
+
+##### Functions
+
+###### default()
+
+**Signature:**
+
+```elixir
+def default()
+```
+
+###### with_timeout()
+
+Add a per-request timeout.
+
+**Signature:**
+
+```elixir
+def with_timeout(duration)
+```
+
+###### with_concurrency_limit()
+
+Limit concurrent in-flight extractions.
+
+**Signature:**
+
+```elixir
+def with_concurrency_limit(max)
+```
+
+###### with_tracing()
+
+Add a tracing span to each extraction request.
+
+**Signature:**
+
+```elixir
+def with_tracing()
+```
+
+###### with_metrics()
+
+Add metrics recording to each extraction request.
+
+Requires the `otel` feature. This is a no-op when `otel` is not enabled.
+
+**Signature:**
+
+```elixir
+def with_metrics()
+```
+
+###### build()
+
+Build the service stack, returning a type-erased cloneable service.
+
+Layer order (outermost to innermost):
+`Tracing → Metrics → Timeout → ConcurrencyLimit → ExtractionService`
+
+**Signature:**
+
+```elixir
+def build()
+```
+
+
+---
+
+#### FictionBookExtractor
+
+FictionBook document extractor.
+
+Supports FictionBook 2.0 format with proper section hierarchy and inline formatting.
+
+##### Functions
+
+###### default()
+
+**Signature:**
+
+```elixir
+def default()
+```
+
+###### name()
+
+**Signature:**
+
+```elixir
+def name()
+```
+
+###### version()
+
+**Signature:**
+
+```elixir
+def version()
+```
+
+###### initialize()
+
+**Signature:**
+
+```elixir
+def initialize()
+```
+
+###### shutdown()
+
+**Signature:**
+
+```elixir
+def shutdown()
+```
+
+###### description()
+
+**Signature:**
+
+```elixir
+def description()
+```
+
+###### author()
+
+**Signature:**
+
+```elixir
+def author()
+```
+
+###### extract_bytes()
+
+**Signature:**
+
+```elixir
+def extract_bytes(content, mime_type, config)
+```
+
+###### supported_mime_types()
+
+**Signature:**
+
+```elixir
+def supported_mime_types()
+```
+
+###### priority()
+
+**Signature:**
+
+```elixir
+def priority()
+```
+
+
+---
+
+#### FictionBookMetadata
+
+FictionBook (FB2) metadata.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `genres` | `list(String.t())` | `[]` | Genres |
+| `sequences` | `list(String.t())` | `[]` | Sequences |
+| `annotation` | `String.t() | nil` | `nil` | Annotation |
+
+
+---
+
+#### FileBytes
+
+An owned buffer of file bytes.
+
+On non-WASM platforms this may be backed by a memory-mapped file (zero heap
+allocation for the file contents) or by a `Vec<u8>` for small files.
+On WASM it is always a `Vec<u8>`.
+
+Implements `Deref<Target = [u8]>` so callers can pass `&FileBytes` as `&[u8]`
+without any additional copy.
+
+##### Functions
+
+###### deref()
+
+**Signature:**
+
+```elixir
+def deref()
+```
+
+###### as_ref()
+
+**Signature:**
+
+```elixir
+def as_ref()
+```
+
+
+---
+
+#### FileExtractionConfig
+
+Per-file extraction configuration overrides for batch processing.
+
+All fields are `Option<T>` — `nil` means "use the batch-level default."
+This type is used with `crate.batch_extract_file` and
+`crate.batch_extract_bytes` to allow heterogeneous
+extraction settings within a single batch.
+
+# Excluded Fields
+
+The following `super.ExtractionConfig` fields are batch-level only and
+cannot be overridden per file:
+- `max_concurrent_extractions` — controls batch parallelism
+- `use_cache` — global caching policy
+- `acceleration` — shared ONNX execution provider
+- `security_limits` — global archive security policy
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `enable_quality_processing` | `boolean() | nil` | `nil` | Override quality post-processing for this file. |
+| `ocr` | `OcrConfig | nil` | `nil` | Override OCR configuration for this file (None in the Option = use batch default). |
+| `force_ocr` | `boolean() | nil` | `nil` | Override force OCR for this file. |
+| `force_ocr_pages` | `list(integer()) | nil` | `[]` | Override force OCR pages for this file (1-indexed page numbers). |
+| `disable_ocr` | `boolean() | nil` | `nil` | Override disable OCR for this file. |
+| `chunking` | `ChunkingConfig | nil` | `nil` | Override chunking configuration for this file. |
+| `content_filter` | `ContentFilterConfig | nil` | `nil` | Override content filtering configuration for this file. |
+| `images` | `ImageExtractionConfig | nil` | `nil` | Override image extraction configuration for this file. |
+| `pdf_options` | `PdfConfig | nil` | `nil` | Override PDF options for this file. |
+| `token_reduction` | `TokenReductionOptions | nil` | `nil` | Override token reduction for this file. |
+| `language_detection` | `LanguageDetectionConfig | nil` | `nil` | Override language detection for this file. |
+| `pages` | `PageConfig | nil` | `nil` | Override page extraction for this file. |
+| `postprocessor` | `PostProcessorConfig | nil` | `nil` | Override post-processor for this file. |
+| `html_options` | `ConversionOptions | nil` | `nil` | Override HTML conversion options for this file. |
+| `result_format` | `OutputFormat | nil` | `nil` | Override result format for this file. |
+| `output_format` | `OutputFormat | nil` | `nil` | Override output content format for this file. |
+| `include_document_structure` | `boolean() | nil` | `nil` | Override document structure output for this file. |
+| `layout` | `LayoutDetectionConfig | nil` | `nil` | Override layout detection for this file. |
+| `timeout_secs` | `integer() | nil` | `nil` | Override per-file extraction timeout in seconds. When set, the extraction for this file will be canceled after the specified duration. A timed-out file produces an error result without affecting other files in the batch. |
+| `tree_sitter` | `TreeSitterConfig | nil` | `nil` | Override tree-sitter configuration for this file. |
+| `structured_extraction` | `StructuredExtractionConfig | nil` | `nil` | Override structured extraction configuration for this file. When set, enables LLM-based structured extraction with a JSON schema for this specific file. The extracted content is sent to a VLM/LLM and the response is parsed according to the provided schema. |
+
+
+---
+
+#### FileHeader
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `flags` | `integer()` | — | Flags |
+
+##### Functions
+
+###### parse()
+
+**Signature:**
+
+```elixir
+def parse(data)
+```
+
+###### is_compressed()
+
+Whether section streams are zlib/deflate-compressed.
+
+**Signature:**
+
+```elixir
+def is_compressed()
+```
+
+###### is_encrypted()
+
+Whether the document is password-encrypted.
+
+**Signature:**
+
+```elixir
+def is_encrypted()
+```
+
+###### is_distribute()
+
+Whether the document is a distribution document (text in ViewText/).
+
+**Signature:**
+
+```elixir
+def is_distribute()
+```
+
+
+---
+
+#### FontScheme
+
+Font scheme containing major (heading) and minor (body) fonts.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `name` | `String.t()` | — | Font scheme name. |
+| `major_latin` | `String.t() | nil` | `nil` | Major (heading) font - Latin script. |
+| `major_east_asian` | `String.t() | nil` | `nil` | Major (heading) font - East Asian script. |
+| `major_complex_script` | `String.t() | nil` | `nil` | Major (heading) font - Complex script. |
+| `minor_latin` | `String.t() | nil` | `nil` | Minor (body) font - Latin script. |
+| `minor_east_asian` | `String.t() | nil` | `nil` | Minor (body) font - East Asian script. |
+| `minor_complex_script` | `String.t() | nil` | `nil` | Minor (body) font - Complex script. |
+
+
+---
+
+#### FontSizeCluster
+
+A cluster of text blocks with the same font size characteristics.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `centroid` | `float()` | — | The centroid (mean) font size of this cluster |
+| `members` | `list(TextBlock)` | — | The text blocks that belong to this cluster |
+
+
+---
+
+#### Footnote
+
+Footnote in Djot.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `label` | `String.t()` | — | Footnote label |
+| `content` | `list(FormattedBlock)` | — | Footnote content blocks |
+
+
+---
+
+#### FormattedBlock
+
+Block-level element in a Djot document.
+
+Represents structural elements like headings, paragraphs, lists, code blocks, etc.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `block_type` | `BlockType` | — | Type of block element |
+| `level` | `integer() | nil` | `nil` | Heading level (1-6) for headings, or nesting level for lists |
+| `inline_content` | `list(InlineElement)` | — | Inline content within the block |
+| `attributes` | `Attributes | nil` | `nil` | Element attributes (classes, IDs, key-value pairs) |
+| `language` | `String.t() | nil` | `nil` | Language identifier for code blocks |
+| `code` | `String.t() | nil` | `nil` | Raw code content for code blocks |
+| `children` | `list(FormattedBlock)` | — | Nested blocks for containers (blockquotes, list items, divs) |
+
+
+---
+
+#### GenericCache
+
+##### Functions
+
+###### new()
+
+**Signature:**
+
+```elixir
+def new(cache_type, cache_dir, max_age_days, max_cache_size_mb, min_free_space_mb)
+```
+
+###### get()
+
+**Signature:**
+
+```elixir
+def get(cache_key, source_file, namespace, ttl_override_secs)
+```
+
+###### get_default()
+
+Backward-compatible get without namespace/TTL.
+
+**Signature:**
+
+```elixir
+def get_default(cache_key, source_file)
+```
+
+###### set()
+
+**Signature:**
+
+```elixir
+def set(cache_key, data, source_file, namespace, ttl_secs)
+```
+
+###### set_default()
+
+Backward-compatible set without namespace/TTL.
+
+**Signature:**
+
+```elixir
+def set_default(cache_key, data, source_file)
+```
+
+###### is_processing()
+
+**Signature:**
+
+```elixir
+def is_processing(cache_key)
+```
+
+###### mark_processing()
+
+**Signature:**
+
+```elixir
+def mark_processing(cache_key)
+```
+
+###### mark_complete()
+
+**Signature:**
+
+```elixir
+def mark_complete(cache_key)
+```
+
+###### clear()
+
+**Signature:**
+
+```elixir
+def clear()
+```
+
+###### delete_namespace()
+
+Delete all cache entries under a namespace.
+
+Removes the namespace subdirectory and all its contents.
+Returns (files_removed, mb_freed).
+
+**Signature:**
+
+```elixir
+def delete_namespace(namespace)
+```
+
+###### get_stats()
+
+**Signature:**
+
+```elixir
+def get_stats()
+```
+
+###### get_stats_filtered()
+
+Get cache stats, optionally filtered to a specific namespace.
+
+**Signature:**
+
+```elixir
+def get_stats_filtered(namespace)
+```
+
+###### cache_dir()
+
+**Signature:**
+
+```elixir
+def cache_dir()
+```
+
+###### cache_type()
+
+**Signature:**
+
+```elixir
+def cache_type()
+```
+
+
+---
+
+#### GridCell
+
+Individual grid cell with position and span metadata.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `content` | `String.t()` | — | Cell text content. |
+| `row` | `integer()` | — | Zero-indexed row position. |
+| `col` | `integer()` | — | Zero-indexed column position. |
+| `row_span` | `integer()` | — | Number of rows this cell spans. |
+| `col_span` | `integer()` | — | Number of columns this cell spans. |
+| `is_header` | `boolean()` | — | Whether this is a header cell. |
+| `bbox` | `BoundingBox | nil` | `nil` | Bounding box for this cell (if available). |
+
+
+---
+
+#### GzipExtractor
+
+Gzip archive extractor.
+
+Decompresses gzip files and extracts text content from the compressed data.
+
+##### Functions
+
+###### default()
+
+**Signature:**
+
+```elixir
+def default()
+```
+
+###### name()
+
+**Signature:**
+
+```elixir
+def name()
+```
+
+###### version()
+
+**Signature:**
+
+```elixir
+def version()
+```
+
+###### initialize()
+
+**Signature:**
+
+```elixir
+def initialize()
+```
+
+###### shutdown()
+
+**Signature:**
+
+```elixir
+def shutdown()
+```
+
+###### description()
+
+**Signature:**
+
+```elixir
+def description()
+```
+
+###### author()
+
+**Signature:**
+
+```elixir
+def author()
+```
+
+###### extract_bytes()
+
+**Signature:**
+
+```elixir
+def extract_bytes(content, mime_type, config)
+```
+
+###### supported_mime_types()
+
+**Signature:**
+
+```elixir
+def supported_mime_types()
+```
+
+###### priority()
+
+**Signature:**
+
+```elixir
+def priority()
+```
+
+###### as_sync_extractor()
+
+**Signature:**
+
+```elixir
+def as_sync_extractor()
+```
+
+###### extract_sync()
+
+**Signature:**
+
+```elixir
+def extract_sync(content, mime_type, config)
+```
+
+
+---
+
+#### HeaderFooter
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `paragraphs` | `list(Paragraph)` | `[]` | Paragraphs |
+| `tables` | `list(Table)` | `[]` | Tables extracted from the document |
+| `header_type` | `HeaderFooterType` | `:default` | Header type (header footer type) |
+
+
+---
+
+#### HeaderMetadata
+
+Header/heading element metadata.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `level` | `integer()` | — | Header level: 1 (h1) through 6 (h6) |
+| `text` | `String.t()` | — | Normalized text content of the header |
+| `id` | `String.t() | nil` | `nil` | HTML id attribute if present |
+| `depth` | `integer()` | — | Document tree depth at the header element |
+| `html_offset` | `integer()` | — | Byte offset in original HTML document |
+
+
+---
+
+#### HeadingContext
+
+Heading context for a chunk within a Markdown document.
+
+Contains the heading hierarchy from document root to this chunk's section.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `headings` | `list(HeadingLevel)` | — | The heading hierarchy from document root to this chunk's section. Index 0 is the outermost (h1), last element is the most specific. |
+
+
+---
+
+#### HeadingLevel
+
+A single heading in the hierarchy.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `level` | `integer()` | — | Heading depth (1 = h1, 2 = h2, etc.) |
+| `text` | `String.t()` | — | The text content of the heading. |
+
+
+---
+
+#### HealthResponse
+
+Health check response.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `status` | `String.t()` | — | Health status |
+| `version` | `String.t()` | — | API version |
+| `plugins` | `PluginStatus | nil` | `nil` | Plugin status (optional) |
+
+
+---
+
+#### HierarchicalBlock
+
+A text block with hierarchy level assignment.
+
+Represents a block of text with semantic heading information extracted from
+font size clustering and hierarchical analysis.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `text` | `String.t()` | — | The text content of this block |
+| `font_size` | `float()` | — | The font size of the text in this block |
+| `level` | `String.t()` | — | The hierarchy level of this block (H1-H6 or Body) Levels correspond to HTML heading tags: - "h1": Top-level heading - "h2": Secondary heading - "h3": Tertiary heading - "h4": Quaternary heading - "h5": Quinary heading - "h6": Senary heading - "body": Body text (no heading level) |
+| `bbox` | `F32F32F32F32 | nil` | `nil` | Bounding box information for the block Contains coordinates as (left, top, right, bottom) in PDF units. |
+
+
+---
+
+#### HierarchyBlock
+
+A TextBlock with hierarchy level assignment.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `text` | `String.t()` | — | The text content |
+| `bbox` | `BoundingBox` | — | The bounding box of the block |
+| `font_size` | `float()` | — | The font size of the text in this block |
+| `hierarchy_level` | `HierarchyLevel` | — | The hierarchy level of this block (H1-H6 or Body) |
+
+
+---
+
+#### HierarchyConfig
+
+Hierarchy extraction configuration for PDF text structure analysis.
+
+Enables extraction of document hierarchy levels (H1-H6) based on font size
+clustering and semantic analysis. When enabled, hierarchical blocks are
+included in page content.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `enabled` | `boolean()` | `true` | Enable hierarchy extraction |
+| `k_clusters` | `integer()` | `3` | Number of font size clusters to use for hierarchy levels (1-7) Default: 6, which provides H1-H6 heading levels with body text. Larger values create more fine-grained hierarchy levels. |
+| `include_bbox` | `boolean()` | `true` | Include bounding box information in hierarchy blocks |
+| `ocr_coverage_threshold` | `float() | nil` | `nil` | OCR coverage threshold for smart OCR triggering (0.0-1.0) Determines when OCR should be triggered based on text block coverage. OCR is triggered when text blocks cover less than this fraction of the page. Default: 0.5 (trigger OCR if less than 50% of page has text) |
+
+##### Functions
+
+###### default()
+
+**Signature:**
+
+```elixir
+def default()
+```
+
+
+---
+
+#### HocrWord
+
+Represents a word extracted from hOCR (or any source) with position and confidence information.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `text` | `String.t()` | — | Text |
+| `left` | `integer()` | — | Left |
+| `top` | `integer()` | — | Top |
+| `width` | `integer()` | — | Width |
+| `height` | `integer()` | — | Height |
+| `confidence` | `float()` | — | Confidence |
+
+##### Functions
+
+###### right()
+
+Get the right edge position.
+
+**Signature:**
+
+```elixir
+def right()
+```
+
+###### bottom()
+
+Get the bottom edge position.
+
+**Signature:**
+
+```elixir
+def bottom()
+```
+
+###### y_center()
+
+Get the vertical center position.
+
+**Signature:**
+
+```elixir
+def y_center()
+```
+
+###### x_center()
+
+Get the horizontal center position.
+
+**Signature:**
+
+```elixir
+def x_center()
+```
+
+
+---
+
+#### HtmlExtractionResult
+
+Result of HTML extraction with optional images and warnings.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `markdown` | `String.t()` | — | Markdown |
+| `images` | `list(ExtractedInlineImage)` | — | Images extracted from the document |
+| `warnings` | `list(String.t())` | — | Warnings |
+
+
+---
+
+#### HtmlExtractor
+
+HTML document extractor using html-to-markdown.
+
+##### Functions
+
+###### default()
+
+**Signature:**
+
+```elixir
+def default()
+```
+
+###### name()
+
+**Signature:**
+
+```elixir
+def name()
+```
+
+###### version()
+
+**Signature:**
+
+```elixir
+def version()
+```
+
+###### initialize()
+
+**Signature:**
+
+```elixir
+def initialize()
+```
+
+###### shutdown()
+
+**Signature:**
+
+```elixir
+def shutdown()
+```
+
+###### extract_sync()
+
+**Signature:**
+
+```elixir
+def extract_sync(content, mime_type, config)
+```
+
+###### extract_bytes()
+
+**Signature:**
+
+```elixir
+def extract_bytes(content, mime_type, config)
+```
+
+###### supported_mime_types()
+
+**Signature:**
+
+```elixir
+def supported_mime_types()
+```
+
+###### priority()
+
+**Signature:**
+
+```elixir
+def priority()
+```
+
+###### as_sync_extractor()
+
+**Signature:**
+
+```elixir
+def as_sync_extractor()
+```
+
+
+---
+
+#### HtmlMetadata
+
+HTML metadata extracted from HTML documents.
+
+Includes document-level metadata, Open Graph data, Twitter Card metadata,
+and extracted structural elements (headers, links, images, structured data).
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `title` | `String.t() | nil` | `nil` | Document title from `<title>` tag |
+| `description` | `String.t() | nil` | `nil` | Document description from `<meta name="description">` tag |
+| `keywords` | `list(String.t())` | `[]` | Document keywords from `<meta name="keywords">` tag, split on commas |
+| `author` | `String.t() | nil` | `nil` | Document author from `<meta name="author">` tag |
+| `canonical_url` | `String.t() | nil` | `nil` | Canonical URL from `<link rel="canonical">` tag |
+| `base_href` | `String.t() | nil` | `nil` | Base URL from `<base href="">` tag for resolving relative URLs |
+| `language` | `String.t() | nil` | `nil` | Document language from `lang` attribute |
+| `text_direction` | `TextDirection | nil` | `nil` | Document text direction from `dir` attribute |
+| `open_graph` | `map()` | `%{}` | Open Graph metadata (og:* properties) for social media Keys like "title", "description", "image", "url", etc. |
+| `twitter_card` | `map()` | `%{}` | Twitter Card metadata (twitter:* properties) Keys like "card", "site", "creator", "title", "description", "image", etc. |
+| `meta_tags` | `map()` | `%{}` | Additional meta tags not covered by specific fields Keys are meta name/property attributes, values are content |
+| `headers` | `list(HeaderMetadata)` | `[]` | Extracted header elements with hierarchy |
+| `links` | `list(LinkMetadata)` | `[]` | Extracted hyperlinks with type classification |
+| `images` | `list(ImageMetadataType)` | `[]` | Extracted images with source and dimensions |
+| `structured_data` | `list(StructuredData)` | `[]` | Extracted structured data blocks |
+
+##### Functions
+
+###### is_empty()
+
+Check if metadata is empty (no meaningful content extracted).
+
+**Signature:**
+
+```elixir
+def is_empty()
+```
+
+###### from()
+
+**Signature:**
+
+```elixir
+def from(metadata)
+```
+
+
+---
+
+#### HtmlOutputConfig
+
+Configuration for styled HTML output.
+
+When set on `ExtractionConfig.html_output` alongside
+`output_format = OutputFormat.Html`, the pipeline builds a
+`StyledHtmlRenderer` instead of
+the plain comrak-based renderer.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `css` | `String.t() | nil` | `nil` | Inline CSS string injected into the output after the theme stylesheet. Concatenated after `css_file` content when both are set. |
+| `css_file` | `String.t() | nil` | `nil` | Path to a CSS file loaded once at renderer construction time. Concatenated before `css` when both are set. |
+| `theme` | `HtmlTheme` | `:unstyled` | Built-in colour/typography theme. Default: `HtmlTheme.Unstyled`. |
+| `class_prefix` | `String.t()` | — | CSS class prefix applied to every emitted class name. Default: `"kb-"`. Change this if your host application already uses classes that start with `kb-`. |
+| `embed_css` | `boolean()` | `true` | When `True` (default), write the resolved CSS into a `<style>` block immediately after the opening `<div class="{prefix}doc">`. Set to `False` to emit only the structural markup and wire up your own stylesheet targeting the `kb-*` class names. |
+
+##### Functions
+
+###### default()
+
+**Signature:**
+
+```elixir
+def default()
+```
+
+
+---
+
+#### HwpDocument
+
+An extracted HWP document, consisting of one or more body-text sections.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `sections` | `list(Section)` | `[]` | All sections from all BodyText/SectionN streams. |
+
+##### Functions
+
+###### extract_text()
+
+Concatenate the text of every paragraph in every section, separated by
+newlines.
+
+**Signature:**
+
+```elixir
+def extract_text()
+```
+
+
+---
+
+#### HwpExtractor
+
+Extractor for Hangul Word Processor (.hwp) files.
+
+Supports HWP 5.0 format, the standard document format in South Korea.
+
+##### Functions
+
+###### default()
+
+**Signature:**
+
+```elixir
+def default()
+```
+
+###### name()
+
+**Signature:**
+
+```elixir
+def name()
+```
+
+###### version()
+
+**Signature:**
+
+```elixir
+def version()
+```
+
+###### initialize()
+
+**Signature:**
+
+```elixir
+def initialize()
+```
+
+###### shutdown()
+
+**Signature:**
+
+```elixir
+def shutdown()
+```
+
+###### description()
+
+**Signature:**
+
+```elixir
+def description()
+```
+
+###### author()
+
+**Signature:**
+
+```elixir
+def author()
+```
+
+###### extract_bytes()
+
+**Signature:**
+
+```elixir
+def extract_bytes(content, mime_type, config)
+```
+
+###### supported_mime_types()
+
+**Signature:**
+
+```elixir
+def supported_mime_types()
+```
+
+###### priority()
+
+**Signature:**
+
+```elixir
+def priority()
+```
+
+
+---
+
+#### ImageDpiConfig
+
+Image extraction DPI configuration (internal use).
+
+**Note:** This is an internal type used for image preprocessing.
+For the main extraction configuration, see `crate.core.config.ExtractionConfig`.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `target_dpi` | `integer()` | `300` | Target DPI for image normalization |
+| `max_image_dimension` | `integer()` | `4096` | Maximum image dimension (width or height) |
+| `auto_adjust_dpi` | `boolean()` | `true` | Whether to auto-adjust DPI based on content |
+| `min_dpi` | `integer()` | `72` | Minimum DPI threshold |
+| `max_dpi` | `integer()` | `600` | Maximum DPI threshold |
+
+##### Functions
+
+###### default()
+
+**Signature:**
+
+```elixir
+def default()
+```
+
+
+---
+
+#### ImageExtractionConfig
+
+Image extraction configuration.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `extract_images` | `boolean()` | — | Extract images from documents |
+| `target_dpi` | `integer()` | — | Target DPI for image normalization |
+| `max_image_dimension` | `integer()` | — | Maximum dimension for images (width or height) |
+| `inject_placeholders` | `boolean()` | — | Whether to inject image reference placeholders into markdown output. When `True` (default), image references like `![Image 1](embedded:p1_i0)` are appended to the markdown. Set to `False` to extract images as data without polluting the markdown output. |
+| `auto_adjust_dpi` | `boolean()` | — | Automatically adjust DPI based on image content |
+| `min_dpi` | `integer()` | — | Minimum DPI threshold |
+| `max_dpi` | `integer()` | — | Maximum DPI threshold |
+
+
+---
+
+#### ImageExtractor
+
+Image extractor for various image formats.
+
+Supports: PNG, JPEG, WebP, BMP, TIFF, GIF.
+Extracts dimensions, format, and EXIF metadata.
+Optionally runs OCR when configured.
+When layout detection is also enabled, uses per-region OCR with
+markdown formatting based on detected layout classes.
+
+##### Functions
+
+###### default()
+
+**Signature:**
+
+```elixir
+def default()
+```
+
+###### name()
+
+**Signature:**
+
+```elixir
+def name()
+```
+
+###### version()
+
+**Signature:**
+
+```elixir
+def version()
+```
+
+###### initialize()
+
+**Signature:**
+
+```elixir
+def initialize()
+```
+
+###### shutdown()
+
+**Signature:**
+
+```elixir
+def shutdown()
+```
+
+###### description()
+
+**Signature:**
+
+```elixir
+def description()
+```
+
+###### author()
+
+**Signature:**
+
+```elixir
+def author()
+```
+
+###### extract_bytes()
+
+**Signature:**
+
+```elixir
+def extract_bytes(content, mime_type, config)
+```
+
+###### supported_mime_types()
+
+**Signature:**
+
+```elixir
+def supported_mime_types()
+```
+
+###### priority()
+
+**Signature:**
+
+```elixir
+def priority()
+```
+
+
+---
+
+#### ImageMetadata
+
+Image metadata extracted from image files.
+
+Includes dimensions, format, and EXIF data.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `width` | `integer()` | — | Image width in pixels |
+| `height` | `integer()` | — | Image height in pixels |
+| `format` | `String.t()` | — | Image format (e.g., "PNG", "JPEG", "TIFF") |
+| `exif` | `map()` | `%{}` | EXIF metadata tags |
+
+
+---
+
+#### ImageMetadataType
+
+Image element metadata.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `src` | `String.t()` | — | Image source (URL, data URI, or SVG content) |
+| `alt` | `String.t() | nil` | `nil` | Alternative text from alt attribute |
+| `title` | `String.t() | nil` | `nil` | Title attribute |
+| `dimensions` | `U32U32 | nil` | `nil` | Image dimensions as (width, height) if available |
+| `image_type` | `ImageType` | — | Image type classification |
+| `attributes` | `list(StringString)` | — | Additional attributes as key-value pairs |
+
+
+---
+
+#### ImageOcrResult
+
+Result of OCR extraction from an image with optional page tracking.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `content` | `String.t()` | — | Extracted text content |
+| `boundaries` | `list(PageBoundary) | nil` | `nil` | Character byte boundaries per frame (for multi-frame TIFFs) |
+| `page_contents` | `list(PageContent) | nil` | `nil` | Per-frame content information |
+
+
+---
+
+#### ImagePreprocessingConfig
+
+Image preprocessing configuration for OCR.
+
+These settings control how images are preprocessed before OCR to improve
+text recognition quality. Different preprocessing strategies work better
+for different document types.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `target_dpi` | `integer()` | `300` | Target DPI for the image (300 is standard, 600 for small text). |
+| `auto_rotate` | `boolean()` | `true` | Auto-detect and correct image rotation. |
+| `deskew` | `boolean()` | `true` | Correct skew (tilted images). |
+| `denoise` | `boolean()` | `false` | Remove noise from the image. |
+| `contrast_enhance` | `boolean()` | `false` | Enhance contrast for better text visibility. |
+| `binarization_method` | `String.t()` | `"otsu"` | Binarization method: "otsu", "sauvola", "adaptive". |
+| `invert_colors` | `boolean()` | `false` | Invert colors (white text on black → black on white). |
+
+##### Functions
+
+###### default()
+
+**Signature:**
+
+```elixir
+def default()
+```
+
+
+---
+
+#### ImagePreprocessingMetadata
+
+Image preprocessing metadata.
+
+Tracks the transformations applied to an image during OCR preprocessing,
+including DPI normalization, resizing, and resampling.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `original_dimensions` | `UsizeUsize` | — | Original image dimensions (width, height) in pixels |
+| `original_dpi` | `F64F64` | — | Original image DPI (horizontal, vertical) |
+| `target_dpi` | `integer()` | — | Target DPI from configuration |
+| `scale_factor` | `float()` | — | Scaling factor applied to the image |
+| `auto_adjusted` | `boolean()` | — | Whether DPI was auto-adjusted based on content |
+| `final_dpi` | `integer()` | — | Final DPI after processing |
+| `new_dimensions` | `UsizeUsize | nil` | `nil` | New dimensions after resizing (if resized) |
+| `resample_method` | `String.t()` | — | Resampling algorithm used ("LANCZOS3", "CATMULLROM", etc.) |
+| `dimension_clamped` | `boolean()` | — | Whether dimensions were clamped to max_image_dimension |
+| `calculated_dpi` | `integer() | nil` | `nil` | Calculated optimal DPI (if auto_adjust_dpi enabled) |
+| `skipped_resize` | `boolean()` | — | Whether resize was skipped (dimensions already optimal) |
+| `resize_error` | `String.t() | nil` | `nil` | Error message if resize failed |
+
+
+---
+
+#### InfoResponse
+
+Server information response.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `version` | `String.t()` | — | API version |
+| `rust_backend` | `boolean()` | — | Whether using Rust backend |
+
+
+---
+
+#### InlineElement
+
+Inline element within a block.
+
+Represents text with formatting, links, images, etc.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `element_type` | `InlineType` | — | Type of inline element |
+| `content` | `String.t()` | — | Text content |
+| `attributes` | `Attributes | nil` | `nil` | Element attributes |
+| `metadata` | `map() | nil` | `nil` | Additional metadata (e.g., href for links, src/alt for images) |
+
+
+---
+
+#### Instant
+
+A platform-aware instant for measuring elapsed time.
+
+On native targets this delegates to `std.time.Instant`.
+On `wasm32` targets it is a zero-cost no-op to avoid the `unreachable` trap.
+
+##### Functions
+
+###### now()
+
+Capture the current instant.
+
+**Signature:**
+
+```elixir
+def now()
+```
+
+###### elapsed_secs_f64()
+
+Seconds elapsed since this instant was captured (as `f64`).
+
+**Signature:**
+
+```elixir
+def elapsed_secs_f64()
+```
+
+###### elapsed_ms()
+
+Milliseconds elapsed since this instant was captured (as `f64`).
+
+**Signature:**
+
+```elixir
+def elapsed_ms()
+```
+
+###### elapsed_millis()
+
+Milliseconds elapsed as `u128` (mirrors `Duration.as_millis`).
+
+**Signature:**
+
+```elixir
+def elapsed_millis()
+```
+
+
+---
+
+#### InternalDocument
+
+The internal flat document representation.
+
+All extractors output this structure. It is converted to the public
+`ExtractionResult` and
+`DocumentStructure` in the pipeline.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `elements` | `list(InternalElement)` | — | All elements in reading order. Append-only during extraction. |
+| `relationships` | `list(Relationship)` | — | Relationships between elements (source index → target). Stored separately from elements for cache-friendly iteration. |
+| `source_format` | `Str` | — | Source format identifier (e.g., "pdf", "docx", "html", "markdown"). |
+| `metadata` | `Metadata` | — | Document-level metadata (title, author, dates, etc.). |
+| `images` | `list(ExtractedImage)` | — | Extracted images (binary data). Referenced by index from `ElementKind.Image`. |
+| `tables` | `list(Table)` | — | Extracted tables (structured data). Referenced by index from `ElementKind.Table`. |
+| `uris` | `list(Uri)` | — | URIs/links discovered during extraction (hyperlinks, image refs, citations, etc.). |
+| `children` | `list(ArchiveEntry) | nil` | `nil` | Archive children: fully-extracted results for files within an archive. Only populated by archive extractors (ZIP, TAR, 7z, GZIP) when recursive extraction is enabled. Each entry contains the full `ExtractionResult` for a child file that was extracted through the public pipeline. |
+| `mime_type` | `Str` | — | MIME type of the source document (e.g., "application/pdf", "text/html"). |
+| `processing_warnings` | `list(ProcessingWarning)` | — | Non-fatal warnings collected during extraction. |
+| `annotations` | `list(PdfAnnotation) | nil` | `nil` | PDF annotations (links, highlights, notes). |
+| `prebuilt_pages` | `list(PageContent) | nil` | `nil` | Pre-built per-page content (set by extractors that track page boundaries natively). When populated, `derive_extraction_result` uses this directly instead of attempting to reconstruct pages from element-level page numbers. |
+| `pre_rendered_content` | `String.t() | nil` | `nil` | Pre-rendered formatted content produced by the extractor itself. When an extractor has direct access to high-quality formatted output (e.g., html-to-markdown produces GFM markdown), it can store that here to bypass the lossy InternalDocument → renderer round-trip. `derive_extraction_result` will use this directly when the requested output format matches `metadata.output_format`. |
+| `prebuilt_ocr_elements` | `list(OcrElement) | nil` | `nil` | Pre-built OCR element list (set by extractors that have direct access to bounding-box element data alongside a separately produced coherent text). When populated, `derive_extraction_result` uses this directly instead of reconstructing `OcrElement`s from `OcrText` `InternalElement`s. This lets the image extractor carry Tesseract/paddle-ocr bounding-box metadata without injecting raw word tokens into the element list (which would otherwise corrupt `render_plain` and page content — issue #706). |
+| `llm_usage` | `list(LlmUsage) | nil` | `nil` | LLM usage records accumulated during extraction (e.g., VLM OCR per page). Populated by extractors that call LLM-backed backends (VLM OCR). `derive_extraction_result` transfers this to `ExtractionResult.llm_usage`. |
+
+##### Functions
+
+###### push_element()
+
+Push an element and return its index.
+
+**Signature:**
+
+```elixir
+def push_element(element)
+```
+
+###### push_relationship()
+
+Push a relationship.
+
+**Signature:**
+
+```elixir
+def push_relationship(relationship)
+```
+
+###### push_table()
+
+Push a table and return its index (for use in `ElementKind.Table`).
+
+**Signature:**
+
+```elixir
+def push_table(table)
+```
+
+###### push_image()
+
+Push an image and return its index (for use in `ElementKind.Image`).
+
+**Signature:**
+
+```elixir
+def push_image(image)
+```
+
+###### push_uri()
+
+Push a URI discovered during extraction.
+Silently drops URIs beyond `MAX_URIS` to prevent unbounded memory growth.
+
+**Signature:**
+
+```elixir
+def push_uri(uri)
+```
+
+###### content()
+
+Concatenate all element text into a single string, separated by newlines.
+
+**Signature:**
+
+```elixir
+def content()
+```
+
+
+---
+
+#### InternalDocumentBuilder
+
+Builder for constructing `InternalDocument` with an ergonomic push-based API.
+
+Tracks nesting depth automatically for list and quote containers,
+and generates deterministic element IDs via blake3 hashing.
+
+##### Functions
+
+###### source_format()
+
+Set the source format identifier (e.g. "docx", "html", "pptx").
+
+**Signature:**
+
+```elixir
+def source_format(format)
+```
+
+###### set_metadata()
+
+Set document-level metadata.
+
+**Signature:**
+
+```elixir
+def set_metadata(metadata)
+```
+
+###### set_mime_type()
+
+Set the MIME type of the source document.
+
+**Signature:**
+
+```elixir
+def set_mime_type(mime_type)
+```
+
+###### add_warning()
+
+Add a non-fatal processing warning.
+
+**Signature:**
+
+```elixir
+def add_warning(warning)
+```
+
+###### set_pdf_annotations()
+
+Set document-level PDF annotations (links, highlights, notes).
+
+**Signature:**
+
+```elixir
+def set_pdf_annotations(annotations)
+```
+
+###### push_uri()
+
+Push a URI discovered during extraction.
+
+**Signature:**
+
+```elixir
+def push_uri(uri)
+```
+
+###### build()
+
+Consume the builder and return the constructed `InternalDocument`.
+
+**Signature:**
+
+```elixir
+def build()
+```
+
+###### push_heading()
+
+Push a heading element.
+
+Auto-sets depth from the heading level and generates an anchor slug
+from the heading text.
+
+**Signature:**
+
+```elixir
+def push_heading(level, text, page, bbox)
+```
+
+###### push_paragraph()
+
+Push a paragraph element.
+
+**Signature:**
+
+```elixir
+def push_paragraph(text, annotations, page, bbox)
+```
+
+###### push_list()
+
+Push a `ListStart` marker and increment depth.
+
+**Signature:**
+
+```elixir
+def push_list(ordered)
+```
+
+###### end_list()
+
+Push a `ListEnd` marker and decrement depth.
+
+**Signature:**
+
+```elixir
+def end_list()
+```
+
+###### push_list_item()
+
+Push a list item element at the current depth.
+
+**Signature:**
+
+```elixir
+def push_list_item(text, ordered, annotations, page, bbox)
+```
+
+###### push_table()
+
+Push a table element. The table data is stored separately in
+`InternalDocument.tables` and referenced by index.
+
+**Signature:**
+
+```elixir
+def push_table(table, page, bbox)
+```
+
+###### push_table_from_cells()
+
+Push a table element from a 2D cell grid, building a `Table` struct automatically.
+
+**Signature:**
+
+```elixir
+def push_table_from_cells(cells, page, bbox)
+```
+
+###### push_image()
+
+Push an image element. The image data is stored separately in
+`InternalDocument.images` and referenced by index.
+
+**Signature:**
+
+```elixir
+def push_image(description, image, page, bbox)
+```
+
+###### push_code()
+
+Push a code block element. Language is stored in attributes.
+
+**Signature:**
+
+```elixir
+def push_code(text, language, page, bbox)
+```
+
+###### push_formula()
+
+Push a math formula element.
+
+**Signature:**
+
+```elixir
+def push_formula(text, page, bbox)
+```
+
+###### push_footnote_ref()
+
+Push a footnote reference marker.
+
+Creates a `FootnoteRef` element with `anchor = key` and also records
+a `Relationship` with `RelationshipTarget.Key(key)` so the derivation
+step can resolve it to the definition.
+
+**Signature:**
+
+```elixir
+def push_footnote_ref(marker, key, page)
+```
+
+###### push_footnote_definition()
+
+Push a footnote definition element with `anchor = key`.
+
+**Signature:**
+
+```elixir
+def push_footnote_definition(text, key, page)
+```
+
+###### push_citation()
+
+Push a citation / bibliographic reference element.
+
+**Signature:**
+
+```elixir
+def push_citation(text, key, page)
+```
+
+###### push_quote_start()
+
+Push a `QuoteStart` marker and increment depth.
+
+**Signature:**
+
+```elixir
+def push_quote_start()
+```
+
+###### push_quote_end()
+
+Push a `QuoteEnd` marker and decrement depth.
+
+**Signature:**
+
+```elixir
+def push_quote_end()
+```
+
+###### push_page_break()
+
+Push a page break marker at depth 0.
+
+**Signature:**
+
+```elixir
+def push_page_break()
+```
+
+###### push_slide()
+
+Push a slide element.
+
+**Signature:**
+
+```elixir
+def push_slide(number, title, page)
+```
+
+###### push_admonition()
+
+Push an admonition / callout element (note, warning, tip, etc.).
+Kind and optional title are stored in attributes.
+
+**Signature:**
+
+```elixir
+def push_admonition(kind, title, page)
+```
+
+###### push_raw_block()
+
+Push a raw block preserved verbatim. Format is stored in attributes.
+
+**Signature:**
+
+```elixir
+def push_raw_block(format, content, page)
+```
+
+###### push_metadata_block()
+
+Push a structured metadata block (frontmatter, email headers).
+Entries are stored in attributes.
+
+**Signature:**
+
+```elixir
+def push_metadata_block(entries, page)
+```
+
+###### push_title()
+
+Push a title element.
+
+**Signature:**
+
+```elixir
+def push_title(text, page, bbox)
+```
+
+###### push_definition_term()
+
+Push a definition term element.
+
+**Signature:**
+
+```elixir
+def push_definition_term(text, page)
+```
+
+###### push_definition_description()
+
+Push a definition description element.
+
+**Signature:**
+
+```elixir
+def push_definition_description(text, page)
+```
+
+###### push_ocr_text()
+
+Push an OCR text element with OCR-specific fields populated.
+
+**Signature:**
+
+```elixir
+def push_ocr_text(text, level, geometry, confidence, rotation, page, bbox)
+```
+
+###### push_group_start()
+
+Push a `GroupStart` marker and increment depth.
+
+**Signature:**
+
+```elixir
+def push_group_start(label, page)
+```
+
+###### push_group_end()
+
+Push a `GroupEnd` marker and decrement depth.
+
+**Signature:**
+
+```elixir
+def push_group_end()
+```
+
+###### push_relationship()
+
+Push a relationship between two elements.
+
+**Signature:**
+
+```elixir
+def push_relationship(source, target, kind)
+```
+
+###### set_anchor()
+
+Set the anchor on an already-pushed element.
+
+**Signature:**
+
+```elixir
+def set_anchor(index, anchor)
+```
+
+###### set_layer()
+
+Set the content layer on an already-pushed element.
+
+**Signature:**
+
+```elixir
+def set_layer(index, layer)
+```
+
+###### set_attributes()
+
+Set attributes on an already-pushed element.
+
+**Signature:**
+
+```elixir
+def set_attributes(index, attributes)
+```
+
+###### set_annotations()
+
+Set annotations on an already-pushed element.
+
+**Signature:**
+
+```elixir
+def set_annotations(index, annotations)
+```
+
+###### set_text()
+
+Set the text content of an already-pushed element.
+
+**Signature:**
+
+```elixir
+def set_text(index, text)
+```
+
+###### push_element()
+
+Push a pre-constructed `InternalElement` directly.
+
+Useful when the caller needs to construct an element with fields
+that the builder's convenience methods don't cover (e.g. an image
+element without `ExtractedImage` data).
+
+**Signature:**
+
+```elixir
+def push_element(element)
+```
+
+
+---
+
+#### InternalElement
+
+A single element in the internal flat document.
+
+Elements are appended in reading order during extraction. The `depth` field
+and optional container markers enable tree reconstruction in the derivation step.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `id` | `InternalElementId` | — | Deterministic identifier. |
+| `kind` | `ElementKind` | — | What kind of content this element represents. |
+| `text` | `String.t()` | — | Primary text content. Empty for non-text elements (images, page breaks). |
+| `depth` | `integer()` | — | Nesting depth (0 = root level). Extractors set this based on heading level, list indent, blockquote depth, etc. The tree derivation step uses depth changes to reconstruct parent-child relationships. |
+| `page` | `integer() | nil` | `nil` | Page number (1-indexed). `None` for non-paginated formats. |
+| `bbox` | `BoundingBox | nil` | `nil` | Bounding box in document coordinates. |
+| `layer` | `ContentLayer` | — | Content layer classification (Body, Header, Footer, Footnote). |
+| `annotations` | `list(TextAnnotation)` | — | Inline annotations (formatting, links) on this element's text content. Byte-range based, reuses the existing `TextAnnotation` type. |
+| `attributes` | `AHashMap | nil` | `nil` | Format-specific key-value attributes. Used for CSS classes, LaTeX env names, slide layout names, etc. |
+| `anchor` | `String.t() | nil` | `nil` | Optional anchor/key for this element. Used by the relationship resolver to match references to targets. Examples: heading slug `"introduction"`, footnote label `"fn1"`, citation key `"smith2024"`, figure label `"fig:diagram"`. |
+| `ocr_geometry` | `OcrBoundingGeometry | nil` | `nil` | OCR bounding geometry (rectangle or quadrilateral). |
+| `ocr_confidence` | `OcrConfidence | nil` | `nil` | OCR confidence scores (detection + recognition). |
+| `ocr_rotation` | `OcrRotation | nil` | `nil` | OCR rotation metadata. |
+
+##### Functions
+
+###### text()
+
+Create a simple text element with minimal fields.
+
+**Signature:**
+
+```elixir
+def text(kind, text, depth)
+```
+
+###### with_page()
+
+Set the page number.
+
+**Signature:**
+
+```elixir
+def with_page(page)
+```
+
+###### with_bbox()
+
+Set the bounding box.
+
+**Signature:**
+
+```elixir
+def with_bbox(bbox)
+```
+
+###### with_layer()
+
+Set the content layer.
+
+**Signature:**
+
+```elixir
+def with_layer(layer)
+```
+
+###### with_anchor()
+
+Set the anchor key.
+
+**Signature:**
+
+```elixir
+def with_anchor(anchor)
+```
+
+###### with_annotations()
+
+Set annotations.
+
+**Signature:**
+
+```elixir
+def with_annotations(annotations)
+```
+
+###### with_attributes()
+
+Set attributes.
+
+**Signature:**
+
+```elixir
+def with_attributes(attributes)
+```
+
+###### with_index()
+
+Regenerate the ID with the correct index (call after pushing to the document).
+
+**Signature:**
+
+```elixir
+def with_index(index)
+```
+
+
+---
+
+#### InternalElementId
+
+Deterministic element identifier, generated via blake3 hashing.
+
+Format: `"ie-{12 hex chars}"` (48 bits from blake3, ~281 trillion address space).
+Same input always produces the same ID, enabling diffing and caching.
+
+##### Functions
+
+###### generate()
+
+Generate a deterministic ID from element content.
+
+Hashes the element kind discriminant, text content, page number, and
+positional index using blake3. Takes 48 bits (6 bytes) of the hash.
+
+**Signature:**
+
+```elixir
+def generate(kind_discriminant, text, page, index)
+```
+
+###### as_str()
+
+Get the ID as a string slice.
+
+**Signature:**
+
+```elixir
+def as_str()
+```
+
+###### fmt()
+
+**Signature:**
+
+```elixir
+def fmt(f)
+```
+
+###### as_ref()
+
+**Signature:**
+
+```elixir
+def as_ref()
+```
+
+
+---
+
+#### InternedString
+
+A reference to an interned string stored in an Arc.
+
+This wraps an Arc<String> and provides convenient access to the string content.
+Multiple calls with the same string content will share the same Arc, reducing memory usage.
+
+##### Functions
+
+###### as_str()
+
+Get the string content.
+
+**Signature:**
+
+```elixir
+def as_str()
+```
+
+###### as_ref()
+
+**Signature:**
+
+```elixir
+def as_ref()
+```
+
+###### fmt()
+
+**Signature:**
+
+```elixir
+def fmt(f)
+```
+
+###### eq()
+
+**Signature:**
+
+```elixir
+def eq(other)
+```
+
+###### deref()
+
+**Signature:**
+
+```elixir
+def deref()
+```
+
+
+---
+
+#### IterationValidator
+
+Helper struct for validating iteration counts.
+
+##### Functions
+
+###### check_iteration()
+
+Validate and increment iteration count.
+
+**Returns:**
+* `Ok(())` if count is within limits
+* `Err(SecurityError)` if count exceeds limit
+
+**Signature:**
+
+```elixir
+def check_iteration()
+```
+
+###### current_count()
+
+Get current iteration count.
+
+**Signature:**
+
+```elixir
+def current_count()
+```
+
+
+---
+
+#### JatsExtractor
+
+JATS document extractor.
+
+Supports JATS (Journal Article Tag Suite) XML documents in various versions,
+handling both the full article structure and minimal JATS subsets.
+
+##### Functions
+
+###### default()
+
+**Signature:**
+
+```elixir
+def default()
+```
+
+###### name()
+
+**Signature:**
+
+```elixir
+def name()
+```
+
+###### version()
+
+**Signature:**
+
+```elixir
+def version()
+```
+
+###### initialize()
+
+**Signature:**
+
+```elixir
+def initialize()
+```
+
+###### shutdown()
+
+**Signature:**
+
+```elixir
+def shutdown()
+```
+
+###### extract_bytes()
+
+**Signature:**
+
+```elixir
+def extract_bytes(content, mime_type, config)
+```
+
+###### supported_mime_types()
+
+**Signature:**
+
+```elixir
+def supported_mime_types()
+```
+
+###### priority()
+
+**Signature:**
+
+```elixir
+def priority()
+```
+
+
+---
+
+#### JatsMetadata
+
+JATS (Journal Article Tag Suite) metadata.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `copyright` | `String.t() | nil` | `nil` | Copyright |
+| `license` | `String.t() | nil` | `nil` | License |
+| `history_dates` | `map()` | `%{}` | History dates |
+| `contributor_roles` | `list(ContributorRole)` | `[]` | Contributor roles |
+
+
+---
+
+#### JsonExtractionConfig
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `extract_schema` | `boolean()` | `false` | Extract schema |
+| `max_depth` | `integer()` | `20` | Maximum depth |
+| `array_item_limit` | `integer()` | `500` | Array item limit |
+| `include_type_info` | `boolean()` | `false` | Include type info |
+| `flatten_nested_objects` | `boolean()` | `true` | Flatten nested objects |
+| `custom_text_field_patterns` | `list(String.t())` | `[]` | Custom text field patterns |
+
+##### Functions
+
+###### default()
+
+**Signature:**
+
+```elixir
+def default()
+```
+
+
+---
+
+#### JupyterExtractor
+
+Jupyter Notebook extractor.
+
+Extracts content from Jupyter notebook JSON files, including:
+- Notebook metadata (kernel, language, nbformat version)
+- Cell content (code and markdown)
+- Cell outputs (text, HTML, etc.)
+- Cell-level metadata (tags, execution counts)
+
+##### Functions
+
+###### default()
+
+**Signature:**
+
+```elixir
+def default()
+```
+
+###### name()
+
+**Signature:**
+
+```elixir
+def name()
+```
+
+###### version()
+
+**Signature:**
+
+```elixir
+def version()
+```
+
+###### initialize()
+
+**Signature:**
+
+```elixir
+def initialize()
+```
+
+###### shutdown()
+
+**Signature:**
+
+```elixir
+def shutdown()
+```
+
+###### description()
+
+**Signature:**
+
+```elixir
+def description()
+```
+
+###### author()
+
+**Signature:**
+
+```elixir
+def author()
+```
+
+###### extract_bytes()
+
+**Signature:**
+
+```elixir
+def extract_bytes(content, mime_type, config)
+```
+
+###### supported_mime_types()
+
+**Signature:**
+
+```elixir
+def supported_mime_types()
+```
+
+###### priority()
+
+**Signature:**
+
+```elixir
+def priority()
+```
+
+
+---
+
+#### KMeansResult
+
+Result of KMeans clustering on font sizes.
+
+Contains cluster labels for each block, where cluster index indicates
+the hierarchy level: 0=H1, 1=H2, ..., 5=H6, 6+=Body.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `labels` | `list(integer())` | — | Cluster label for each block (0-indexed) |
+
+
+---
+
+#### KeynoteExtractor
+
+Apple Keynote presentation extractor.
+
+Supports `.key` files (modern iWork format, 2013+).
+
+Extracts slide text and speaker notes from the IWA container:
+ZIP → Snappy → protobuf text fields.
+
+##### Functions
+
+###### default()
+
+**Signature:**
+
+```elixir
+def default()
+```
+
+###### name()
+
+**Signature:**
+
+```elixir
+def name()
+```
+
+###### version()
+
+**Signature:**
+
+```elixir
+def version()
+```
+
+###### initialize()
+
+**Signature:**
+
+```elixir
+def initialize()
+```
+
+###### shutdown()
+
+**Signature:**
+
+```elixir
+def shutdown()
+```
+
+###### description()
+
+**Signature:**
+
+```elixir
+def description()
+```
+
+###### author()
+
+**Signature:**
+
+```elixir
+def author()
+```
+
+###### extract_bytes()
+
+**Signature:**
+
+```elixir
+def extract_bytes(content, mime_type, config)
+```
+
+###### supported_mime_types()
+
+**Signature:**
+
+```elixir
+def supported_mime_types()
+```
+
+###### priority()
+
+**Signature:**
+
+```elixir
+def priority()
+```
+
+
+---
+
+#### Keyword
+
+Extracted keyword with metadata.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `text` | `String.t()` | — | The keyword text. |
+| `score` | `float()` | — | Relevance score (higher is better, algorithm-specific range). |
+| `algorithm` | `KeywordAlgorithm` | — | Algorithm that extracted this keyword. |
+| `positions` | `list(integer()) | nil` | `nil` | Optional positions where keyword appears in text (character offsets). |
+
+##### Functions
+
+###### with_positions()
+
+Create a new keyword with positions.
+
+**Signature:**
+
+```elixir
+def with_positions(text, score, algorithm, positions)
+```
+
+
+---
+
+#### KeywordConfig
+
+Keyword extraction configuration.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `algorithm` | `KeywordAlgorithm` | `:yake` | Algorithm to use for extraction. |
+| `max_keywords` | `integer()` | `10` | Maximum number of keywords to extract (default: 10). |
+| `min_score` | `float()` | `0` | Minimum score threshold (0.0-1.0, default: 0.0). Keywords with scores below this threshold are filtered out. Note: Score ranges differ between algorithms. |
+| `ngram_range` | `UsizeUsize` | — | N-gram range for keyword extraction (min, max). (1, 1) = unigrams only (1, 2) = unigrams and bigrams (1, 3) = unigrams, bigrams, and trigrams (default) |
+| `language` | `String.t() | nil` | `nil` | Language code for stopword filtering (e.g., "en", "de", "fr"). If None, no stopword filtering is applied. |
+| `yake_params` | `YakeParams | nil` | `nil` | YAKE-specific tuning parameters. |
+| `rake_params` | `RakeParams | nil` | `nil` | RAKE-specific tuning parameters. |
+
+##### Functions
+
+###### default()
+
+**Signature:**
+
+```elixir
+def default()
+```
+
+###### with_max_keywords()
+
+Set maximum number of keywords to extract.
+
+**Signature:**
+
+```elixir
+def with_max_keywords(max)
+```
+
+###### with_min_score()
+
+Set minimum score threshold.
+
+**Signature:**
+
+```elixir
+def with_min_score(score)
+```
+
+###### with_ngram_range()
+
+Set n-gram range.
+
+**Signature:**
+
+```elixir
+def with_ngram_range(min, max)
+```
+
+###### with_language()
+
+Set language for stopword filtering.
+
+**Signature:**
+
+```elixir
+def with_language(lang)
+```
+
+
+---
+
+#### KeywordExtractor
+
+Post-processor that extracts keywords from document content.
+
+This processor:
+- Runs in the Middle processing stage
+- Only processes when `config.keywords` is configured
+- Stores extracted keywords in `metadata.additional["keywords"]`
+- Uses the configured algorithm (YAKE or RAKE)
+
+##### Functions
+
+###### name()
+
+**Signature:**
+
+```elixir
+def name()
+```
+
+###### version()
+
+**Signature:**
+
+```elixir
+def version()
+```
+
+###### initialize()
+
+**Signature:**
+
+```elixir
+def initialize()
+```
+
+###### shutdown()
+
+**Signature:**
+
+```elixir
+def shutdown()
+```
+
+###### process()
+
+**Signature:**
+
+```elixir
+def process(result, config)
+```
+
+###### processing_stage()
+
+**Signature:**
+
+```elixir
+def processing_stage()
+```
+
+###### should_process()
+
+**Signature:**
+
+```elixir
+def should_process(result, config)
+```
+
+###### estimated_duration_ms()
+
+**Signature:**
+
+```elixir
+def estimated_duration_ms(result)
+```
+
+
+---
+
+#### KreuzbergMcp
+
+Kreuzberg MCP server.
+
+Provides document extraction capabilities via MCP tools.
+
+The server loads a default extraction configuration from kreuzberg.toml/yaml/json
+via discovery. Per-request OCR settings override the defaults.
+
+##### Functions
+
+###### clone()
+
+**Signature:**
+
+```elixir
+def clone()
+```
+
+###### new()
+
+Create a new Kreuzberg MCP server instance with default config.
+
+Uses `ExtractionConfig.discover()` to search for kreuzberg.toml/yaml/json
+in current and parent directories. Falls back to default configuration if
+no config file is found.
+
+**Signature:**
+
+```elixir
+def new()
+```
+
+###### with_config()
+
+Create a new Kreuzberg MCP server instance with explicit config.
+
+**Signature:**
+
+```elixir
+def with_config(config)
+```
+
+###### get_info()
+
+**Signature:**
+
+```elixir
+def get_info()
+```
+
+###### default()
+
+**Signature:**
+
+```elixir
+def default()
+```
+
+
+---
+
+#### LanguageDetectionConfig
+
+Language detection configuration.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `enabled` | `boolean()` | — | Enable language detection |
+| `min_confidence` | `float()` | — | Minimum confidence threshold (0.0-1.0) |
+| `detect_multiple` | `boolean()` | — | Detect multiple languages in the document |
+
+
+---
+
+#### LanguageDetector
+
+Post-processor that detects languages in document content.
+
+This processor:
+- Runs in the Early processing stage
+- Only processes when `config.language_detection` is configured
+- Stores detected languages in `result.detected_languages`
+- Uses the whatlang library for detection
+
+##### Functions
+
+###### name()
+
+**Signature:**
+
+```elixir
+def name()
+```
+
+###### version()
+
+**Signature:**
+
+```elixir
+def version()
+```
+
+###### initialize()
+
+**Signature:**
+
+```elixir
+def initialize()
+```
+
+###### shutdown()
+
+**Signature:**
+
+```elixir
+def shutdown()
+```
+
+###### process()
+
+**Signature:**
+
+```elixir
+def process(result, config)
+```
+
+###### processing_stage()
+
+**Signature:**
+
+```elixir
+def processing_stage()
+```
+
+###### should_process()
+
+**Signature:**
+
+```elixir
+def should_process(result, config)
+```
+
+###### estimated_duration_ms()
+
+**Signature:**
+
+```elixir
+def estimated_duration_ms(result)
+```
+
+
+---
+
+#### LanguageRegistry
+
+Language support registry for OCR backends.
+
+Maintains a mapping of OCR backend names to their supported language codes.
+This is the single source of truth for language support across all bindings.
+
+##### Functions
+
+###### global()
+
+Get the default global registry instance.
+
+The registry is created on first access and reused for all subsequent calls.
+
+**Returns:**
+
+A reference to the global `LanguageRegistry` instance.
+
+**Signature:**
+
+```elixir
+def global()
+```
+
+###### get_supported_languages()
+
+Get supported languages for a specific OCR backend.
+
+**Returns:**
+
+`Some(&[String])` if the backend is registered, `nil` otherwise.
+
+**Signature:**
+
+```elixir
+def get_supported_languages(backend)
+```
+
+###### is_language_supported()
+
+Check if a language is supported by a specific backend.
+
+**Returns:**
+
+`true` if the language is supported, `false` otherwise.
+
+**Signature:**
+
+```elixir
+def is_language_supported(backend, language)
+```
+
+###### get_backends()
+
+Get all registered backend names.
+
+**Returns:**
+
+A vector of backend names in the registry.
+
+**Signature:**
+
+```elixir
+def get_backends()
+```
+
+###### get_language_count()
+
+Get language count for a specific backend.
+
+**Returns:**
+
+Number of supported languages for the backend, or 0 if backend not found.
+
+**Signature:**
+
+```elixir
+def get_language_count(backend)
+```
+
+###### default()
+
+**Signature:**
+
+```elixir
+def default()
+```
+
+
+---
+
+#### LatexExtractor
+
+LaTeX document extractor
+
+##### Functions
+
+###### build_internal_document()
+
+Build an `InternalDocument` from LaTeX source.
+
+Captures `\label{}` as anchors, `\ref{}` as CrossReference relationships,
+`\cite{}` as CitationReference relationships, and footnotes.
+
+**Signature:**
+
+```elixir
+def build_internal_document(source, inject_placeholders)
+```
+
+###### default()
+
+**Signature:**
+
+```elixir
+def default()
+```
+
+###### name()
+
+**Signature:**
+
+```elixir
+def name()
+```
+
+###### version()
+
+**Signature:**
+
+```elixir
+def version()
+```
+
+###### initialize()
+
+**Signature:**
+
+```elixir
+def initialize()
+```
+
+###### shutdown()
+
+**Signature:**
+
+```elixir
+def shutdown()
+```
+
+###### description()
+
+**Signature:**
+
+```elixir
+def description()
+```
+
+###### author()
+
+**Signature:**
+
+```elixir
+def author()
+```
+
+###### extract_bytes()
+
+**Signature:**
+
+```elixir
+def extract_bytes(content, mime_type, config)
+```
+
+###### extract_file()
+
+**Signature:**
+
+```elixir
+def extract_file(path, mime_type, config)
+```
+
+###### supported_mime_types()
+
+**Signature:**
+
+```elixir
+def supported_mime_types()
+```
+
+###### priority()
+
+**Signature:**
+
+```elixir
+def priority()
+```
+
+
+---
+
+#### LayoutDetection
+
+A single layout detection result.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `class` | `LayoutClass` | — | Class (layout class) |
+| `confidence` | `float()` | — | Confidence |
+| `bbox` | `BBox` | — | Bbox (b box) |
+
+##### Functions
+
+###### sort_by_confidence_desc()
+
+Sort detections by confidence in descending order.
+
+**Signature:**
+
+```elixir
+def sort_by_confidence_desc(detections)
+```
+
+###### fmt()
+
+**Signature:**
+
+```elixir
+def fmt(f)
+```
+
+
+---
+
+#### LayoutDetectionConfig
+
+Layout detection configuration.
+
+Controls layout detection behavior in the extraction pipeline.
+When set on `ExtractionConfig`, layout detection
+is enabled for PDF extraction.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `confidence_threshold` | `float() | nil` | `nil` | Confidence threshold override (None = use model default). |
+| `apply_heuristics` | `boolean()` | `true` | Whether to apply postprocessing heuristics (default: true). |
+| `table_model` | `TableModel` | `:tatr` | Table structure recognition model. Controls which model is used for table cell detection within layout-detected table regions. Defaults to `TableModel.Tatr`. |
+| `acceleration` | `AccelerationConfig | nil` | `nil` | Hardware acceleration for ONNX models (layout detection + table structure). When set, controls which execution provider (CPU, CUDA, CoreML, TensorRT) is used for inference. Defaults to `None` (auto-select per platform). |
+
+##### Functions
+
+###### default()
+
+**Signature:**
+
+```elixir
+def default()
+```
+
+
+---
+
+#### LayoutEngine
+
+High-level layout detection engine.
+
+Wraps model loading, inference, and postprocessing into a single
+reusable object. Models are downloaded and cached on first use.
+
+##### Functions
+
+###### from_config()
+
+Create a layout engine from a full config.
+
+**Signature:**
+
+```elixir
+def from_config(config)
+```
+
+###### detect()
+
+Run layout detection on an image.
+
+Returns a `DetectionResult` with bounding boxes, classes, and confidence scores.
+If `apply_heuristics` is enabled in config, postprocessing is applied automatically.
+
+**Signature:**
+
+```elixir
+def detect(img)
+```
+
+###### detect_timed()
+
+Run layout detection on an image and return granular timing data.
+
+Identical to `detect` but also returns a `DetectTimings` breakdown.
+Use this when you need per-step profiling (preprocess / onnx / postprocess).
+
+**Signature:**
+
+```elixir
+def detect_timed(img)
+```
+
+###### detect_batch()
+
+Run layout detection on a batch of images in a single model call.
+
+Returns one `(DetectionResult, DetectTimings)` tuple per input image.
+Postprocessing heuristics are applied per image when enabled in config.
+
+Timing note: `preprocess_ms` and `onnx_ms` in each `DetectTimings` are the
+amortized per-image share of the batch operation (total / N), not independent
+per-image measurements.
+
+**Signature:**
+
+```elixir
+def detect_batch(images)
+```
+
+###### model_name()
+
+Get the model name.
+
+**Signature:**
+
+```elixir
+def model_name()
+```
+
+###### config()
+
+Return a reference to the engine's configuration.
+
+Used by callers (e.g. parallel layout runners) that need to create
+additional engines with identical settings.
+
+**Signature:**
+
+```elixir
+def config()
+```
+
+
+---
+
+#### LayoutEngineConfig
+
+Full configuration for the layout engine.
+
+Provides fine-grained control over model selection, thresholds, and
+postprocessing.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `backend` | `ModelBackend` | `:rt_detr` | Which model backend to use. |
+| `confidence_threshold` | `float() | nil` | `nil` | Confidence threshold override (None = use model default). |
+| `apply_heuristics` | `boolean()` | `true` | Whether to apply postprocessing heuristics. |
+| `cache_dir` | `String.t() | nil` | `nil` | Custom cache directory for model files (None = default). |
+| `acceleration` | `AccelerationConfig | nil` | `nil` | Hardware acceleration for ONNX inference. |
+
+##### Functions
+
+###### default()
+
+**Signature:**
+
+```elixir
+def default()
+```
+
+
+---
+
+#### LayoutModel
+
+Common interface for all layout detection model backends.
+
+##### Functions
+
+###### detect()
+
+Run layout detection on an image using the default confidence threshold.
+
+**Signature:**
+
+```elixir
+def detect(img)
+```
+
+###### detect_with_threshold()
+
+Run layout detection with a custom confidence threshold.
+
+**Signature:**
+
+```elixir
+def detect_with_threshold(img, threshold)
+```
+
+###### detect_batch()
+
+Run layout detection on a batch of images in a single model call.
+
+Returns one `Vec<LayoutDetection>` per input image (same order).
+`threshold` overrides the model's default confidence cutoff when `Some`.
+
+The default implementation is a sequential fallback: models that support
+true batched inference (e.g. `rtdetr.RtDetrModel`) override this.
+
+**Signature:**
+
+```elixir
+def detect_batch(images, threshold)
+```
+
+###### name()
+
+Human-readable model name.
+
+**Signature:**
+
+```elixir
+def name()
+```
+
+
+---
+
+#### LayoutModelManager
+
+Manages layout model downloading, caching, and path resolution.
+
+##### Functions
+
+###### ensure_rtdetr_model()
+
+Ensure the RT-DETR model (Docling Heron) exists locally, downloading if needed.
+
+**Signature:**
+
+```elixir
+def ensure_rtdetr_model()
+```
+
+###### is_rtdetr_cached()
+
+Check if the RT-DETR model is cached.
+
+**Signature:**
+
+```elixir
+def is_rtdetr_cached()
+```
+
+###### ensure_tatr_model()
+
+Ensure the TATR table structure recognition model exists locally, downloading if needed.
+
+**Signature:**
+
+```elixir
+def ensure_tatr_model()
+```
+
+###### is_tatr_cached()
+
+Check if the TATR model is cached.
+
+**Signature:**
+
+```elixir
+def is_tatr_cached()
+```
+
+###### ensure_slanet_model()
+
+Ensure a SLANeXT table structure model exists locally, downloading if needed.
+
+`variant` must be one of: `"slanet_wired"`, `"slanet_wireless"`, `"slanet_plus"`.
+
+**Signature:**
+
+```elixir
+def ensure_slanet_model(variant)
+```
+
+###### ensure_table_classifier()
+
+Ensure the table classifier model exists locally, downloading if needed.
+
+**Signature:**
+
+```elixir
+def ensure_table_classifier()
+```
+
+###### cache_dir()
+
+Get the cache directory path.
+
+**Signature:**
+
+```elixir
+def cache_dir()
+```
+
+###### manifest()
+
+Returns the manifest of all layout model files with checksums and sizes.
+
+Paths are relative to the cache root (prefixed with "layout/").
+
+**Signature:**
+
+```elixir
+def manifest()
+```
+
+###### ensure_default_models()
+
+Ensures the default layout models (RT-DETR + TATR) are downloaded and cached.
+
+This downloads only the core models needed for basic layout detection and table
+structure recognition. Use `ensure_all_models` to also download the larger
+SLANeXT variants (~730MB).
+
+**Signature:**
+
+```elixir
+def ensure_default_models()
+```
+
+###### ensure_all_models()
+
+Ensures all layout models are downloaded and cached.
+
+Downloads RT-DETR, TATR, and all SLANeXT table structure variants (~730MB).
+For a lighter download that omits SLANeXT, use `ensure_default_models`.
+
+**Signature:**
+
+```elixir
+def ensure_all_models()
+```
+
+
+---
+
+#### LayoutRegion
+
+A detected layout region on a page.
+
+When layout detection is enabled, each page may have layout regions
+identifying different content types (text, pictures, tables, etc.)
+with confidence scores and spatial positions.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `class` | `String.t()` | — | Layout class name (e.g. "picture", "table", "text", "section_header"). |
+| `confidence` | `float()` | — | Confidence score from the layout detection model (0.0 to 1.0). |
+| `bounding_box` | `BoundingBox` | — | Bounding box in document coordinate space. |
+| `area_fraction` | `float()` | — | Fraction of the page area covered by this region (0.0 to 1.0). |
+
+
+---
+
+#### LayoutTimingReport
+
+Timing breakdown for the entire layout detection run.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `total_ms` | `float()` | — | Total ms |
+| `per_page` | `list(PageTiming)` | — | Per page |
+
+##### Functions
+
+###### avg_render_ms()
+
+**Signature:**
+
+```elixir
+def avg_render_ms()
+```
+
+###### avg_inference_ms()
+
+**Signature:**
+
+```elixir
+def avg_inference_ms()
+```
+
+###### avg_preprocess_ms()
+
+**Signature:**
+
+```elixir
+def avg_preprocess_ms()
+```
+
+###### avg_onnx_ms()
+
+**Signature:**
+
+```elixir
+def avg_onnx_ms()
+```
+
+###### avg_postprocess_ms()
+
+**Signature:**
+
+```elixir
+def avg_postprocess_ms()
+```
+
+###### total_inference_ms()
+
+**Signature:**
+
+```elixir
+def total_inference_ms()
+```
+
+###### total_render_ms()
+
+**Signature:**
+
+```elixir
+def total_render_ms()
+```
+
+###### total_preprocess_ms()
+
+**Signature:**
+
+```elixir
+def total_preprocess_ms()
+```
+
+###### total_onnx_ms()
+
+**Signature:**
+
+```elixir
+def total_onnx_ms()
+```
+
+###### total_postprocess_ms()
+
+**Signature:**
+
+```elixir
+def total_postprocess_ms()
+```
+
+
+---
+
+#### LinkMetadata
+
+Link element metadata.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `href` | `String.t()` | — | The href URL value |
+| `text` | `String.t()` | — | Link text content (normalized) |
+| `title` | `String.t() | nil` | `nil` | Optional title attribute |
+| `link_type` | `LinkType` | — | Link type classification |
+| `rel` | `list(String.t())` | — | Rel attribute values |
+| `attributes` | `list(StringString)` | — | Additional attributes as key-value pairs |
+
+
+---
+
+#### ListItemMetadata
+
+Metadata about a detected list item.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `list_type` | `ListType` | — | Type of list (Bullet, Numbered, etc.) |
+| `byte_start` | `integer()` | — | Starting byte offset in the content string |
+| `byte_end` | `integer()` | — | Ending byte offset in the content string |
+| `indent_level` | `integer()` | — | List item indent level |
+
+
+---
+
+#### LlmConfig
+
+Configuration for an LLM provider/model via liter-llm.
+
+Each feature (VLM OCR, VLM embeddings, structured extraction) carries
+its own `LlmConfig`, allowing different providers per feature.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `model` | `String.t()` | — | Provider/model string using liter-llm routing format. Examples: `"openai/gpt-4o"`, `"anthropic/claude-sonnet-4-20250514"`, `"groq/llama-3.1-70b-versatile"`. |
+| `api_key` | `String.t() | nil` | `nil` | API key for the provider. When `None`, liter-llm falls back to the provider's standard environment variable (e.g., `OPENAI_API_KEY`). |
+| `base_url` | `String.t() | nil` | `nil` | Custom base URL override for the provider endpoint. |
+| `timeout_secs` | `integer() | nil` | `nil` | Request timeout in seconds (default: 60). |
+| `max_retries` | `integer() | nil` | `nil` | Maximum retry attempts (default: 3). |
+| `temperature` | `float() | nil` | `nil` | Sampling temperature for generation tasks. |
+| `max_tokens` | `integer() | nil` | `nil` | Maximum tokens to generate. |
+
+
+---
+
+#### LlmUsage
+
+Token usage and cost data for a single LLM call made during extraction.
+
+Populated when VLM OCR, structured extraction, or LLM-based embeddings
+are used. Multiple entries may be present when multiple LLM calls occur
+within one extraction (e.g. VLM OCR + structured extraction).
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `model` | `String.t()` | — | The LLM model identifier (e.g. "openai/gpt-4o", "anthropic/claude-sonnet-4-20250514"). |
+| `source` | `String.t()` | — | The pipeline stage that triggered this LLM call (e.g. "vlm_ocr", "structured_extraction", "embeddings"). |
+| `input_tokens` | `integer() | nil` | `nil` | Number of input/prompt tokens consumed. |
+| `output_tokens` | `integer() | nil` | `nil` | Number of output/completion tokens generated. |
+| `total_tokens` | `integer() | nil` | `nil` | Total tokens (input + output). |
+| `estimated_cost` | `float() | nil` | `nil` | Estimated cost in USD based on the provider's published pricing. |
+| `finish_reason` | `String.t() | nil` | `nil` | Why the model stopped generating (e.g. "stop", "length", "content_filter"). |
+
+
+---
+
+#### ManifestEntryResponse
+
+Model manifest entry for cache management.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `relative_path` | `String.t()` | — | Relative path within the cache directory |
+| `sha256` | `String.t()` | — | SHA256 checksum of the model file |
+| `size_bytes` | `integer()` | — | Expected file size in bytes |
+| `source_url` | `String.t()` | — | HuggingFace source URL for downloading |
+
+
+---
+
+#### ManifestResponse
+
+Model manifest response.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `kreuzberg_version` | `String.t()` | — | Kreuzberg version |
+| `total_size_bytes` | `integer()` | — | Total size of all models in bytes |
+| `model_count` | `integer()` | — | Number of models in the manifest |
+| `models` | `list(ManifestEntryResponse)` | — | Individual model entries |
+
+
+---
+
+#### MarkdownExtractor
+
+Markdown extractor with metadata and table support.
+
+Parses markdown documents with YAML frontmatter, extracting:
+- Metadata from YAML frontmatter
+- Plain text content
+- Tables as structured data
+- Document structure (headings, links, code blocks)
+- Images from data URIs
+
+##### Functions
+
+###### build_internal_document()
+
+Build an `InternalDocument` from pulldown-cmark events and optional YAML frontmatter.
+
+**Signature:**
+
+```elixir
+def build_internal_document(events, yaml)
+```
+
+###### default()
+
+**Signature:**
+
+```elixir
+def default()
+```
+
+###### name()
+
+**Signature:**
+
+```elixir
+def name()
+```
+
+###### version()
+
+**Signature:**
+
+```elixir
+def version()
+```
+
+###### initialize()
+
+**Signature:**
+
+```elixir
+def initialize()
+```
+
+###### shutdown()
+
+**Signature:**
+
+```elixir
+def shutdown()
+```
+
+###### description()
+
+**Signature:**
+
+```elixir
+def description()
+```
+
+###### author()
+
+**Signature:**
+
+```elixir
+def author()
+```
+
+###### extract_bytes()
+
+**Signature:**
+
+```elixir
+def extract_bytes(content, mime_type, config)
+```
+
+###### extract_file()
+
+**Signature:**
+
+```elixir
+def extract_file(path, mime_type, config)
+```
+
+###### supported_mime_types()
+
+**Signature:**
+
+```elixir
+def supported_mime_types()
+```
+
+###### priority()
+
+**Signature:**
+
+```elixir
+def priority()
+```
+
+
+---
+
+#### MdxExtractor
+
+MDX extractor with JSX stripping and Markdown processing.
+
+Strips MDX-specific syntax (imports, exports, JSX component tags,
+inline expressions) and processes the remaining content as Markdown,
+extracting metadata from YAML frontmatter and tables.
+
+##### Functions
+
+###### build_internal_document()
+
+Build an `InternalDocument` from pulldown-cmark events after JSX stripping.
+
+JSX blocks that were stripped are recorded as raw blocks in the internal document.
+
+**Signature:**
+
+```elixir
+def build_internal_document(events, yaml, raw_jsx_blocks)
+```
+
+###### default()
+
+**Signature:**
+
+```elixir
+def default()
+```
+
+###### name()
+
+**Signature:**
+
+```elixir
+def name()
+```
+
+###### version()
+
+**Signature:**
+
+```elixir
+def version()
+```
+
+###### initialize()
+
+**Signature:**
+
+```elixir
+def initialize()
+```
+
+###### shutdown()
+
+**Signature:**
+
+```elixir
+def shutdown()
+```
+
+###### description()
+
+**Signature:**
+
+```elixir
+def description()
+```
+
+###### author()
+
+**Signature:**
+
+```elixir
+def author()
+```
+
+###### extract_bytes()
+
+**Signature:**
+
+```elixir
+def extract_bytes(content, mime_type, config)
+```
+
+###### extract_file()
+
+**Signature:**
+
+```elixir
+def extract_file(path, mime_type, config)
+```
+
+###### supported_mime_types()
+
+**Signature:**
+
+```elixir
+def supported_mime_types()
+```
+
+###### priority()
+
+**Signature:**
+
+```elixir
+def priority()
+```
+
+
+---
+
+#### MergedChunk
+
+A merged chunk produced by `merge_segments`.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `text` | `String.t()` | — | Text |
+| `byte_start` | `integer()` | — | Byte start |
+| `byte_end` | `integer()` | — | Byte end |
+
+
+---
+
+#### Metadata
+
+Extraction result metadata.
+
+Contains common fields applicable to all formats, format-specific metadata
+via a discriminated union, and additional custom fields from postprocessors.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `title` | `String.t() | nil` | `nil` | Document title |
+| `subject` | `String.t() | nil` | `nil` | Document subject or description |
+| `authors` | `list(String.t()) | nil` | `[]` | Primary author(s) - always Vec for consistency |
+| `keywords` | `list(String.t()) | nil` | `[]` | Keywords/tags - always Vec for consistency |
+| `language` | `String.t() | nil` | `nil` | Primary language (ISO 639 code) |
+| `created_at` | `String.t() | nil` | `nil` | Creation timestamp (ISO 8601 format) |
+| `modified_at` | `String.t() | nil` | `nil` | Last modification timestamp (ISO 8601 format) |
+| `created_by` | `String.t() | nil` | `nil` | User who created the document |
+| `modified_by` | `String.t() | nil` | `nil` | User who last modified the document |
+| `pages` | `PageStructure | nil` | `nil` | Page/slide/sheet structure with boundaries |
+| `format` | `FormatMetadata | nil` | `nil` | Format-specific metadata (discriminated union) Contains detailed metadata specific to the document format. Serializes with a `format_type` discriminator field. |
+| `image_preprocessing` | `ImagePreprocessingMetadata | nil` | `nil` | Image preprocessing metadata (when OCR preprocessing was applied) |
+| `json_schema` | `term() | nil` | `nil` | JSON schema (for structured data extraction) |
+| `error` | `ErrorMetadata | nil` | `nil` | Error metadata (for batch operations) |
+| `extraction_duration_ms` | `integer() | nil` | `nil` | Extraction duration in milliseconds (for benchmarking). This field is populated by batch extraction to provide per-file timing information. It's `None` for single-file extraction (which uses external timing). |
+| `category` | `String.t() | nil` | `nil` | Document category (from frontmatter or classification). |
+| `tags` | `list(String.t()) | nil` | `[]` | Document tags (from frontmatter). |
+| `document_version` | `String.t() | nil` | `nil` | Document version string (from frontmatter). |
+| `abstract_text` | `String.t() | nil` | `nil` | Abstract or summary text (from frontmatter). |
+| `output_format` | `String.t() | nil` | `nil` | Output format identifier (e.g., "markdown", "html", "text"). Set by the output format pipeline stage when format conversion is applied. Previously stored in `metadata.additional["output_format"]`. |
+| `additional` | `AHashMap` | — | Additional custom fields from postprocessors. **Deprecated**: Prefer using typed fields on `ExtractionResult` and `Metadata` instead of inserting into this map. Typed fields provide better cross-language compatibility and type safety. This field will be removed in a future major version. This flattened map allows Python/TypeScript postprocessors to add arbitrary fields (entity extraction, keyword extraction, etc.). Fields are merged at the root level during serialization. Uses `Cow<'static, str>` keys so static string keys avoid allocation. |
+
+
+---
+
+#### MetricsLayer
+
+A `tower.Layer` that records service-level extraction metrics.
+
+##### Functions
+
+###### layer()
+
+**Signature:**
+
+```elixir
+def layer(inner)
+```
+
+
+---
+
+#### ModelCache
+
+##### Functions
+
+###### put()
+
+Return a model to the cache for reuse.
+
+If the cache already holds a model (e.g. from a concurrent caller),
+the returned model is silently dropped.
+
+**Signature:**
+
+```elixir
+def put(model)
+```
+
+###### take()
+
+Take the cached model if one exists, without creating a new one.
+
+**Signature:**
+
+```elixir
+def take()
+```
+
+
+---
+
+#### ModelManager
+
+Manages PaddleOCR model downloading, caching, and path resolution.
+
+The model manager ensures that PaddleOCR models are available locally,
+organized by model type. Shared models (det, cls) are downloaded once,
+while recognition models are downloaded per-script-family on demand.
+
+##### Functions
+
+###### cache_dir()
+
+Gets the cache directory path.
+
+**Signature:**
+
+```elixir
+def cache_dir()
+```
+
+###### ensure_rec_model()
+
+Ensures a recognition model for the given script family exists locally.
+
+Downloads the model and character dictionary from HuggingFace if not cached.
+
+**Signature:**
+
+```elixir
+def ensure_rec_model(family)
+```
+
+###### ensure_models_exist()
+
+Backward-compatible method that ensures all models for English exist.
+
+**Signature:**
+
+```elixir
+def ensure_models_exist()
+```
+
+###### model_path()
+
+Returns the path for a model type directory (det, cls).
+
+**Signature:**
+
+```elixir
+def model_path(model_type)
+```
+
+###### are_shared_models_cached()
+
+Checks if shared models (det + cls) are cached locally.
+
+**Signature:**
+
+```elixir
+def are_shared_models_cached()
+```
+
+###### is_rec_model_cached()
+
+Checks if a recognition model for the given family is cached.
+
+**Signature:**
+
+```elixir
+def is_rec_model_cached(family)
+```
+
+###### are_models_cached()
+
+Checks if all required models are cached (shared + English v2 rec).
+
+**Signature:**
+
+```elixir
+def are_models_cached()
+```
+
+###### clear_cache()
+
+Clears all cached models from the cache directory.
+
+**Signature:**
+
+```elixir
+def clear_cache()
+```
+
+###### cache_stats()
+
+Returns statistics about the current cache.
+
+**Signature:**
+
+```elixir
+def cache_stats()
+```
+
+###### manifest()
+
+Returns the manifest of all PaddleOCR model files with checksums and sizes.
+
+This includes shared models (det, cls) and all 9 per-script recognition model families.
+Paths are relative to the cache root (prefixed with "paddle-ocr/").
+
+**Signature:**
+
+```elixir
+def manifest()
+```
+
+###### ensure_all_models()
+
+Ensures all v2 models are downloaded and cached.
+
+Downloads:
+- Both detection tiers (server + mobile)
+- Classification model (PP-LCNet textline_ori)
+- Document orientation model (PP-LCNet doc_ori)
+- All v2 unified rec models (server, mobile, en_mobile)
+- All per-script rec models for uncovered scripts
+
+**Signature:**
+
+```elixir
+def ensure_all_models()
+```
+
+###### ensure_v2_det_model()
+
+Ensures the v2 detection model for the given tier is cached locally.
+
+Downloads from HuggingFace if not cached. Returns the path to the
+directory containing the ONNX model file.
+
+**Signature:**
+
+```elixir
+def ensure_v2_det_model(tier)
+```
+
+###### ensure_v2_cls_model()
+
+Ensures the v2 classification model is cached locally.
+
+The cls model is the same for both tiers.
+
+**Signature:**
+
+```elixir
+def ensure_v2_cls_model()
+```
+
+###### ensure_doc_ori_model()
+
+Ensures the v2 document orientation model is cached locally.
+
+Used for page-level auto_rotate when PaddleOCR backend is active.
+
+**Signature:**
+
+```elixir
+def ensure_doc_ori_model()
+```
+
+###### ensure_shared_models()
+
+Ensures shared models (det + cls) are cached for the given tier.
+
+**Signature:**
+
+```elixir
+def ensure_shared_models(tier)
+```
+
+###### resolve_rec_model()
+
+Resolves the recognition model for a script family and tier.
+
+Returns the model directory, dict file path, and a model key for
+engine pool sharing. Multiple families may share the same model key
+(e.g. chinese and japanese both use "v2:unified_server").
+
+# Selection matrix
+
+| Family | Server | Mobile |
+|---|---|---|
+| english | v2 unified_server (84MB) | v2 unified_mobile (16.5MB) |
+| chinese (ch, jpn, chinese_cht) | v2 unified_server (84MB) | v2 unified_mobile (16.5MB) |
+| all others | per-script (unchanged) | per-script (unchanged) |
+
+**Signature:**
+
+```elixir
+def resolve_rec_model(family, tier)
+```
+
+
+---
+
+#### ModelManifestEntry
+
+A single model file entry in the cache manifest.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `relative_path` | `String.t()` | — | Relative path within the cache directory (e.g., "paddle-ocr/det/model.onnx"). |
+| `sha256` | `String.t()` | — | SHA256 checksum of the model file. |
+| `size_bytes` | `integer()` | — | Expected file size in bytes. |
+| `source_url` | `String.t()` | — | HuggingFace source URL for downloading. |
+
+
+---
+
+#### ModelPaths
+
+Combined paths to all models needed for OCR (backward compatibility).
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `det_model` | `String.t()` | — | Path to the detection model directory. |
+| `cls_model` | `String.t()` | — | Path to the classification model directory. |
+| `rec_model` | `String.t()` | — | Path to the recognition model directory. |
+| `dict_file` | `String.t()` | — | Path to the character dictionary file. |
+
+
+---
+
+#### NativeTextStats
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `non_whitespace` | `integer()` | — | Non whitespace |
+| `alnum` | `integer()` | — | Alnum |
+| `meaningful_words` | `integer()` | — | Meaningful words |
+| `alnum_ratio` | `float()` | — | Alnum ratio |
+| `garbage_char_count` | `integer()` | — | Count of Unicode replacement characters (U+FFFD) indicating encoding failures. |
+| `fragmented_word_ratio` | `float()` | — | Fraction of whitespace-delimited words that are 1-2 characters (0.0-1.0). High values indicate fragmented/garbled text extraction. |
+| `consecutive_repeat_ratio` | `float()` | — | Fraction of consecutive word pairs that are identical (0.0-1.0). High values indicate column scrambling where text is duplicated. |
+| `avg_word_length` | `float()` | — | Average word length (by chars). Very low values indicate garbled extraction. |
+| `word_count` | `integer()` | — | Total word count (whitespace-delimited). |
+
+##### Functions
+
+###### compute()
+
+**Signature:**
+
+```elixir
+def compute(text, thresholds)
+```
+
+###### from()
+
+Convenience method using default thresholds.
+
+**Signature:**
+
+```elixir
+def from(text)
+```
+
+
+---
+
+#### NodeId
+
+Deterministic node identifier.
+
+Generated from a hash of `node_type + text + page`. The same document
+always produces the same IDs, making them useful for diffing, caching,
+and external references.
+
+##### Functions
+
+###### generate()
+
+Generate a deterministic `NodeId` from node content.
+
+Uses wrapping multiplication hashing on the node type discriminant,
+text content, page number, and node index to produce a stable hex identifier.
+The index parameter ensures uniqueness for duplicate content on the same page.
+
+# Parameters
+
+- `node_type`: The node type discriminant (e.g., "paragraph", "heading")
+- `text`: The text content of the node
+- `page`: The page number (None becomes u64.MAX for hashing)
+- `index`: The position of this node in the document's nodes array
+
+**Signature:**
+
+```elixir
+def generate(node_type, text, page, index)
+```
+
+###### as_ref()
+
+**Signature:**
+
+```elixir
+def as_ref()
+```
+
+###### fmt()
+
+**Signature:**
+
+```elixir
+def fmt(f)
+```
+
+
+---
+
+#### NormalizeResult
+
+Result of image normalization
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `rgb_data` | `binary()` | — | Processed RGB image data (height * width * 3 bytes) |
+| `dimensions` | `UsizeUsize` | — | Image dimensions (width, height) |
+| `metadata` | `ImagePreprocessingMetadata` | — | Preprocessing metadata |
+
+
+---
+
+#### Note
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `id` | `String.t()` | — | Unique identifier |
+| `note_type` | `NoteType` | — | Note type (note type) |
+| `paragraphs` | `list(Paragraph)` | — | Paragraphs |
+
+
+---
+
+#### NumbersExtractor
+
+Apple Numbers spreadsheet extractor.
+
+Supports `.numbers` files (modern iWork format, 2013+).
+
+Extracts cell string values and sheet names from the IWA container:
+ZIP → Snappy → protobuf text fields. Output is formatted as plain text
+with one text token per line (representing cell values and labels).
+
+##### Functions
+
+###### default()
+
+**Signature:**
+
+```elixir
+def default()
+```
+
+###### name()
+
+**Signature:**
+
+```elixir
+def name()
+```
+
+###### version()
+
+**Signature:**
+
+```elixir
+def version()
+```
+
+###### initialize()
+
+**Signature:**
+
+```elixir
+def initialize()
+```
+
+###### shutdown()
+
+**Signature:**
+
+```elixir
+def shutdown()
+```
+
+###### description()
+
+**Signature:**
+
+```elixir
+def description()
+```
+
+###### author()
+
+**Signature:**
+
+```elixir
+def author()
+```
+
+###### extract_bytes()
+
+**Signature:**
+
+```elixir
+def extract_bytes(content, mime_type, config)
+```
+
+###### supported_mime_types()
+
+**Signature:**
+
+```elixir
+def supported_mime_types()
+```
+
+###### priority()
+
+**Signature:**
+
+```elixir
+def priority()
+```
+
+
+---
+
+#### OcrBackend
+
+Trait for OCR backend plugins.
+
+Implement this trait to add custom OCR capabilities. OCR backends can be:
+- Native Rust implementations (like Tesseract)
+- FFI bridges to Python libraries (like EasyOCR, PaddleOCR)
+- Cloud-based OCR services (Google Vision, AWS Textract, etc.)
+
+# Thread Safety
+
+OCR backends must be thread-safe (`Send + Sync`) to support concurrent processing.
+
+##### Functions
+
+###### process_image()
+
+Process an image and extract text via OCR.
+
+**Returns:**
+
+An `ExtractionResult` containing the extracted text and metadata.
+
+**Errors:**
+
+- `KreuzbergError.Ocr` - OCR processing failed
+- `KreuzbergError.Validation` - Invalid image format or configuration
+- `KreuzbergError.Io` - I/O errors (these always bubble up)
+
+**Signature:**
+
+```elixir
+def process_image(image_bytes, config)
+```
+
+###### process_image_file()
+
+Process a file and extract text via OCR.
+
+Default implementation reads the file and calls `process_image`.
+Override for custom file handling or optimizations.
+
+**Errors:**
+
+Same as `process_image`, plus file I/O errors.
+
+**Signature:**
+
+```elixir
+def process_image_file(path, config)
+```
+
+###### supports_language()
+
+Check if this backend supports a given language code.
+
+**Returns:**
+
+`true` if the language is supported, `false` otherwise.
+
+**Signature:**
+
+```elixir
+def supports_language(lang)
+```
+
+###### backend_type()
+
+Get the backend type identifier.
+
+**Returns:**
+
+The backend type enum value.
+
+**Signature:**
+
+```elixir
+def backend_type()
+```
+
+###### supported_languages()
+
+Optional: Get a list of all supported languages.
+
+Defaults to empty list. Override to provide comprehensive language support info.
+
+**Signature:**
+
+```elixir
+def supported_languages()
+```
+
+###### supports_table_detection()
+
+Optional: Check if the backend supports table detection.
+
+Defaults to `false`. Override if your backend can detect and extract tables.
+
+**Signature:**
+
+```elixir
+def supports_table_detection()
+```
+
+###### supports_document_processing()
+
+Check if the backend supports direct document-level processing (e.g. for PDFs).
+
+Defaults to `false`. Override if the backend has optimized document processing.
+
+**Signature:**
+
+```elixir
+def supports_document_processing()
+```
+
+###### process_document()
+
+Process a document file directly via OCR.
+
+Only called if `supports_document_processing` returns `true`.
+
+**Signature:**
+
+```elixir
+def process_document(path, config)
+```
+
+
+---
+
+#### OcrBackendRegistry
+
+Registry for OCR backend plugins.
+
+Manages OCR backends with backend type and language-based selection.
+
+# Thread Safety
+
+The registry is thread-safe and can be accessed concurrently from multiple threads.
+
+##### Functions
+
+###### new_empty()
+
+Create a new empty OCR backend registry without default backends.
+
+This is useful for testing or when you want full control over backend registration.
+
+**Signature:**
+
+```elixir
+def new_empty()
+```
+
+###### register()
+
+Register an OCR backend.
+
+**Returns:**
+
+- `Ok(())` if registration succeeded
+- `Err(...)` if initialization failed
+
+**Signature:**
+
+```elixir
+def register(backend)
+```
+
+###### get()
+
+Get an OCR backend by name.
+
+**Returns:**
+
+The backend if found, or an error if not registered.
+
+**Signature:**
+
+```elixir
+def get(name)
+```
+
+###### get_for_language()
+
+Get an OCR backend that supports a specific language.
+
+Returns the first backend that supports the language.
+
+**Returns:**
+
+The first backend supporting the language, or an error if none found.
+
+**Signature:**
+
+```elixir
+def get_for_language(language)
+```
+
+###### list()
+
+List all registered backend names.
+
+**Signature:**
+
+```elixir
+def list()
+```
+
+###### remove()
+
+Remove a backend from the registry.
+
+Calls `shutdown()` on the backend before removing.
+
+**Signature:**
+
+```elixir
+def remove(name)
+```
+
+###### shutdown_all()
+
+Shutdown all backends and clear the registry.
+
+**Signature:**
+
+```elixir
+def shutdown_all()
+```
+
+###### reset_to_defaults()
+
+Shutdown all backends and re-register the built-in defaults.
+
+**Signature:**
+
+```elixir
+def reset_to_defaults()
+```
+
+###### default()
+
+**Signature:**
+
+```elixir
+def default()
+```
+
+
+---
+
+#### OcrCache
+
+##### Functions
+
+###### new()
+
+**Signature:**
+
+```elixir
+def new(cache_dir)
+```
+
+###### get_cached_result()
+
+**Signature:**
+
+```elixir
+def get_cached_result(image_hash, backend, config)
+```
+
+###### set_cached_result()
+
+**Signature:**
+
+```elixir
+def set_cached_result(image_hash, backend, config, result)
+```
+
+###### clear()
+
+**Signature:**
+
+```elixir
+def clear()
+```
+
+###### get_stats()
+
+**Signature:**
+
+```elixir
+def get_stats()
+```
+
+
+---
+
+#### OcrCacheStats
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `total_files` | `integer()` | — | Total files |
+| `total_size_mb` | `float()` | — | Total size mb |
+
+
+---
+
+#### OcrConfidence
+
+Confidence scores for an OCR element.
+
+Separates detection confidence (how confident that text exists at this location)
+from recognition confidence (how confident about the actual text content).
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `detection` | `float() | nil` | `nil` | Detection confidence: how confident the OCR engine is that text exists here. PaddleOCR provides this as `box_score`, Tesseract doesn't have a direct equivalent. Range: 0.0 to 1.0 (or None if not available). |
+| `recognition` | `float()` | — | Recognition confidence: how confident about the text content. Range: 0.0 to 1.0. |
+
+##### Functions
+
+###### from_tesseract()
+
+Create confidence from Tesseract's single confidence value.
+
+Tesseract provides confidence as 0-100, which we normalize to 0.0-1.0.
+
+**Signature:**
+
+```elixir
+def from_tesseract(confidence)
+```
+
+###### from_paddle()
+
+Create confidence from PaddleOCR scores.
+
+Both scores should be in 0.0-1.0 range, but PaddleOCR may occasionally return
+values slightly above 1.0 due to model calibration. This method clamps both
+values to ensure they stay within the valid 0.0-1.0 range.
+
+**Signature:**
+
+```elixir
+def from_paddle(box_score, text_score)
+```
+
+
+---
+
+#### OcrConfig
+
+OCR configuration.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `enabled` | `boolean()` | `true` | Whether OCR is enabled. Setting `enabled: false` is a shorthand for `disable_ocr: true` on the parent `ExtractionConfig`. Images return metadata only; PDFs use native text extraction without OCR fallback. Defaults to `True`. When `False`, all other OCR settings are ignored. |
+| `backend` | `String.t()` | — | OCR backend: tesseract, easyocr, paddleocr |
+| `language` | `String.t()` | — | Language code (e.g., "eng", "deu") |
+| `tesseract_config` | `TesseractConfig | nil` | `nil` | Tesseract-specific configuration (optional) |
+| `output_format` | `OutputFormat | nil` | `nil` | Output format for OCR results (optional, for format conversion) |
+| `paddle_ocr_config` | `term() | nil` | `nil` | PaddleOCR-specific configuration (optional, JSON passthrough) |
+| `element_config` | `OcrElementConfig | nil` | `nil` | OCR element extraction configuration |
+| `quality_thresholds` | `OcrQualityThresholds | nil` | `nil` | Quality thresholds for the native-text-to-OCR fallback decision. When None, uses compiled defaults (matching previous hardcoded behavior). |
+| `pipeline` | `OcrPipelineConfig | nil` | `nil` | Multi-backend OCR pipeline configuration. When set, enables weighted fallback across multiple OCR backends based on output quality. When None, uses the single `backend` field (same as today). |
+| `auto_rotate` | `boolean()` | `false` | Enable automatic page rotation based on orientation detection. When enabled, uses Tesseract's `DetectOrientationScript()` to detect page orientation (0/90/180/270 degrees) before OCR. If the page is rotated with high confidence, the image is corrected before recognition. This is critical for handling rotated scanned documents. |
+| `vlm_config` | `LlmConfig | nil` | `nil` | VLM (Vision Language Model) OCR configuration. Required when `backend` is `"vlm"`. Uses liter-llm to send page images to a vision model for text extraction. |
+| `vlm_prompt` | `String.t() | nil` | `nil` | Custom Jinja2 prompt template for VLM OCR. When `None`, uses the default template. Available variables: - `{{ language }}` — The document language code (e.g., "eng", "deu"). |
+
+##### Functions
+
+###### default()
+
+**Signature:**
+
+```elixir
+def default()
+```
+
+###### validate()
+
+Validates that the configured backend is supported.
+
+This method checks that the backend name is one of the supported OCR backends:
+- tesseract
+- easyocr
+- paddleocr
+
+Typos in backend names are caught at configuration validation time, not at runtime.
+Also validates pipeline stage backends when a pipeline is configured.
+
+**Signature:**
+
+```elixir
+def validate()
+```
+
+###### effective_thresholds()
+
+Returns the effective quality thresholds, using configured values or defaults.
+
+**Signature:**
+
+```elixir
+def effective_thresholds()
+```
+
+###### effective_pipeline()
+
+Returns the effective pipeline config.
+
+- If `pipeline` is explicitly set, returns it.
+- If `paddle-ocr` feature is compiled in and no explicit pipeline is set,
+  auto-constructs a default pipeline: primary backend (priority 100) + paddleocr (priority 50).
+- Otherwise returns `nil` (single-backend mode, same as today).
+
+**Signature:**
+
+```elixir
+def effective_pipeline()
+```
+
+
+---
+
+#### OcrElement
+
+A unified OCR element representing detected text with full metadata.
+
+This is the primary type for structured OCR output, preserving all information
+from both Tesseract and PaddleOCR backends.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `text` | `String.t()` | — | The recognized text content. |
+| `geometry` | `OcrBoundingGeometry` | `:rectangle` | Bounding geometry (rectangle or quadrilateral). |
+| `confidence` | `OcrConfidence` | — | Confidence scores for detection and recognition. |
+| `level` | `OcrElementLevel` | `:line` | Hierarchical level (word, line, block, page). |
+| `rotation` | `OcrRotation | nil` | `nil` | Rotation information (if detected). |
+| `page_number` | `integer()` | — | Page number (1-indexed). |
+| `parent_id` | `String.t() | nil` | `nil` | Parent element ID for hierarchical relationships. Only used for Tesseract output which has word -> line -> block hierarchy. |
+| `backend_metadata` | `map()` | `%{}` | Backend-specific metadata that doesn't fit the unified schema. |
+
+##### Functions
+
+###### with_level()
+
+Set the hierarchical level.
+
+**Signature:**
+
+```elixir
+def with_level(level)
+```
+
+###### with_rotation()
+
+Set rotation information.
+
+**Signature:**
+
+```elixir
+def with_rotation(rotation)
+```
+
+###### with_page_number()
+
+Set page number.
+
+**Signature:**
+
+```elixir
+def with_page_number(page_number)
+```
+
+###### with_parent_id()
+
+Set parent element ID.
+
+**Signature:**
+
+```elixir
+def with_parent_id(parent_id)
+```
+
+###### with_metadata()
+
+Add backend-specific metadata.
+
+**Signature:**
+
+```elixir
+def with_metadata(key, value)
+```
+
+###### with_rotation_opt()
+
+**Signature:**
+
+```elixir
+def with_rotation_opt(rotation)
+```
+
+
+---
+
+#### OcrElementConfig
+
+Configuration for OCR element extraction.
+
+Controls how OCR elements are extracted and filtered.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `include_elements` | `boolean()` | — | Whether to include OCR elements in the extraction result. When true, the `ocr_elements` field in `ExtractionResult` will be populated. |
+| `min_level` | `OcrElementLevel` | `:line` | Minimum hierarchical level to include. Elements below this level (e.g., words when min_level is Line) will be excluded. |
+| `min_confidence` | `float()` | — | Minimum recognition confidence threshold (0.0-1.0). Elements with confidence below this threshold will be filtered out. |
+| `build_hierarchy` | `boolean()` | — | Whether to build hierarchical relationships between elements. When true, `parent_id` fields will be populated based on spatial containment. Only meaningful for Tesseract output. |
+
+
+---
+
+#### OcrExtractionResult
+
+OCR extraction result.
+
+Result of performing OCR on an image or scanned document,
+including recognized text and detected tables.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `content` | `String.t()` | — | Recognized text content |
+| `mime_type` | `String.t()` | — | Original MIME type of the processed image |
+| `metadata` | `map()` | — | OCR processing metadata (confidence scores, language, etc.) |
+| `tables` | `list(OcrTable)` | — | Tables detected and extracted via OCR |
+| `ocr_elements` | `list(OcrElement) | nil` | `nil` | Structured OCR elements with bounding boxes and confidence scores. Available when TSV output is requested or table detection is enabled. |
+| `internal_document` | `InternalDocument | nil` | `nil` | Structured document produced from hOCR parsing. Carries paragraph structure, bounding boxes, and confidence scores that the flattened `content` string discards. |
+
+
+---
+
+#### OcrFallbackDecision
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `stats` | `NativeTextStats` | — | Stats (native text stats) |
+| `avg_non_whitespace` | `float()` | — | Avg non whitespace |
+| `avg_alnum` | `float()` | — | Avg alnum |
+| `fallback` | `boolean()` | — | Fallback |
+
+
+---
+
+#### OcrMetadata
+
+OCR processing metadata.
+
+Captures information about OCR processing configuration and results.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `language` | `String.t()` | — | OCR language code(s) used |
+| `psm` | `integer()` | — | Tesseract Page Segmentation Mode (PSM) |
+| `output_format` | `String.t()` | — | Output format (e.g., "text", "hocr") |
+| `table_count` | `integer()` | — | Number of tables detected |
+| `table_rows` | `integer() | nil` | `nil` | Table rows |
+| `table_cols` | `integer() | nil` | `nil` | Table cols |
+
+
+---
+
+#### OcrPipelineConfig
+
+Multi-backend OCR pipeline with quality-based fallback.
+
+Backends are tried in priority order (highest first). After each backend
+produces output, quality is evaluated. If it meets `quality_thresholds.pipeline_min_quality`,
+the result is accepted. Otherwise the next backend is tried.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `stages` | `list(OcrPipelineStage)` | — | Ordered list of backends to try. Sorted by priority (descending) at runtime. |
+| `quality_thresholds` | `OcrQualityThresholds` | — | Quality thresholds for deciding whether to accept a result or try the next backend. |
+
+
+---
+
+#### OcrPipelineStage
+
+A single backend stage in the OCR pipeline.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `backend` | `String.t()` | — | Backend name: "tesseract", "paddleocr", "easyocr", or a custom registered name. |
+| `priority` | `integer()` | — | Priority weight (higher = tried first). Stages are sorted by priority descending. |
+| `language` | `String.t() | nil` | `nil` | Language override for this stage (None = use parent OcrConfig.language). |
+| `tesseract_config` | `TesseractConfig | nil` | `nil` | Tesseract-specific config override for this stage. |
+| `paddle_ocr_config` | `term() | nil` | `nil` | PaddleOCR-specific config for this stage. |
+| `vlm_config` | `LlmConfig | nil` | `nil` | VLM config override for this pipeline stage. |
+
+
+---
+
+#### OcrProcessor
+
+##### Functions
+
+###### new()
+
+**Signature:**
+
+```elixir
+def new(cache_dir)
+```
+
+###### process_image()
+
+**Signature:**
+
+```elixir
+def process_image(image_bytes, config)
+```
+
+###### process_image_with_format()
+
+Process an image with OCR and respect the output format from ExtractionConfig.
+
+This variant allows specifying an output format (Plain, Markdown, Djot) which
+affects how the OCR result's mime_type is set when markdown output is requested.
+
+**Signature:**
+
+```elixir
+def process_image_with_format(image_bytes, config, output_format)
+```
+
+###### clear_cache()
+
+**Signature:**
+
+```elixir
+def clear_cache()
+```
+
+###### get_cache_stats()
+
+**Signature:**
+
+```elixir
+def get_cache_stats()
+```
+
+###### process_image_file()
+
+**Signature:**
+
+```elixir
+def process_image_file(file_path, config)
+```
+
+###### process_image_file_with_format()
+
+Process a file with OCR and respect the output format from ExtractionConfig.
+
+This variant allows specifying an output format (Plain, Markdown, Djot) which
+affects how the OCR result's mime_type is set when markdown output is requested.
+
+**Signature:**
+
+```elixir
+def process_image_file_with_format(file_path, config, output_format)
+```
+
+###### process_image_files_batch()
+
+Process multiple image files in parallel using Rayon.
+
+This method processes OCR operations in parallel across CPU cores for improved throughput.
+Results are returned in the same order as the input file paths.
+
+**Signature:**
+
+```elixir
+def process_image_files_batch(file_paths, config)
+```
+
+
+---
+
+#### OcrQualityThresholds
+
+Quality thresholds for OCR fallback decisions and pipeline quality gating.
+
+All fields default to the values that match the previous hardcoded behavior,
+so `OcrQualityThresholds.default()` preserves existing semantics exactly.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `min_total_non_whitespace` | `integer()` | `64` | Minimum total non-whitespace characters to consider text substantive. |
+| `min_non_whitespace_per_page` | `float()` | `32` | Minimum non-whitespace characters per page on average. |
+| `min_meaningful_word_len` | `integer()` | `4` | Minimum character count for a word to be "meaningful". |
+| `min_meaningful_words` | `integer()` | `3` | Minimum count of meaningful words before text is accepted. |
+| `min_alnum_ratio` | `float()` | `0.3` | Minimum alphanumeric ratio (non-whitespace chars that are alphanumeric). |
+| `min_garbage_chars` | `integer()` | `5` | Minimum Unicode replacement characters (U+FFFD) to trigger OCR fallback. |
+| `max_fragmented_word_ratio` | `float()` | `0.6` | Maximum fraction of short (1-2 char) words before text is considered fragmented. |
+| `critical_fragmented_word_ratio` | `float()` | `0.8` | Critical fragmentation threshold — triggers OCR regardless of meaningful words. Normal English text has ~20-30% short words. 80%+ is definitive garbage. |
+| `min_avg_word_length` | `float()` | `2` | Minimum average word length. Below this with enough words indicates garbled extraction. |
+| `min_words_for_avg_length_check` | `integer()` | `50` | Minimum word count before average word length check applies. |
+| `min_consecutive_repeat_ratio` | `float()` | `0.08` | Minimum consecutive word repetition ratio to detect column scrambling. |
+| `min_words_for_repeat_check` | `integer()` | `50` | Minimum word count before consecutive repetition check is applied. |
+| `substantive_min_chars` | `integer()` | `100` | Minimum character count for "substantive markdown" OCR skip gate. |
+| `non_text_min_chars` | `integer()` | `20` | Minimum character count for "non-text content" OCR skip gate. |
+| `alnum_ws_ratio_threshold` | `float()` | `0.4` | Alphanumeric+whitespace ratio threshold for skip decisions. |
+| `pipeline_min_quality` | `float()` | `0.5` | Minimum quality score (0.0-1.0) for a pipeline stage result to be accepted. If the result from a backend scores below this, try the next backend. |
+
+##### Functions
+
+###### default()
+
+**Signature:**
+
+```elixir
+def default()
+```
+
+
+---
+
+#### OcrRotation
+
+Rotation information for an OCR element.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `angle_degrees` | `float()` | — | Rotation angle in degrees (0, 90, 180, 270 for PaddleOCR). |
+| `confidence` | `float() | nil` | `nil` | Confidence score for the rotation detection. |
+
+##### Functions
+
+###### from_paddle()
+
+Create rotation from PaddleOCR angle classification.
+
+PaddleOCR uses angle_index (0-3) representing 0, 90, 180, 270 degrees.
+
+**Errors:**
+
+Returns an error if `angle_index` is not in the valid range (0-3).
+
+**Signature:**
+
+```elixir
+def from_paddle(angle_index, angle_score)
+```
+
+
+---
+
+#### OcrTable
+
+Table detected via OCR.
+
+Represents a table structure recognized during OCR processing.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `cells` | `list(list(String.t()))` | — | Table cells as a 2D vector (rows × columns) |
+| `markdown` | `String.t()` | — | Markdown representation of the table |
+| `page_number` | `integer()` | — | Page number where the table was found (1-indexed) |
+| `bounding_box` | `OcrTableBoundingBox | nil` | `nil` | Bounding box of the table in pixel coordinates (from OCR word positions). |
+
+
+---
+
+#### OcrTableBoundingBox
+
+Bounding box for an OCR-detected table in pixel coordinates.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `left` | `integer()` | — | Left x-coordinate (pixels) |
+| `top` | `integer()` | — | Top y-coordinate (pixels) |
+| `right` | `integer()` | — | Right x-coordinate (pixels) |
+| `bottom` | `integer()` | — | Bottom y-coordinate (pixels) |
+
+
+---
+
+#### OdtExtractor
+
+High-performance ODT extractor using native Rust XML parsing.
+
+This extractor provides:
+- Fast text extraction via roxmltree XML parsing
+- Comprehensive metadata extraction from meta.xml
+- Table extraction with row and cell support
+- Formatting preservation (bold, italic, strikeout)
+- Support for headings, paragraphs, and special elements
+
+##### Functions
+
+###### default()
+
+**Signature:**
+
+```elixir
+def default()
+```
+
+###### name()
+
+**Signature:**
+
+```elixir
+def name()
+```
+
+###### version()
+
+**Signature:**
+
+```elixir
+def version()
+```
+
+###### initialize()
+
+**Signature:**
+
+```elixir
+def initialize()
+```
+
+###### shutdown()
+
+**Signature:**
+
+```elixir
+def shutdown()
+```
+
+###### description()
+
+**Signature:**
+
+```elixir
+def description()
+```
+
+###### author()
+
+**Signature:**
+
+```elixir
+def author()
+```
+
+###### extract_bytes()
+
+**Signature:**
+
+```elixir
+def extract_bytes(content, mime_type, config)
+```
+
+###### supported_mime_types()
+
+**Signature:**
+
+```elixir
+def supported_mime_types()
+```
+
+###### priority()
+
+**Signature:**
+
+```elixir
+def priority()
+```
+
+
+---
+
+#### OdtProperties
+
+OpenDocument metadata from meta.xml
+
+Contains metadata fields defined by the OASIS OpenDocument Format standard.
+Uses Dublin Core elements (dc:) and OpenDocument meta elements (meta:).
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `title` | `String.t() | nil` | `nil` | Document title (dc:title) |
+| `subject` | `String.t() | nil` | `nil` | Document subject/topic (dc:subject) |
+| `creator` | `String.t() | nil` | `nil` | Current document creator/author (dc:creator) |
+| `initial_creator` | `String.t() | nil` | `nil` | Initial creator of the document (meta:initial-creator) |
+| `keywords` | `String.t() | nil` | `nil` | Keywords or tags (meta:keyword) |
+| `description` | `String.t() | nil` | `nil` | Document description (dc:description) |
+| `date` | `String.t() | nil` | `nil` | Current modification date (dc:date) |
+| `creation_date` | `String.t() | nil` | `nil` | Initial creation date (meta:creation-date) |
+| `language` | `String.t() | nil` | `nil` | Document language (dc:language) |
+| `generator` | `String.t() | nil` | `nil` | Generator/application that created the document (meta:generator) |
+| `editing_duration` | `String.t() | nil` | `nil` | Editing duration in ISO 8601 format (meta:editing-duration) |
+| `editing_cycles` | `String.t() | nil` | `nil` | Number of edits/revisions (meta:editing-cycles) |
+| `page_count` | `integer() | nil` | `nil` | Document statistics - page count (meta:page-count) |
+| `word_count` | `integer() | nil` | `nil` | Document statistics - word count (meta:word-count) |
+| `character_count` | `integer() | nil` | `nil` | Document statistics - character count (meta:character-count) |
+| `paragraph_count` | `integer() | nil` | `nil` | Document statistics - paragraph count (meta:paragraph-count) |
+| `table_count` | `integer() | nil` | `nil` | Document statistics - table count (meta:table-count) |
+| `image_count` | `integer() | nil` | `nil` | Document statistics - image count (meta:image-count) |
+
+
+---
+
+#### OpenWebDocumentMetadata
+
+Metadata for the OpenWebUI external document loader response.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `source` | `String.t()` | — | Original filename |
+
+
+---
+
+#### OpenWebDocumentResponse
+
+OpenWebUI "External" engine response format.
+
+Returned by `PUT /process` for the OpenWebUI external document loader.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `page_content` | `String.t()` | — | Extracted text content |
+| `metadata` | `OpenWebDocumentMetadata` | — | Document metadata |
+
+
+---
+
+#### OpmlExtractor
+
+OPML format extractor.
+
+Extracts outline structure and metadata from OPML documents using native Rust parsing.
+
+##### Functions
+
+###### default()
+
+**Signature:**
+
+```elixir
+def default()
+```
+
+###### name()
+
+**Signature:**
+
+```elixir
+def name()
+```
+
+###### version()
+
+**Signature:**
+
+```elixir
+def version()
+```
+
+###### initialize()
+
+**Signature:**
+
+```elixir
+def initialize()
+```
+
+###### shutdown()
+
+**Signature:**
+
+```elixir
+def shutdown()
+```
+
+###### description()
+
+**Signature:**
+
+```elixir
+def description()
+```
+
+###### author()
+
+**Signature:**
+
+```elixir
+def author()
+```
+
+###### extract_bytes()
+
+**Signature:**
+
+```elixir
+def extract_bytes(content, mime_type, config)
+```
+
+###### supported_mime_types()
+
+**Signature:**
+
+```elixir
+def supported_mime_types()
+```
+
+###### priority()
+
+**Signature:**
+
+```elixir
+def priority()
+```
+
+
+---
+
+#### OrgModeExtractor
+
+Org Mode document extractor.
+
+Provides native Rust-based Org Mode extraction using the `org` library,
+extracting structured content and metadata.
+
+##### Functions
+
+###### build_internal_document()
+
+Build an `InternalDocument` from Org Mode source text.
+
+Handles headings, paragraphs, lists, code blocks, tables, inline links,
+and footnote references.
+
+**Signature:**
+
+```elixir
+def build_internal_document(org_text)
+```
+
+###### default()
+
+**Signature:**
+
+```elixir
+def default()
+```
+
+###### name()
+
+**Signature:**
+
+```elixir
+def name()
+```
+
+###### version()
+
+**Signature:**
+
+```elixir
+def version()
+```
+
+###### initialize()
+
+**Signature:**
+
+```elixir
+def initialize()
+```
+
+###### shutdown()
+
+**Signature:**
+
+```elixir
+def shutdown()
+```
+
+###### description()
+
+**Signature:**
+
+```elixir
+def description()
+```
+
+###### author()
+
+**Signature:**
+
+```elixir
+def author()
+```
+
+###### extract_bytes()
+
+**Signature:**
+
+```elixir
+def extract_bytes(content, mime_type, config)
+```
+
+###### extract_file()
+
+**Signature:**
+
+```elixir
+def extract_file(path, mime_type, config)
+```
+
+###### supported_mime_types()
+
+**Signature:**
+
+```elixir
+def supported_mime_types()
+```
+
+###### priority()
+
+**Signature:**
+
+```elixir
+def priority()
+```
+
+
+---
+
+#### OrientationResult
+
+Document orientation detection result.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `degrees` | `integer()` | — | Detected orientation in degrees (0, 90, 180, or 270). |
+| `confidence` | `float()` | — | Confidence score (0.0-1.0). |
+
+
+---
+
+#### PaddleOcrBackend
+
+PaddleOCR backend using ONNX Runtime.
+
+Maintains a pool of OCR engines keyed by script family. Each family has its own
+recognition model and character dictionary, while detection and classification
+models are shared across all families.
+
+# Thread Safety
+
+The backend is `Send + Sync` and can be used across threads safely via `Arc`.
+Each engine in the pool has its own mutex, so concurrent OCR on different
+script families does not block.
+
+##### Functions
+
+###### new()
+
+Create a new PaddleOCR backend with default configuration.
+
+**Signature:**
+
+```elixir
+def new()
+```
+
+###### with_config()
+
+Create a new PaddleOCR backend with custom configuration.
+
+**Signature:**
+
+```elixir
+def with_config(config)
+```
+
+###### name()
+
+**Signature:**
+
+```elixir
+def name()
+```
+
+###### version()
+
+**Signature:**
+
+```elixir
+def version()
+```
+
+###### initialize()
+
+**Signature:**
+
+```elixir
+def initialize()
+```
+
+###### shutdown()
+
+**Signature:**
+
+```elixir
+def shutdown()
+```
+
+###### process_image()
+
+**Signature:**
+
+```elixir
+def process_image(image_bytes, config)
+```
+
+###### process_image_file()
+
+**Signature:**
+
+```elixir
+def process_image_file(path, config)
+```
+
+###### supports_language()
+
+**Signature:**
+
+```elixir
+def supports_language(lang)
+```
+
+###### backend_type()
+
+**Signature:**
+
+```elixir
+def backend_type()
+```
+
+###### supported_languages()
+
+**Signature:**
+
+```elixir
+def supported_languages()
+```
+
+###### supports_table_detection()
+
+**Signature:**
+
+```elixir
+def supports_table_detection()
+```
+
+###### default()
+
+**Signature:**
+
+```elixir
+def default()
+```
+
+
+---
+
+#### PaddleOcrConfig
+
+Configuration for PaddleOCR backend.
+
+Configures PaddleOCR text detection and recognition with multi-language support.
+Uses a builder pattern for convenient configuration.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `language` | `String.t()` | — | Language code (e.g., "en", "ch", "jpn", "kor", "deu", "fra") |
+| `cache_dir` | `String.t() | nil` | `nil` | Optional custom cache directory for model files |
+| `use_angle_cls` | `boolean()` | — | Enable angle classification for rotated text (default: false). Can misfire on short text regions, rotating crops incorrectly before recognition. |
+| `enable_table_detection` | `boolean()` | — | Enable table structure detection (default: false) |
+| `det_db_thresh` | `float()` | — | Database threshold for text detection (default: 0.3) Range: 0.0-1.0, higher values require more confident detections |
+| `det_db_box_thresh` | `float()` | — | Box threshold for text bounding box refinement (default: 0.5) Range: 0.0-1.0 |
+| `det_db_unclip_ratio` | `float()` | — | Unclip ratio for expanding text bounding boxes (default: 1.6) Controls the expansion of detected text regions |
+| `det_limit_side_len` | `integer()` | — | Maximum side length for detection image (default: 960) Larger images may be resized to this limit for faster inference |
+| `rec_batch_num` | `integer()` | — | Batch size for recognition inference (default: 6) Number of text regions to process simultaneously |
+| `padding` | `integer()` | — | Padding in pixels added around the image before detection (default: 10). Large values can include surrounding content like table gridlines. |
+| `drop_score` | `float()` | — | Minimum recognition confidence score for text lines (default: 0.5). Text regions with recognition confidence below this threshold are discarded. Matches PaddleOCR Python's `drop_score` parameter. Range: 0.0-1.0 |
+| `model_tier` | `String.t()` | — | Model tier controlling detection/recognition model size and accuracy trade-off. - `"mobile"` (default): Lightweight models (~4.5MB detection, ~16.5MB recognition), fast download and inference - `"server"`: Large, high-accuracy models (~88MB detection, ~84MB recognition), best for GPU or complex documents |
+
+##### Functions
+
+###### with_cache_dir()
+
+Sets a custom cache directory for model files.
+
+**Signature:**
+
+```elixir
+def with_cache_dir(path)
+```
+
+###### with_table_detection()
+
+Enables or disables table structure detection.
+
+**Signature:**
+
+```elixir
+def with_table_detection(enable)
+```
+
+###### with_angle_cls()
+
+Enables or disables angle classification for rotated text.
+
+**Signature:**
+
+```elixir
+def with_angle_cls(enable)
+```
+
+###### with_det_db_thresh()
+
+Sets the database threshold for text detection.
+
+**Signature:**
+
+```elixir
+def with_det_db_thresh(threshold)
+```
+
+###### with_det_db_box_thresh()
+
+Sets the box threshold for text bounding box refinement.
+
+**Signature:**
+
+```elixir
+def with_det_db_box_thresh(threshold)
+```
+
+###### with_det_db_unclip_ratio()
+
+Sets the unclip ratio for expanding text bounding boxes.
+
+**Signature:**
+
+```elixir
+def with_det_db_unclip_ratio(ratio)
+```
+
+###### with_det_limit_side_len()
+
+Sets the maximum side length for detection images.
+
+**Signature:**
+
+```elixir
+def with_det_limit_side_len(length)
+```
+
+###### with_rec_batch_num()
+
+Sets the batch size for recognition inference.
+
+**Signature:**
+
+```elixir
+def with_rec_batch_num(batch_size)
+```
+
+###### with_drop_score()
+
+Sets the minimum recognition confidence threshold.
+
+**Signature:**
+
+```elixir
+def with_drop_score(score)
+```
+
+###### with_padding()
+
+Sets padding in pixels added around images before detection.
+
+**Signature:**
+
+```elixir
+def with_padding(padding)
+```
+
+###### with_model_tier()
+
+Sets the model tier controlling detection/recognition model size.
+
+**Signature:**
+
+```elixir
+def with_model_tier(tier)
+```
+
+###### resolve_cache_dir()
+
+Resolves the cache directory, checking in order:
+1. Configured `cache_dir` if set
+2. `KREUZBERG_CACHE_DIR` environment variable + `/paddle-ocr`
+3. Default: `.kreuzberg/paddle-ocr/` (consistent with other cache types)
+
+**Returns:**
+
+The resolved cache directory path
+
+**Signature:**
+
+```elixir
+def resolve_cache_dir()
+```
+
+###### default()
+
+Creates a default configuration with English language support.
+
+**Signature:**
+
+```elixir
+def default()
+```
+
+
+---
+
+#### PageBoundary
+
+Byte offset boundary for a page.
+
+Tracks where a specific page's content starts and ends in the main content string,
+enabling mapping from byte positions to page numbers. Offsets are guaranteed to be
+at valid UTF-8 character boundaries when using standard String methods (push_str, push, etc.).
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `byte_start` | `integer()` | — | Byte offset where this page starts in the content string (UTF-8 valid boundary, inclusive) |
+| `byte_end` | `integer()` | — | Byte offset where this page ends in the content string (UTF-8 valid boundary, exclusive) |
+| `page_number` | `integer()` | — | Page number (1-indexed) |
+
+
+---
+
+#### PageConfig
+
+Page extraction and tracking configuration.
+
+Controls how pages are extracted, tracked, and represented in the extraction results.
+When `nil`, page tracking is disabled.
+
+Page range tracking in chunk metadata (first_page/last_page) is automatically enabled
+when page boundaries are available and chunking is configured.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `extract_pages` | `boolean()` | `false` | Extract pages as separate array (ExtractionResult.pages) |
+| `insert_page_markers` | `boolean()` | `false` | Insert page markers in main content string |
+| `marker_format` | `String.t()` | `"
+
+<!-- PAGE {page_num} -->
+
+"` | Page marker format (use {page_num} placeholder) Default: "\n\n<!-- PAGE {page_num} -->\n\n" |
+
+##### Functions
+
+###### default()
+
+**Signature:**
+
+```elixir
+def default()
+```
+
+
+---
+
+#### PageContent
+
+Content for a single page/slide.
+
+When page extraction is enabled, documents are split into per-page content
+with associated tables and images mapped to each page.
+
+# Performance
+
+Uses Arc-wrapped tables and images for memory efficiency:
+- `Vec<Arc<Table>>` enables zero-copy sharing of table data
+- `Vec<Arc<ExtractedImage>>` enables zero-copy sharing of image data
+- Maintains exact JSON compatibility via custom Serialize/Deserialize
+
+This reduces memory overhead for documents with shared tables/images
+by avoiding redundant copies during serialization.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `page_number` | `integer()` | — | Page number (1-indexed) |
+| `content` | `String.t()` | — | Text content for this page |
+| `tables` | `list(Table)` | — | Tables found on this page (uses Arc for memory efficiency) Serializes as Vec<Table> for JSON compatibility while maintaining Arc semantics in-memory for zero-copy sharing. |
+| `images` | `list(ExtractedImage)` | — | Images found on this page (uses Arc for memory efficiency) Serializes as Vec<ExtractedImage> for JSON compatibility while maintaining Arc semantics in-memory for zero-copy sharing. |
+| `hierarchy` | `PageHierarchy | nil` | `nil` | Hierarchy information for the page (when hierarchy extraction is enabled) Contains text hierarchy levels (H1-H6) extracted from the page content. |
+| `is_blank` | `boolean() | nil` | `nil` | Whether this page is blank (no meaningful text content) Determined during extraction based on text content analysis. A page is blank if it has fewer than 3 non-whitespace characters and contains no tables or images. |
+| `layout_regions` | `list(LayoutRegion) | nil` | `nil` | Layout detection regions for this page (when layout detection is enabled). Contains detected layout regions with class, confidence, bounding box, and area fraction. Only populated when layout detection is configured. |
+
+
+---
+
+#### PageHierarchy
+
+Page hierarchy structure containing heading levels and block information.
+
+Used when PDF text hierarchy extraction is enabled. Contains hierarchical
+blocks with heading levels (H1-H6) for semantic document structure.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `block_count` | `integer()` | — | Number of hierarchy blocks on this page |
+| `blocks` | `list(HierarchicalBlock)` | — | Hierarchical blocks with heading levels |
+
+
+---
+
+#### PageInfo
+
+Metadata for individual page/slide/sheet.
+
+Captures per-page information including dimensions, content counts,
+and visibility state (for presentations).
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `number` | `integer()` | — | Page number (1-indexed) |
+| `title` | `String.t() | nil` | `nil` | Page title (usually for presentations) |
+| `dimensions` | `F64F64 | nil` | `nil` | Dimensions in points (PDF) or pixels (images): (width, height) |
+| `image_count` | `integer() | nil` | `nil` | Number of images on this page |
+| `table_count` | `integer() | nil` | `nil` | Number of tables on this page |
+| `hidden` | `boolean() | nil` | `nil` | Whether this page is hidden (e.g., in presentations) |
+| `is_blank` | `boolean() | nil` | `nil` | Whether this page is blank (no meaningful text, no images, no tables) A page is considered blank if it has fewer than 3 non-whitespace characters and contains no tables or images. This is useful for filtering out empty pages in scanned documents or PDFs with blank separator pages. |
+
+
+---
+
+#### PageLayoutRegion
+
+A detected layout region mapped to PDF coordinate space.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `class` | `LayoutClass` | — | Class (layout class) |
+| `confidence` | `float()` | — | Confidence |
+| `bbox` | `PdfLayoutBBox` | — | Bbox (pdf layout b box) |
+
+
+---
+
+#### PageLayoutResult
+
+Layout detection results for a single page.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `page_index` | `integer()` | — | Page index |
+| `regions` | `list(PageLayoutRegion)` | — | Regions |
+| `page_width_pts` | `float()` | — | Page width pts |
+| `page_height_pts` | `float()` | — | Page height pts |
+| `render_width_px` | `integer()` | — | Width of the rendered image used for layout detection (pixels). |
+| `render_height_px` | `integer()` | — | Height of the rendered image used for layout detection (pixels). |
+
+
+---
+
+#### PageMargins
+
+Page margins in twips (twentieths of a point).
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `top` | `integer() | nil` | `nil` | Top margin in twips. |
+| `right` | `integer() | nil` | `nil` | Right margin in twips. |
+| `bottom` | `integer() | nil` | `nil` | Bottom margin in twips. |
+| `left` | `integer() | nil` | `nil` | Left margin in twips. |
+| `header` | `integer() | nil` | `nil` | Header offset in twips. |
+| `footer` | `integer() | nil` | `nil` | Footer offset in twips. |
+| `gutter` | `integer() | nil` | `nil` | Gutter margin in twips. |
+
+##### Functions
+
+###### to_points()
+
+Convert all margins from twips to points.
+
+Conversion factor: 1 twip = 1/20 point, or equivalently divide by 20.
+
+**Signature:**
+
+```elixir
+def to_points()
+```
+
+
+---
+
+#### PageMarginsPoints
+
+Page margins converted to points (1/72 inch).
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `top` | `float() | nil` | `nil` | Top |
+| `right` | `float() | nil` | `nil` | Right |
+| `bottom` | `float() | nil` | `nil` | Bottom |
+| `left` | `float() | nil` | `nil` | Left |
+| `header` | `float() | nil` | `nil` | Header |
+| `footer` | `float() | nil` | `nil` | Footer |
+| `gutter` | `float() | nil` | `nil` | Gutter |
+
+
+---
+
+#### PageRenderOptions
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `target_dpi` | `integer()` | `300` | Target dpi |
+| `max_image_dimension` | `integer()` | `65536` | Maximum image dimension |
+| `auto_adjust_dpi` | `boolean()` | `true` | Auto adjust dpi |
+| `min_dpi` | `integer()` | `72` | Minimum dpi |
+| `max_dpi` | `integer()` | `600` | Maximum dpi |
+
+##### Functions
+
+###### default()
+
+**Signature:**
+
+```elixir
+def default()
+```
+
+
+---
+
+#### PageStructure
+
+Unified page structure for documents.
+
+Supports different page types (PDF pages, PPTX slides, Excel sheets)
+with character offset boundaries for chunk-to-page mapping.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `total_count` | `integer()` | — | Total number of pages/slides/sheets |
+| `unit_type` | `PageUnitType` | — | Type of paginated unit |
+| `boundaries` | `list(PageBoundary) | nil` | `nil` | Character offset boundaries for each page Maps character ranges in the extracted content to page numbers. Used for chunk page range calculation. |
+| `pages` | `list(PageInfo) | nil` | `nil` | Detailed per-page metadata (optional, only when needed) |
+
+
+---
+
+#### PageTiming
+
+Timing breakdown for a single page.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `render_ms` | `float()` | — | Time to render the PDF page to a raster image (amortized from batch render). |
+| `preprocess_ms` | `float()` | — | Time spent in image preprocessing (resize, normalize, tensor construction). |
+| `onnx_ms` | `float()` | — | Time for the ONNX model session.run() call (actual neural network inference). |
+| `inference_ms` | `float()` | — | Total model inference time (preprocess + onnx), as measured by the engine. |
+| `postprocess_ms` | `float()` | — | Time spent in postprocessing (confidence filtering, overlap resolution). |
+| `mapping_ms` | `float()` | — | Time to map pixel-space bounding boxes to PDF coordinate space. |
+
+
+---
+
+#### PagesExtractor
+
+Apple Pages document extractor.
+
+Supports `.pages` files (modern iWork format, 2013+).
+
+Extracts all text content from the document by parsing the IWA
+(iWork Archive) container: ZIP → Snappy → protobuf text fields.
+
+##### Functions
+
+###### default()
+
+**Signature:**
+
+```elixir
+def default()
+```
+
+###### name()
+
+**Signature:**
+
+```elixir
+def name()
+```
+
+###### version()
+
+**Signature:**
+
+```elixir
+def version()
+```
+
+###### initialize()
+
+**Signature:**
+
+```elixir
+def initialize()
+```
+
+###### shutdown()
+
+**Signature:**
+
+```elixir
+def shutdown()
+```
+
+###### description()
+
+**Signature:**
+
+```elixir
+def description()
+```
+
+###### author()
+
+**Signature:**
+
+```elixir
+def author()
+```
+
+###### extract_bytes()
+
+**Signature:**
+
+```elixir
+def extract_bytes(content, mime_type, config)
+```
+
+###### supported_mime_types()
+
+**Signature:**
+
+```elixir
+def supported_mime_types()
+```
+
+###### priority()
+
+**Signature:**
+
+```elixir
+def priority()
+```
+
+
+---
+
+#### PanicContext
+
+Context information captured when a panic occurs.
+
+This struct stores detailed information about where and when a panic happened,
+enabling better error reporting across FFI boundaries.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `file` | `String.t()` | — | Source file where the panic occurred |
+| `line` | `integer()` | — | Line number where the panic occurred |
+| `function` | `String.t()` | — | Function name where the panic occurred |
+| `message` | `String.t()` | — | Panic message extracted from the panic payload |
+| `timestamp` | `SystemTime` | — | Timestamp when the panic was captured |
+
+##### Functions
+
+###### format()
+
+Formats the panic context as a human-readable string.
+
+**Signature:**
+
+```elixir
+def format()
+```
+
+
+---
+
+#### ParaText
+
+Plain text content decoded from a ParaText record (tag 0x43).
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `content` | `String.t()` | — | The extracted text content |
+
+##### Functions
+
+###### from_record()
+
+Decode a ParaText record from raw bytes.
+
+The data field of a TAG_PARA_TEXT record is a sequence of UTF-16LE code
+units.  Control characters < 0x0020 are mapped to whitespace or skipped;
+characters in the private-use range 0xF020–0xF07F (HWP internal controls)
+are discarded.
+
+**Signature:**
+
+```elixir
+def from_record(record)
+```
+
+
+---
+
+#### Paragraph
+
+A single paragraph; may or may not carry a text payload.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `text` | `ParaText | nil` | `nil` | Text (para text) |
+
+
+---
+
+#### ParagraphMeta
+
+Metadata for a single paragraph extracted from RTF.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `heading_level` | `integer()` | — | Heading level (1-based): 1 = H1, 2 = H2, etc. 0 = not a heading. |
+| `list_level` | `integer() | nil` | `nil` | List nesting level (0-based). `None` means not a list item. |
+| `list_id` | `integer() | nil` | `nil` | List override ID (\lsN). Used to detect list boundaries. |
+| `is_table` | `boolean()` | — | Whether this paragraph is a table placeholder (text is in tables vec). |
+| `ordered` | `boolean()` | — | Whether this list item is ordered (numbered/lettered). Detected from `\listtext` or `\pntext` content. `False` = unordered (bullet). |
+
+
+---
+
+#### ParagraphProperties
+
+Paragraph-level formatting properties (alignment, spacing, indentation, etc.).
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `alignment` | `String.t() | nil` | `nil` | `"left"`, `"center"`, `"right"`, `"both"` (justified). |
+| `spacing_before` | `integer() | nil` | `nil` | Spacing before paragraph in twips. |
+| `spacing_after` | `integer() | nil` | `nil` | Spacing after paragraph in twips. |
+| `spacing_line` | `integer() | nil` | `nil` | Line spacing in twips or 240ths of a line. |
+| `spacing_line_rule` | `String.t() | nil` | `nil` | Line spacing rule: "auto", "exact", or "atLeast". |
+| `indent_left` | `integer() | nil` | `nil` | Left indentation in twips. |
+| `indent_right` | `integer() | nil` | `nil` | Right indentation in twips. |
+| `indent_first_line` | `integer() | nil` | `nil` | First-line indentation in twips. |
+| `indent_hanging` | `integer() | nil` | `nil` | Hanging indentation in twips. |
+| `outline_level` | `integer() | nil` | `nil` | Outline level 0-8 for heading levels. |
+| `keep_next` | `boolean() | nil` | `nil` | Keep with next paragraph on same page. |
+| `keep_lines` | `boolean() | nil` | `nil` | Keep all lines of paragraph on same page. |
+| `page_break_before` | `boolean() | nil` | `nil` | Force page break before paragraph. |
+| `widow_control` | `boolean() | nil` | `nil` | Prevent widow/orphan lines. |
+| `suppress_auto_hyphens` | `boolean() | nil` | `nil` | Suppress automatic hyphenation. |
+| `bidi` | `boolean() | nil` | `nil` | Right-to-left paragraph direction. |
+| `shading_fill` | `String.t() | nil` | `nil` | Background color hex value (from w:shd w:fill). |
+| `shading_val` | `String.t() | nil` | `nil` | Shading pattern value (from w:shd w:val). |
+| `border_top` | `String.t() | nil` | `nil` | Top border style (from w:pBdr/w:top w:val). |
+| `border_bottom` | `String.t() | nil` | `nil` | Bottom border style (from w:pBdr/w:bottom w:val). |
+| `border_left` | `String.t() | nil` | `nil` | Left border style (from w:pBdr/w:left w:val). |
+| `border_right` | `String.t() | nil` | `nil` | Right border style (from w:pBdr/w:right w:val). |
+
+
+---
+
+#### PdfAnnotation
+
+A PDF annotation extracted from a document page.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `annotation_type` | `PdfAnnotationType` | — | The type of annotation. |
+| `content` | `String.t() | nil` | `nil` | Text content of the annotation (e.g., comment text, link URL). |
+| `page_number` | `integer()` | — | Page number where the annotation appears (1-indexed). |
+| `bounding_box` | `BoundingBox | nil` | `nil` | Bounding box of the annotation on the page. |
+
+
+---
+
+#### PdfConfig
+
+PDF-specific configuration.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `backend` | `PdfBackend` | `:pdfium` | PDF extraction backend. Default: `Pdfium`. |
+| `extract_images` | `boolean()` | `false` | Extract images from PDF |
+| `passwords` | `list(String.t()) | nil` | `nil` | List of passwords to try when opening encrypted PDFs |
+| `extract_metadata` | `boolean()` | `true` | Extract PDF metadata |
+| `hierarchy` | `HierarchyConfig | nil` | `nil` | Hierarchy extraction configuration (None = hierarchy extraction disabled) |
+| `extract_annotations` | `boolean()` | `false` | Extract PDF annotations (text notes, highlights, links, stamps). Default: false |
+| `top_margin_fraction` | `float() | nil` | `nil` | Top margin fraction (0.0–1.0) of page height to exclude headers/running heads. Default: 0.06 (6%) |
+| `bottom_margin_fraction` | `float() | nil` | `nil` | Bottom margin fraction (0.0–1.0) of page height to exclude footers/page numbers. Default: 0.05 (5%) |
+| `allow_single_column_tables` | `boolean()` | `false` | Allow single-column pseudo tables in extraction results. By default, tables with fewer than 2 columns (layout-guided) or 3 columns (heuristic) are rejected. When `True`, the minimum column count is relaxed to 1, allowing single-column structured data (glossaries, itemized lists) to be emitted as tables. Other quality filters (density, sparsity, prose detection) still apply. |
+
+##### Functions
+
+###### default()
+
+**Signature:**
+
+```elixir
+def default()
+```
+
+
+---
+
+#### PdfExtractionMetadata
+
+Complete PDF extraction metadata including common and PDF-specific fields.
+
+This struct combines common document fields (title, authors, dates) with
+PDF-specific metadata and optional page structure information. It is returned
+by `extract_metadata_from_document()` when page boundaries are provided.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `title` | `String.t() | nil` | `nil` | Document title |
+| `subject` | `String.t() | nil` | `nil` | Document subject or description |
+| `authors` | `list(String.t()) | nil` | `nil` | Document authors (parsed from PDF Author field) |
+| `keywords` | `list(String.t()) | nil` | `nil` | Document keywords (parsed from PDF Keywords field) |
+| `created_at` | `String.t() | nil` | `nil` | Creation timestamp (ISO 8601 format) |
+| `modified_at` | `String.t() | nil` | `nil` | Last modification timestamp (ISO 8601 format) |
+| `created_by` | `String.t() | nil` | `nil` | Application or user that created the document |
+| `pdf_specific` | `PdfMetadata` | — | PDF-specific metadata |
+| `page_structure` | `PageStructure | nil` | `nil` | Page structure with boundaries and optional per-page metadata |
+
+
+---
+
+#### PdfExtractor
+
+PDF document extractor using pypdfium2 and playa-pdf.
+
+##### Functions
+
+###### default()
+
+**Signature:**
+
+```elixir
+def default()
+```
+
+###### name()
+
+**Signature:**
+
+```elixir
+def name()
+```
+
+###### version()
+
+**Signature:**
+
+```elixir
+def version()
+```
+
+###### initialize()
+
+**Signature:**
+
+```elixir
+def initialize()
+```
+
+###### shutdown()
+
+**Signature:**
+
+```elixir
+def shutdown()
+```
+
+###### extract_bytes()
+
+**Signature:**
+
+```elixir
+def extract_bytes(content, mime_type, config)
+```
+
+###### supported_mime_types()
+
+**Signature:**
+
+```elixir
+def supported_mime_types()
+```
+
+
+---
+
+#### PdfImage
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `page_number` | `integer()` | — | Page number |
+| `image_index` | `integer()` | — | Image index |
+| `width` | `integer()` | — | Width |
+| `height` | `integer()` | — | Height |
+| `color_space` | `String.t() | nil` | `nil` | Color space |
+| `bits_per_component` | `integer() | nil` | `nil` | Bits per component |
+| `filters` | `list(String.t())` | — | Original PDF stream filters (e.g. `["FlateDecode"]`, `["DCTDecode"]`). |
+| `data` | `binary()` | — | The decoded image bytes in a standard format (JPEG, PNG, etc.). |
+| `decoded_format` | `String.t()` | — | The format of `data` after decoding: `"jpeg"`, `"png"`, `"jpeg2000"`, `"ccitt"`, or `"raw"`. |
+
+
+---
+
+#### PdfImageExtractor
+
+##### Functions
+
+###### new()
+
+**Signature:**
+
+```elixir
+def new(pdf_bytes)
+```
+
+###### new_with_password()
+
+**Signature:**
+
+```elixir
+def new_with_password(pdf_bytes, password)
+```
+
+###### extract_images()
+
+**Signature:**
+
+```elixir
+def extract_images()
+```
+
+###### extract_images_from_page()
+
+**Signature:**
+
+```elixir
+def extract_images_from_page(page_number)
+```
+
+###### get_image_count()
+
+**Signature:**
+
+```elixir
+def get_image_count()
+```
+
+
+---
+
+#### PdfLayoutBBox
+
+Bounding box in PDF coordinate space (points, y=0 at bottom of page).
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `left` | `float()` | — | Left |
+| `bottom` | `float()` | — | Bottom |
+| `right` | `float()` | — | Right |
+| `top` | `float()` | — | Top |
+
+##### Functions
+
+###### width()
+
+**Signature:**
+
+```elixir
+def width()
+```
+
+###### height()
+
+**Signature:**
+
+```elixir
+def height()
+```
+
+
+---
+
+#### PdfMetadata
+
+PDF-specific metadata.
+
+Contains metadata fields specific to PDF documents that are not in the common
+`Metadata` structure. Common fields like title, authors, keywords, and dates
+are now at the `Metadata` level.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `pdf_version` | `String.t() | nil` | `nil` | PDF version (e.g., "1.7", "2.0") |
+| `producer` | `String.t() | nil` | `nil` | PDF producer (application that created the PDF) |
+| `is_encrypted` | `boolean() | nil` | `nil` | Whether the PDF is encrypted/password-protected |
+| `width` | `integer() | nil` | `nil` | First page width in points (1/72 inch) |
+| `height` | `integer() | nil` | `nil` | First page height in points (1/72 inch) |
+| `page_count` | `integer() | nil` | `nil` | Total number of pages in the PDF document |
+
+
+---
+
+#### PdfPageIterator
+
+Lazy page-by-page PDF renderer.
+
+Reads the file once at construction and yields one PNG-encoded page per
+`next()` call. Only one rendered page is held in memory at a time.
+
+The PDFium mutex is acquired and released per page, so other PDF
+operations can proceed between iterations. This makes the iterator
+safe to use in long-running loops (e.g., sending each page to a vision
+model for OCR) without blocking all PDF processing.
+
+Use the iterator when memory is a concern or when you want to process
+pages as they are rendered.
+
+##### Functions
+
+###### new()
+
+Create an iterator from raw PDF bytes.
+
+Validates the PDF and determines the page count. The PDF bytes are
+owned by the iterator — the file is not re-read from disk.
+
+**Errors:**
+
+Returns an error if the PDF is invalid or password-protected without
+the correct password.
+
+**Signature:**
+
+```elixir
+def new(pdf_bytes, dpi, password)
+```
+
+###### from_file()
+
+Create an iterator from a file path.
+
+Reads the file into memory once. Subsequent iterations render from
+the owned bytes without re-reading the file.
+
+**Errors:**
+
+Returns an error if the file cannot be read or the PDF is invalid.
+
+**Signature:**
+
+```elixir
+def from_file(path, dpi, password)
+```
+
+###### page_count()
+
+Number of pages in the PDF.
+
+**Signature:**
+
+```elixir
+def page_count()
+```
+
+###### next()
+
+**Signature:**
+
+```elixir
+def next()
+```
+
+###### size_hint()
+
+**Signature:**
+
+```elixir
+def size_hint()
+```
+
+
+---
+
+#### PdfRenderer
+
+##### Functions
+
+###### new()
+
+**Signature:**
+
+```elixir
+def new()
+```
+
+
+---
+
+#### PdfTextExtractor
+
+##### Functions
+
+###### new()
+
+**Signature:**
+
+```elixir
+def new()
+```
+
+
+---
+
+#### PdfUnifiedExtractionResult
+
+Result type for unified PDF text and metadata extraction.
+
+Contains text, optional page boundaries, optional per-page content, and metadata.
+
+
+---
+
+#### PlainTextExtractor
+
+Plain text extractor.
+
+Extracts content from plain text files (.txt).
+
+##### Functions
+
+###### default()
+
+**Signature:**
+
+```elixir
+def default()
+```
+
+###### name()
+
+**Signature:**
+
+```elixir
+def name()
+```
+
+###### version()
+
+**Signature:**
+
+```elixir
+def version()
+```
+
+###### initialize()
+
+**Signature:**
+
+```elixir
+def initialize()
+```
+
+###### shutdown()
+
+**Signature:**
+
+```elixir
+def shutdown()
+```
+
+###### description()
+
+**Signature:**
+
+```elixir
+def description()
+```
+
+###### author()
+
+**Signature:**
+
+```elixir
+def author()
+```
+
+###### extract_bytes()
+
+**Signature:**
+
+```elixir
+def extract_bytes(content, mime_type, config)
+```
+
+###### supported_mime_types()
+
+**Signature:**
+
+```elixir
+def supported_mime_types()
+```
+
+###### priority()
+
+**Signature:**
+
+```elixir
+def priority()
+```
+
+
+---
+
+#### Plugin
+
+Base trait that all plugins must implement.
+
+This trait provides common functionality for plugin lifecycle management,
+identification, and metadata.
+
+# Thread Safety
+
+All plugins must be `Send + Sync` to support concurrent usage across threads.
+
+##### Functions
+
+###### name()
+
+Returns the unique name/identifier for this plugin.
+
+The name should be:
+- Unique across all plugins
+- Lowercase with hyphens (e.g., "my-custom-plugin")
+- URL-safe characters only
+
+**Signature:**
+
+```elixir
+def name()
+```
+
+###### version()
+
+Returns the semantic version of this plugin.
+
+Should follow semver format: `MAJOR.MINOR.PATCH`
+
+**Signature:**
+
+```elixir
+def version()
+```
+
+###### initialize()
+
+Initialize the plugin.
+
+Called once when the plugin is registered. Use this to:
+- Load configuration
+- Initialize resources (connections, caches, etc.)
+- Validate dependencies
+
+# Thread Safety
+
+This method takes `&self` instead of `&mut self` to work with `Arc<dyn Plugin>`.
+Plugins needing mutable state during initialization should use interior mutability
+patterns (Mutex, RwLock, OnceCell, etc.).
+
+**Errors:**
+
+Should return an error if initialization fails. The plugin will not be
+registered if this method returns an error.
+
+**Signature:**
+
+```elixir
+def initialize()
+```
+
+###### shutdown()
+
+Shutdown the plugin.
+
+Called when the plugin is being unregistered or the application is shutting down.
+Use this to:
+- Close connections
+- Flush caches
+- Release resources
+
+# Thread Safety
+
+This method takes `&self` instead of `&mut self` to work with `Arc<dyn Plugin>`.
+Plugins needing mutable state during shutdown should use interior mutability
+patterns (Mutex, RwLock, etc.).
+
+**Errors:**
+
+Errors during shutdown are logged but don't prevent the shutdown process.
+
+**Signature:**
+
+```elixir
+def shutdown()
+```
+
+###### description()
+
+Optional plugin description for debugging and logging.
+
+Defaults to empty string if not overridden.
+
+**Signature:**
+
+```elixir
+def description()
+```
+
+###### author()
+
+Optional plugin author information.
+
+Defaults to empty string if not overridden.
+
+**Signature:**
+
+```elixir
+def author()
+```
+
+
+---
+
+#### PluginHealthStatus
+
+Plugin health status information.
+
+Contains diagnostic information about registered plugins for each type.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `ocr_backends_count` | `integer()` | — | Number of registered OCR backends |
+| `ocr_backends` | `list(String.t())` | — | Names of registered OCR backends |
+| `extractors_count` | `integer()` | — | Number of registered document extractors |
+| `extractors` | `list(String.t())` | — | Names of registered document extractors |
+| `post_processors_count` | `integer()` | — | Number of registered post-processors |
+| `post_processors` | `list(String.t())` | — | Names of registered post-processors |
+| `validators_count` | `integer()` | — | Number of registered validators |
+| `validators` | `list(String.t())` | — | Names of registered validators |
+
+##### Functions
+
+###### check()
+
+Check plugin health and return status.
+
+This function reads all plugin registries and collects information
+about registered plugins. It logs warnings if critical plugins are missing.
+
+**Returns:**
+
+`PluginHealthStatus` with counts and names of all registered plugins.
+
+**Signature:**
+
+```elixir
+def check()
+```
+
+
+---
+
+#### Pool
+
+##### Functions
+
+###### acquire()
+
+Acquire an object from the pool or create a new one if empty.
+
+**Returns:**
+
+A `PoolGuard<T>` that will return the object to the pool when dropped.
+
+**Panics:**
+
+Panics if the mutex is already locked by the current thread (deadlock).
+This is a safety mechanism provided by parking_lot to prevent subtle bugs.
+
+**Signature:**
+
+```elixir
+def acquire()
+```
+
+###### size()
+
+Get the current number of objects in the pool.
+
+**Signature:**
+
+```elixir
+def size()
+```
+
+###### clear()
+
+Clear the pool, discarding all pooled objects.
+
+**Signature:**
+
+```elixir
+def clear()
+```
+
+
+---
+
+#### PoolConfig
+
+Configuration for the string buffer pool.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `max_buffers_per_size` | `integer()` | `4` | Maximum buffers per size bucket |
+| `initial_capacity` | `integer()` | `4096` | Initial capacity for new buffers |
+| `max_capacity_before_discard` | `integer()` | `65536` | Maximum capacity before discarding |
+
+##### Functions
+
+###### default()
+
+**Signature:**
+
+```elixir
+def default()
+```
+
+
+---
+
+#### PoolMetrics
+
+Metrics tracking for pool allocations and reuse patterns.
+
+These metrics help identify pool efficiency and allocation patterns.
+Only available when the `pool-metrics` feature is enabled.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `total_acquires` | `AtomicUsize` | — | Total number of acquire calls on this pool |
+| `total_cache_hits` | `AtomicUsize` | — | Total number of cache hits (reused objects from pool) |
+| `peak_items_stored` | `AtomicUsize` | — | Peak number of objects stored simultaneously in this pool |
+| `total_creations` | `AtomicUsize` | — | Total number of objects created by the factory function |
+
+##### Functions
+
+###### hit_rate()
+
+Calculate the cache hit rate as a percentage (0.0-100.0).
+
+**Signature:**
+
+```elixir
+def hit_rate()
+```
+
+###### snapshot()
+
+Get all metrics as a struct for reporting.
+
+**Signature:**
+
+```elixir
+def snapshot()
+```
+
+###### reset()
+
+Reset all metrics to zero.
+
+**Signature:**
+
+```elixir
+def reset()
+```
+
+###### default()
+
+**Signature:**
+
+```elixir
+def default()
+```
+
+
+---
+
+#### PoolMetricsSnapshot
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `total_acquires` | `integer()` | — | Total acquires |
+| `total_cache_hits` | `integer()` | — | Total cache hits |
+| `peak_items_stored` | `integer()` | — | Peak items stored |
+| `total_creations` | `integer()` | — | Total creations |
+
+
+---
+
+#### PoolSizeHint
+
+Hint for optimal pool sizing based on document characteristics.
+
+This struct contains the estimated sizes for string and byte buffers
+that should be allocated in the pool to handle extraction without
+excessive reallocation.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `estimated_total_size` | `integer()` | — | Estimated total string buffer pool size in bytes |
+| `string_buffer_count` | `integer()` | — | Recommended number of string buffers |
+| `string_buffer_capacity` | `integer()` | — | Recommended capacity per string buffer in bytes |
+| `byte_buffer_count` | `integer()` | — | Recommended number of byte buffers |
+| `byte_buffer_capacity` | `integer()` | — | Recommended capacity per byte buffer in bytes |
+
+##### Functions
+
+###### estimated_string_pool_memory()
+
+Calculate the estimated string pool memory in bytes.
+
+This is the total estimated memory for all string buffers.
+
+**Signature:**
+
+```elixir
+def estimated_string_pool_memory()
+```
+
+###### estimated_byte_pool_memory()
+
+Calculate the estimated byte pool memory in bytes.
+
+This is the total estimated memory for all byte buffers.
+
+**Signature:**
+
+```elixir
+def estimated_byte_pool_memory()
+```
+
+###### total_pool_memory()
+
+Calculate the total estimated pool memory in bytes.
+
+This includes both string and byte buffer pools.
+
+**Signature:**
+
+```elixir
+def total_pool_memory()
+```
+
+
+---
+
+#### PooledString
+
+RAII wrapper for a pooled string buffer.
+
+Automatically returns the buffer to the pool when dropped.
+
+##### Functions
+
+###### buffer_mut()
+
+Get mutable access to the underlying string buffer.
+
+**Signature:**
+
+```elixir
+def buffer_mut()
+```
+
+###### as_str()
+
+Get immutable access to the underlying string buffer.
+
+**Signature:**
+
+```elixir
+def as_str()
+```
+
+###### deref()
+
+**Signature:**
+
+```elixir
+def deref()
+```
+
+###### deref_mut()
+
+**Signature:**
+
+```elixir
+def deref_mut()
+```
+
+###### drop()
+
+**Signature:**
+
+```elixir
+def drop()
+```
+
+###### fmt()
+
+**Signature:**
+
+```elixir
+def fmt(f)
+```
+
+
+---
+
+#### Position
+
+Horizontal or vertical position.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `relative_from` | `String.t()` | — | Relative from |
+| `offset` | `integer() | nil` | `nil` | Offset |
+
+
+---
+
+#### PostProcessorConfig
+
+Post-processor configuration.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `enabled` | `boolean()` | `true` | Enable post-processors |
+| `enabled_processors` | `list(String.t()) | nil` | `nil` | Whitelist of processor names to run (None = all enabled) |
+| `disabled_processors` | `list(String.t()) | nil` | `nil` | Blacklist of processor names to skip (None = none disabled) |
+| `enabled_set` | `AHashSet | nil` | `nil` | Pre-computed AHashSet for O(1) enabled processor lookup |
+| `disabled_set` | `AHashSet | nil` | `nil` | Pre-computed AHashSet for O(1) disabled processor lookup |
+
+##### Functions
+
+###### build_lookup_sets()
+
+Pre-compute HashSets for O(1) processor name lookups.
+
+This method converts the enabled/disabled processor Vec to HashSet
+for constant-time lookups in the pipeline.
+
+**Signature:**
+
+```elixir
+def build_lookup_sets()
+```
+
+###### default()
+
+**Signature:**
+
+```elixir
+def default()
+```
+
+
+---
+
+#### PostProcessorRegistry
+
+Registry for post-processor plugins.
+
+Manages post-processors organized by processing stage.
+
+##### Functions
+
+###### register()
+
+Register a post-processor.
+
+**Signature:**
+
+```elixir
+def register(processor, priority)
+```
+
+###### get_for_stage()
+
+Get all processors for a specific stage, in priority order.
+
+**Returns:**
+
+Vector of processors in priority order (highest first).
+
+**Signature:**
+
+```elixir
+def get_for_stage(stage)
+```
+
+###### list()
+
+List all registered processor names.
+
+**Signature:**
+
+```elixir
+def list()
+```
+
+###### remove()
+
+Remove a processor from the registry.
+
+**Signature:**
+
+```elixir
+def remove(name)
+```
+
+###### shutdown_all()
+
+Shutdown all processors and clear the registry.
+
+**Signature:**
+
+```elixir
+def shutdown_all()
+```
+
+###### default()
+
+**Signature:**
+
+```elixir
+def default()
+```
+
+
+---
+
+#### PptExtractionResult
+
+Result of PPT text extraction.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `text` | `String.t()` | — | Extracted text content, with slides separated by double newlines. |
+| `slide_count` | `integer()` | — | Number of slides found. |
+| `metadata` | `PptMetadata` | — | Document metadata. |
+| `speaker_notes` | `list(String.t())` | — | Speaker notes text per slide (if available). |
+
+
+---
+
+#### PptExtractor
+
+Native PPT extractor using OLE/CFB parsing.
+
+This extractor handles PowerPoint 97-2003 binary (.ppt) files without
+requiring LibreOffice, providing ~50x faster extraction.
+
+##### Functions
+
+###### default()
+
+**Signature:**
+
+```elixir
+def default()
+```
+
+###### name()
+
+**Signature:**
+
+```elixir
+def name()
+```
+
+###### version()
+
+**Signature:**
+
+```elixir
+def version()
+```
+
+###### initialize()
+
+**Signature:**
+
+```elixir
+def initialize()
+```
+
+###### shutdown()
+
+**Signature:**
+
+```elixir
+def shutdown()
+```
+
+###### description()
+
+**Signature:**
+
+```elixir
+def description()
+```
+
+###### author()
+
+**Signature:**
+
+```elixir
+def author()
+```
+
+###### extract_bytes()
+
+**Signature:**
+
+```elixir
+def extract_bytes(content, mime_type, config)
+```
+
+###### supported_mime_types()
+
+**Signature:**
+
+```elixir
+def supported_mime_types()
+```
+
+###### priority()
+
+**Signature:**
+
+```elixir
+def priority()
+```
+
+
+---
+
+#### PptMetadata
+
+Metadata extracted from PPT files.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `title` | `String.t() | nil` | `nil` | Title |
+| `subject` | `String.t() | nil` | `nil` | Subject |
+| `author` | `String.t() | nil` | `nil` | Author |
+| `last_author` | `String.t() | nil` | `nil` | Last author |
+
+
+---
+
+#### PptxAppProperties
+
+Application properties from docProps/app.xml for PPTX
+
+Contains PowerPoint-specific document metadata.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `application` | `String.t() | nil` | `nil` | Application name (e.g., "Microsoft Office PowerPoint") |
+| `app_version` | `String.t() | nil` | `nil` | Application version |
+| `total_time` | `integer() | nil` | `nil` | Total editing time in minutes |
+| `company` | `String.t() | nil` | `nil` | Company name |
+| `doc_security` | `integer() | nil` | `nil` | Document security level |
+| `scale_crop` | `boolean() | nil` | `nil` | Scale crop flag |
+| `links_up_to_date` | `boolean() | nil` | `nil` | Links up to date flag |
+| `shared_doc` | `boolean() | nil` | `nil` | Shared document flag |
+| `hyperlinks_changed` | `boolean() | nil` | `nil` | Hyperlinks changed flag |
+| `slides` | `integer() | nil` | `nil` | Number of slides |
+| `notes` | `integer() | nil` | `nil` | Number of notes |
+| `hidden_slides` | `integer() | nil` | `nil` | Number of hidden slides |
+| `multimedia_clips` | `integer() | nil` | `nil` | Number of multimedia clips |
+| `presentation_format` | `String.t() | nil` | `nil` | Presentation format (e.g., "Widescreen", "Standard") |
+| `slide_titles` | `list(String.t())` | `[]` | Slide titles |
+
+
+---
+
+#### PptxExtractionOptions
+
+Options for PPTX content extraction.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `extract_images` | `boolean()` | `true` | Whether to extract embedded images. |
+| `page_config` | `PageConfig | nil` | `nil` | Optional page configuration for boundary tracking. |
+| `plain` | `boolean()` | `false` | Whether to output plain text (no markdown). |
+| `include_structure` | `boolean()` | `false` | Whether to build the `DocumentStructure` tree. |
+| `inject_placeholders` | `boolean()` | `true` | Whether to emit `![alt](target)` references in markdown output. |
+
+##### Functions
+
+###### default()
+
+**Signature:**
+
+```elixir
+def default()
+```
+
+
+---
+
+#### PptxExtractionResult
+
+PowerPoint (PPTX) extraction result.
+
+Contains extracted slide content, metadata, and embedded images/tables.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `content` | `String.t()` | — | Extracted text content from all slides |
+| `metadata` | `PptxMetadata` | — | Presentation metadata |
+| `slide_count` | `integer()` | — | Total number of slides |
+| `image_count` | `integer()` | — | Total number of embedded images |
+| `table_count` | `integer()` | — | Total number of tables |
+| `images` | `list(ExtractedImage)` | — | Extracted images from the presentation |
+| `page_structure` | `PageStructure | nil` | `nil` | Slide structure with boundaries (when page tracking is enabled) |
+| `page_contents` | `list(PageContent) | nil` | `nil` | Per-slide content (when page tracking is enabled) |
+| `document` | `DocumentStructure | nil` | `nil` | Structured document representation |
+| `hyperlinks` | `list(StringOptionString)` | — | Hyperlinks discovered in slides as (url, optional_label) pairs. |
+| `office_metadata` | `map()` | — | Office metadata extracted from docProps/core.xml and docProps/app.xml. Contains keys like "title", "author", "created_by", "subject", "keywords", "modified_by", "created_at", "modified_at", etc. |
+
+
+---
+
+#### PptxExtractor
+
+PowerPoint presentation extractor.
+
+Supports: .pptx, .pptm, .ppsx
+
+##### Functions
+
+###### default()
+
+**Signature:**
+
+```elixir
+def default()
+```
+
+###### name()
+
+**Signature:**
+
+```elixir
+def name()
+```
+
+###### version()
+
+**Signature:**
+
+```elixir
+def version()
+```
+
+###### initialize()
+
+**Signature:**
+
+```elixir
+def initialize()
+```
+
+###### shutdown()
+
+**Signature:**
+
+```elixir
+def shutdown()
+```
+
+###### extract_bytes()
+
+**Signature:**
+
+```elixir
+def extract_bytes(content, mime_type, config)
+```
+
+###### extract_file()
+
+**Signature:**
+
+```elixir
+def extract_file(path, mime_type, config)
+```
+
+###### supported_mime_types()
+
+**Signature:**
+
+```elixir
+def supported_mime_types()
+```
+
+###### priority()
+
+**Signature:**
+
+```elixir
+def priority()
+```
+
+
+---
+
+#### PptxMetadata
+
+PowerPoint presentation metadata.
+
+Extracted from PPTX files containing slide counts and presentation details.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `slide_count` | `integer()` | — | Total number of slides in the presentation |
+| `slide_names` | `list(String.t())` | `[]` | Names of slides (if available) |
+| `image_count` | `integer() | nil` | `nil` | Number of embedded images |
+| `table_count` | `integer() | nil` | `nil` | Number of tables |
+
+
+---
+
+#### ProcessingWarning
+
+A non-fatal warning from a processing pipeline stage.
+
+Captures errors from optional features that don't prevent extraction
+but may indicate degraded results.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `source` | `Str` | — | The pipeline stage or feature that produced this warning (e.g., "embedding", "chunking", "language_detection", "output_format"). |
+| `message` | `Str` | — | Human-readable description of what went wrong. |
+
+
+---
+
+#### PstExtractor
+
+PST file extractor.
+
+Supports: .pst (Microsoft Outlook Personal Folders)
+
+##### Functions
+
+###### default()
+
+**Signature:**
+
+```elixir
+def default()
+```
+
+###### name()
+
+**Signature:**
+
+```elixir
+def name()
+```
+
+###### version()
+
+**Signature:**
+
+```elixir
+def version()
+```
+
+###### initialize()
+
+**Signature:**
+
+```elixir
+def initialize()
+```
+
+###### shutdown()
+
+**Signature:**
+
+```elixir
+def shutdown()
+```
+
+###### extract_sync()
+
+**Signature:**
+
+```elixir
+def extract_sync(content, mime_type, config)
+```
+
+###### extract_bytes()
+
+**Signature:**
+
+```elixir
+def extract_bytes(content, mime_type, config)
+```
+
+###### supported_mime_types()
+
+**Signature:**
+
+```elixir
+def supported_mime_types()
+```
+
+###### priority()
+
+**Signature:**
+
+```elixir
+def priority()
+```
+
+###### as_sync_extractor()
+
+**Signature:**
+
+```elixir
+def as_sync_extractor()
+```
+
+
+---
+
+#### PstMetadata
+
+Outlook PST archive metadata.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `message_count` | `integer()` | — | Number of message |
+
+
+---
+
+#### QualityProcessor
+
+Post-processor that calculates quality score and cleans text.
+
+This processor:
+- Runs in the Early processing stage
+- Calculates quality score when `config.enable_quality_processing` is true
+- Stores quality score in `metadata.additional["quality_score"]`
+- Cleans and normalizes extracted text
+
+##### Functions
+
+###### name()
+
+**Signature:**
+
+```elixir
+def name()
+```
+
+###### version()
+
+**Signature:**
+
+```elixir
+def version()
+```
+
+###### initialize()
+
+**Signature:**
+
+```elixir
+def initialize()
+```
+
+###### shutdown()
+
+**Signature:**
+
+```elixir
+def shutdown()
+```
+
+###### process()
+
+**Signature:**
+
+```elixir
+def process(result, config)
+```
+
+###### processing_stage()
+
+**Signature:**
+
+```elixir
+def processing_stage()
+```
+
+###### should_process()
+
+**Signature:**
+
+```elixir
+def should_process(result, config)
+```
+
+###### estimated_duration_ms()
+
+**Signature:**
+
+```elixir
+def estimated_duration_ms(result)
+```
+
+
+---
+
+#### RakeParams
+
+RAKE-specific parameters.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `min_word_length` | `integer()` | `1` | Minimum word length to consider (default: 1). |
+| `max_words_per_phrase` | `integer()` | `3` | Maximum words in a keyword phrase (default: 3). |
+
+##### Functions
+
+###### default()
+
+**Signature:**
+
+```elixir
+def default()
+```
+
+
+---
+
+#### RecModelPaths
+
+Paths to a recognition model and its character dictionary.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `rec_model` | `String.t()` | — | Path to the recognition model directory. |
+| `dict_file` | `String.t()` | — | Path to the character dictionary file. |
+
+
+---
+
+#### RecognizedTable
+
+Pre-computed table markdown for a table detection region.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `detection_bbox` | `BBox` | — | Detection bbox that this table corresponds to (for matching). |
+| `cells` | `list(list(String.t()))` | — | Table cells as a 2D vector (rows x columns). |
+| `markdown` | `String.t()` | — | Rendered markdown table. |
+
+
+---
+
+#### Record
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `tag_id` | `integer()` | — | Tag id |
+| `data` | `binary()` | — | Data |
+
+##### Functions
+
+###### parse()
+
+**Signature:**
+
+```elixir
+def parse(reader)
+```
+
+###### data_reader()
+
+Return a fresh `StreamReader` over this record's data bytes.
+
+**Signature:**
+
+```elixir
+def data_reader()
+```
+
+
+---
+
+#### Recyclable
+
+Trait for types that can be pooled and reused.
+
+Implementing this trait allows a type to be used with `Pool<T>`.
+The `reset()` method should clear the object's state for reuse.
+
+##### Functions
+
+###### reset()
+
+Reset the object to a reusable state.
+
+This is called when returning an object to the pool.
+Should clear any internal data while preserving capacity.
+
+**Signature:**
+
+```elixir
+def reset()
+```
+
+
+---
+
+#### Relationship
+
+A relationship between two elements in the document.
+
+During extraction, targets may be unresolved keys (`RelationshipTarget.Key`).
+The derivation step resolves these to indices using the element anchor index.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `source` | `integer()` | — | Index of the source element in `InternalDocument.elements`. |
+| `target` | `RelationshipTarget` | — | Target of the relationship (resolved index or unresolved key). |
+| `kind` | `RelationshipKind` | — | Semantic kind of the relationship. |
+
+
+---
+
+#### Renderer
+
+Trait for document renderers that convert `InternalDocument` to output strings.
+
+Renderers are stateless converters that transform the internal document
+representation into a specific output format (Markdown, HTML, Djot, plain text, etc.).
+
+# Thread Safety
+
+Renderers must be `Send + Sync` to support concurrent rendering across threads.
+
+##### Functions
+
+###### name()
+
+The format name (e.g., "markdown", "html", "djot", "plain").
+
+**Signature:**
+
+```elixir
+def name()
+```
+
+###### render()
+
+Render an `InternalDocument` to the output format.
+
+**Returns:**
+
+The rendered output as a string.
+
+**Errors:**
+
+Returns an error if rendering fails.
+
+**Signature:**
+
+```elixir
+def render(doc)
+```
+
+
+---
+
+#### RendererRegistry
+
+Registry for document renderer plugins.
+
+Manages renderers that convert `InternalDocument` to output format strings.
+
+# Thread Safety
+
+The registry is thread-safe and can be accessed concurrently from multiple threads.
+
+##### Functions
+
+###### new_empty()
+
+Create a new empty renderer registry without built-in renderers.
+
+Useful for testing or when you want full control over renderer registration.
+
+**Signature:**
+
+```elixir
+def new_empty()
+```
+
+###### register()
+
+Register a renderer.
+
+**Returns:**
+
+- `Ok(())` if registration succeeded
+- `Err(...)` if the renderer name is invalid
+
+**Signature:**
+
+```elixir
+def register(renderer)
+```
+
+###### get()
+
+Get a renderer by name.
+
+**Returns:**
+
+The renderer if found, or an error if not registered.
+
+**Signature:**
+
+```elixir
+def get(name)
+```
+
+###### render()
+
+Render a document using the named renderer.
+
+Convenience method that looks up the renderer by name and renders the document.
+
+**Returns:**
+
+The rendered output string, or an error if the renderer is not found or rendering fails.
+
+**Signature:**
+
+```elixir
+def render(name, doc)
+```
+
+###### list()
+
+List all registered renderer names.
+
+**Signature:**
+
+```elixir
+def list()
+```
+
+###### remove()
+
+Remove a renderer from the registry.
+
+**Signature:**
+
+```elixir
+def remove(name)
+```
+
+###### reset_to_defaults()
+
+Clear all renderers and re-register the built-in defaults.
+
+**Signature:**
+
+```elixir
+def reset_to_defaults()
+```
+
+###### default()
+
+**Signature:**
+
+```elixir
+def default()
+```
+
+
+---
+
+#### ResolvedRecModel
+
+Resolved recognition model with engine pool key for sharing.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `model_dir` | `String.t()` | — | Directory containing model.onnx. |
+| `dict_file` | `String.t()` | — | Path to the character dictionary file. |
+| `model_key` | `String.t()` | — | Engine pool key for sharing engines across script families. Multiple families may share the same key (e.g. chinese and japanese both map to "v2:unified_server" when using server tier). |
+
+
+---
+
+#### ResolvedStyle
+
+Fully resolved (flattened) style after walking the inheritance chain.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `paragraph_properties` | `ParagraphProperties` | — | Paragraph properties (paragraph properties) |
+| `run_properties` | `RunProperties` | — | Run properties (run properties) |
+
+
+---
+
+#### RowProperties
+
+Row-level properties from `<w:trPr>`.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `height` | `integer() | nil` | `nil` | Height |
+| `height_rule` | `String.t() | nil` | `nil` | Height rule |
+| `is_header` | `boolean()` | — | Whether header |
+| `cant_split` | `boolean()` | — | Cant split |
+
+
+---
+
+#### RstExtractor
+
+Native Rust reStructuredText extractor.
+
+Parses RST documents using document tree parsing and extracts:
+- Metadata from field lists
+- Document structure (headings, sections)
+- Text content and inline formatting
+- Code blocks and directives
+- Tables and lists
+
+##### Functions
+
+###### build_internal_document()
+
+Build an `InternalDocument` from RST content.
+
+Handles sections, paragraphs, code blocks, tables, footnotes, citations,
+and cross-references.
+
+**Signature:**
+
+```elixir
+def build_internal_document(content, inject_placeholders)
+```
+
+###### default()
+
+**Signature:**
+
+```elixir
+def default()
+```
+
+###### name()
+
+**Signature:**
+
+```elixir
+def name()
+```
+
+###### version()
+
+**Signature:**
+
+```elixir
+def version()
+```
+
+###### initialize()
+
+**Signature:**
+
+```elixir
+def initialize()
+```
+
+###### shutdown()
+
+**Signature:**
+
+```elixir
+def shutdown()
+```
+
+###### description()
+
+**Signature:**
+
+```elixir
+def description()
+```
+
+###### author()
+
+**Signature:**
+
+```elixir
+def author()
+```
+
+###### extract_bytes()
+
+**Signature:**
+
+```elixir
+def extract_bytes(content, mime_type, config)
+```
+
+###### extract_file()
+
+**Signature:**
+
+```elixir
+def extract_file(path, mime_type, config)
+```
+
+###### supported_mime_types()
+
+**Signature:**
+
+```elixir
+def supported_mime_types()
+```
+
+###### priority()
+
+**Signature:**
+
+```elixir
+def priority()
+```
+
+
+---
+
+#### RtDetrModel
+
+Docling RT-DETR v2 layout detection model.
+
+This model is NMS-free (transformer-based end-to-end detection).
+
+Input tensors:
+  - `images`:            f32 [batch, 3, 640, 640]  (preprocessed pixel data)
+  - `orig_target_sizes`: i64 [batch, 2]            ([height, width] of original image)
+
+Output tensors:
+  - `labels`: i64 [batch, num_queries]   (class IDs, 0-16)
+  - `boxes`:  f32 [batch, num_queries, 4] (bounding boxes in original image coordinates)
+  - `scores`: f32 [batch, num_queries]   (confidence scores)
+
+##### Functions
+
+###### from_file()
+
+Load a Docling RT-DETR ONNX model from a file.
+
+**Signature:**
+
+```elixir
+def from_file(path, accel)
+```
+
+###### detect()
+
+**Signature:**
+
+```elixir
+def detect(img)
+```
+
+###### detect_with_threshold()
+
+**Signature:**
+
+```elixir
+def detect_with_threshold(img, threshold)
+```
+
+###### detect_batch()
+
+**Signature:**
+
+```elixir
+def detect_batch(images, threshold)
+```
+
+###### name()
+
+**Signature:**
+
+```elixir
+def name()
+```
+
+
+---
+
+#### RtfExtractor
+
+Native Rust RTF extractor.
+
+Extracts text content, metadata, and structure from RTF documents
+
+##### Functions
+
+###### default()
+
+**Signature:**
+
+```elixir
+def default()
+```
+
+###### name()
+
+**Signature:**
+
+```elixir
+def name()
+```
+
+###### version()
+
+**Signature:**
+
+```elixir
+def version()
+```
+
+###### initialize()
+
+**Signature:**
+
+```elixir
+def initialize()
+```
+
+###### shutdown()
+
+**Signature:**
+
+```elixir
+def shutdown()
+```
+
+###### description()
+
+**Signature:**
+
+```elixir
+def description()
+```
+
+###### author()
+
+**Signature:**
+
+```elixir
+def author()
+```
+
+###### extract_bytes()
+
+**Signature:**
+
+```elixir
+def extract_bytes(content, mime_type, config)
+```
+
+###### supported_mime_types()
+
+**Signature:**
+
+```elixir
+def supported_mime_types()
+```
+
+###### priority()
+
+**Signature:**
+
+```elixir
+def priority()
+```
+
+
+---
+
+#### Run
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `text` | `String.t()` | — | Text |
+| `bold` | `boolean()` | — | Bold |
+| `italic` | `boolean()` | — | Italic |
+| `underline` | `boolean()` | — | Underline |
+| `strikethrough` | `boolean()` | — | Strikethrough |
+| `subscript` | `boolean()` | — | Subscript |
+| `superscript` | `boolean()` | — | Superscript |
+| `font_size` | `integer() | nil` | `nil` | Font size in half-points (from `w:sz`). |
+| `font_color` | `String.t() | nil` | `nil` | Font color as "RRGGBB" hex (from `w:color`). |
+| `highlight` | `String.t() | nil` | `nil` | Highlight color name (from `w:highlight`). |
+| `hyperlink_url` | `String.t() | nil` | `nil` | Hyperlink url |
+| `math_latex` | `StringBool | nil` | `nil` | LaTeX math content: (latex_source, is_display_math). When set, this run represents an equation and `text` is ignored. |
+
+##### Functions
+
+###### to_markdown()
+
+Render this run as markdown with formatting markers.
+
+**Signature:**
+
+```elixir
+def to_markdown()
+```
+
+
+---
+
+#### RunProperties
+
+Run-level formatting properties (bold, italic, font, size, color, etc.).
+
+All fields are `Option` so that inheritance resolution can distinguish
+"not set" (`nil`) from "explicitly set" (`Some`).
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `bold` | `boolean() | nil` | `nil` | Bold |
+| `italic` | `boolean() | nil` | `nil` | Italic |
+| `underline` | `boolean() | nil` | `nil` | Underline |
+| `strikethrough` | `boolean() | nil` | `nil` | Strikethrough |
+| `color` | `String.t() | nil` | `nil` | Hex RGB color, e.g. `"2F5496"`. |
+| `font_size_half_points` | `integer() | nil` | `nil` | Font size in half-points (`w:sz` val). Divide by 2 to get points. |
+| `font_ascii` | `String.t() | nil` | `nil` | ASCII font family (`w:rFonts w:ascii`). |
+| `font_ascii_theme` | `String.t() | nil` | `nil` | ASCII theme font (`w:rFonts w:asciiTheme`). |
+| `vert_align` | `String.t() | nil` | `nil` | Vertical alignment: "superscript", "subscript", or "baseline". |
+| `font_h_ansi` | `String.t() | nil` | `nil` | High ANSI font family (w:rFonts w:hAnsi). |
+| `font_cs` | `String.t() | nil` | `nil` | Complex script font family (w:rFonts w:cs). |
+| `font_east_asia` | `String.t() | nil` | `nil` | East Asian font family (w:rFonts w:eastAsia). |
+| `highlight` | `String.t() | nil` | `nil` | Highlight color name (e.g., "yellow", "green", "cyan"). |
+| `caps` | `boolean() | nil` | `nil` | All caps text transformation. |
+| `small_caps` | `boolean() | nil` | `nil` | Small caps text transformation. |
+| `shadow` | `boolean() | nil` | `nil` | Text shadow effect. |
+| `outline` | `boolean() | nil` | `nil` | Text outline effect. |
+| `emboss` | `boolean() | nil` | `nil` | Text emboss effect. |
+| `imprint` | `boolean() | nil` | `nil` | Text imprint (engrave) effect. |
+| `char_spacing` | `integer() | nil` | `nil` | Character spacing in twips (from w:spacing w:val). |
+| `position` | `integer() | nil` | `nil` | Vertical position offset in half-points (from w:position w:val). |
+| `kern` | `integer() | nil` | `nil` | Kerning threshold in half-points (from w:kern w:val). |
+| `theme_color` | `String.t() | nil` | `nil` | Theme color reference (e.g., "accent1", "dk1"). |
+| `theme_tint` | `String.t() | nil` | `nil` | Theme color tint modification (hex value). |
+| `theme_shade` | `String.t() | nil` | `nil` | Theme color shade modification (hex value). |
+
+
+---
+
+#### Section
+
+A body-text section containing a flat list of paragraphs.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `paragraphs` | `list(Paragraph)` | `[]` | Paragraphs |
+
+
+---
+
+#### SectionProperties
+
+DOCX section properties parsed from `w:sectPr` element.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `page_width_twips` | `integer() | nil` | `nil` | Page width in twips (from `w:pgSz w:w`). |
+| `page_height_twips` | `integer() | nil` | `nil` | Page height in twips (from `w:pgSz w:h`). |
+| `orientation` | `Orientation | nil` | `nil` | Page orientation (from `w:pgSz w:orient`). |
+| `margins` | `PageMargins` | — | Page margins (from `w:pgMar`). |
+| `columns` | `ColumnLayout` | — | Column layout (from `w:cols`). |
+| `doc_grid_line_pitch` | `integer() | nil` | `nil` | Document grid line pitch in twips (from `w:docGrid w:linePitch`). |
+
+##### Functions
+
+###### page_width_points()
+
+Convert page width from twips to points.
+
+**Signature:**
+
+```elixir
+def page_width_points()
+```
+
+###### page_height_points()
+
+Convert page height from twips to points.
+
+**Signature:**
+
+```elixir
+def page_height_points()
+```
+
+
+---
+
+#### SecurityLimits
+
+Configuration for security limits across extractors.
+
+All limits are intentionally conservative to prevent DoS attacks
+while still supporting legitimate documents.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `max_archive_size` | `integer()` | — | Maximum uncompressed size for archives (500 MB) |
+| `max_compression_ratio` | `integer()` | `100` | Maximum compression ratio before flagging as potential bomb (100:1) |
+| `max_files_in_archive` | `integer()` | `10000` | Maximum number of files in archive (10,000) |
+| `max_nesting_depth` | `integer()` | `100` | Maximum nesting depth for structures (100) |
+| `max_entity_length` | `integer()` | `32` | Maximum entity/string length (32) |
+| `max_content_size` | `integer()` | — | Maximum string growth per document (100 MB) |
+| `max_iterations` | `integer()` | `10000000` | Maximum iterations per operation |
+| `max_xml_depth` | `integer()` | `100` | Maximum XML depth (100 levels) |
+| `max_table_cells` | `integer()` | `100000` | Maximum cells per table (100,000) |
+
+##### Functions
+
+###### default()
+
+**Signature:**
+
+```elixir
+def default()
+```
+
+
+---
+
+#### SegmentData
+
+Text segment data extracted from PDF using pdfium's pre-merged segments.
+
+Pdfium merges characters sharing the same baseline and font settings into segments,
+providing correct word boundaries without gap-based heuristics. Each segment contains
+the full text run, bounding box, and font metadata sampled from the first character.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `text` | `String.t()` | — | The segment text content (may contain spaces / multiple words) |
+| `x` | `float()` | — | Left x position in PDF units |
+| `y` | `float()` | — | Bottom y position in PDF units (PDF coordinate system, y=0 at bottom) |
+| `width` | `float()` | — | Width of the segment bounding box |
+| `height` | `float()` | — | Height of the segment bounding box |
+| `font_size` | `float()` | — | Font size in points (from first character) |
+| `is_bold` | `boolean()` | — | Whether the font is bold |
+| `is_italic` | `boolean()` | — | Whether the font is italic |
+| `is_monospace` | `boolean()` | — | Whether the font is monospace (e.g. Courier, Consolas) |
+| `baseline_y` | `float()` | — | Baseline Y position (from first character origin, falls back to bounds bottom) |
+| `assigned_role` | `integer() | nil` | `nil` | Pre-assigned heading level from the PDF structure tree (1-6), or `None` when the heading level is unknown and must be inferred via font-size clustering. |
+
+
+---
+
+#### ServerConfig
+
+API server configuration.
+
+This struct holds all configuration options for the Kreuzberg API server,
+including host/port settings, CORS configuration, and upload limits.
+
+# Defaults
+
+- `host`: "127.0.0.1" (localhost only)
+- `port`: 8000
+- `cors_origins`: empty vector (allows all origins)
+- `max_request_body_bytes`: 104_857_600 (100 MB)
+- `max_multipart_field_bytes`: 104_857_600 (100 MB)
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `host` | `String.t()` | — | Server host address (e.g., "127.0.0.1", "0.0.0.0") |
+| `port` | `integer()` | — | Server port number |
+| `cors_origins` | `list(String.t())` | `[]` | CORS allowed origins. Empty vector means allow all origins. If this is an empty vector, the server will accept requests from any origin. If populated with specific origins (e.g., ["<https://example.com">]), only those origins will be allowed. |
+| `max_request_body_bytes` | `integer()` | — | Maximum size of request body in bytes (default: 100 MB) |
+| `max_multipart_field_bytes` | `integer()` | — | Maximum size of multipart fields in bytes (default: 100 MB) |
+
+##### Functions
+
+###### default()
+
+**Signature:**
+
+```elixir
+def default()
+```
+
+###### listen_addr()
+
+Get the server listen address (host:port).
+
+**Signature:**
+
+```elixir
+def listen_addr()
+```
+
+###### cors_allows_all()
+
+Check if CORS allows all origins.
+
+Returns `true` if the `cors_origins` vector is empty, meaning all origins
+are allowed. Returns `false` if specific origins are configured.
+
+**Signature:**
+
+```elixir
+def cors_allows_all()
+```
+
+###### is_origin_allowed()
+
+Check if a given origin is allowed by CORS configuration.
+
+Returns `true` if:
+- CORS allows all origins (empty origins list), or
+- The given origin is in the allowed origins list
+
+**Signature:**
+
+```elixir
+def is_origin_allowed(origin)
+```
+
+###### max_request_body_mb()
+
+Get maximum request body size in megabytes (rounded up).
+
+**Signature:**
+
+```elixir
+def max_request_body_mb()
+```
+
+###### max_multipart_field_mb()
+
+Get maximum multipart field size in megabytes (rounded up).
+
+**Signature:**
+
+```elixir
+def max_multipart_field_mb()
+```
+
+###### apply_env_overrides()
+
+Apply environment variable overrides to the configuration.
+
+Reads the following environment variables and overrides config values if set:
+
+- `KREUZBERG_HOST` - Server host address
+- `KREUZBERG_PORT` - Server port number (parsed as u16)
+- `KREUZBERG_CORS_ORIGINS` - Comma-separated list of allowed origins
+- `KREUZBERG_MAX_REQUEST_BODY_BYTES` - Max request body size in bytes
+- `KREUZBERG_MAX_MULTIPART_FIELD_BYTES` - Max multipart field size in bytes
+
+**Errors:**
+
+Returns `KreuzbergError.Validation` if:
+- `KREUZBERG_PORT` cannot be parsed as u16
+- `KREUZBERG_MAX_REQUEST_BODY_BYTES` cannot be parsed as usize
+- `KREUZBERG_MAX_MULTIPART_FIELD_BYTES` cannot be parsed as usize
+
+**Signature:**
+
+```elixir
+def apply_env_overrides()
+```
+
+###### from_file()
+
+Load server configuration from a file.
+
+Automatically detects the file format based on extension:
+- `.toml` - TOML format
+- `.yaml` or `.yml` - YAML format
+- `.json` - JSON format
+
+This function handles two config file formats:
+1. Flat format: Server config at root level
+2. Nested format: Server config under `[server]` section (combined with ExtractionConfig)
+
+**Errors:**
+
+Returns `KreuzbergError.Validation` if:
+- File doesn't exist or cannot be read
+- File extension is not recognized
+- File content is invalid for the detected format
+
+**Signature:**
+
+```elixir
+def from_file(path)
+```
+
+###### from_toml_file()
+
+Load server configuration from a TOML file.
+
+**Errors:**
+
+Returns `KreuzbergError.Validation` if the file doesn't exist or is invalid TOML.
+
+**Signature:**
+
+```elixir
+def from_toml_file(path)
+```
+
+###### from_yaml_file()
+
+Load server configuration from a YAML file.
+
+**Errors:**
+
+Returns `KreuzbergError.Validation` if the file doesn't exist or is invalid YAML.
+
+**Signature:**
+
+```elixir
+def from_yaml_file(path)
+```
+
+###### from_json_file()
+
+Load server configuration from a JSON file.
+
+**Errors:**
+
+Returns `KreuzbergError.Validation` if the file doesn't exist or is invalid JSON.
+
+**Signature:**
+
+```elixir
+def from_json_file(path)
+```
+
+
+---
+
+#### SevenZExtractor
+
+7z archive extractor.
+
+Extracts file lists and text content from 7z archives.
+
+##### Functions
+
+###### default()
+
+**Signature:**
+
+```elixir
+def default()
+```
+
+###### name()
+
+**Signature:**
+
+```elixir
+def name()
+```
+
+###### version()
+
+**Signature:**
+
+```elixir
+def version()
+```
+
+###### initialize()
+
+**Signature:**
+
+```elixir
+def initialize()
+```
+
+###### shutdown()
+
+**Signature:**
+
+```elixir
+def shutdown()
+```
+
+###### description()
+
+**Signature:**
+
+```elixir
+def description()
+```
+
+###### author()
+
+**Signature:**
+
+```elixir
+def author()
+```
+
+###### extract_bytes()
+
+**Signature:**
+
+```elixir
+def extract_bytes(content, mime_type, config)
+```
+
+###### supported_mime_types()
+
+**Signature:**
+
+```elixir
+def supported_mime_types()
+```
+
+###### priority()
+
+**Signature:**
+
+```elixir
+def priority()
+```
+
+###### as_sync_extractor()
+
+**Signature:**
+
+```elixir
+def as_sync_extractor()
+```
+
+###### extract_sync()
+
+**Signature:**
+
+```elixir
+def extract_sync(content, mime_type, config)
+```
+
+
+---
+
+#### SharedModelPaths
+
+Paths to shared models (detection + classification).
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `det_model` | `String.t()` | — | Path to the detection model directory. |
+| `cls_model` | `String.t()` | — | Path to the classification model directory. |
+
+
+---
+
+#### SlanetCell
+
+A single cell detected by SLANeXT.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `polygon` | `F328` | — | Bounding box polygon in image pixel coordinates. Format: [x1, y1, x2, y2, x3, y3, x4, y4] (4 corners, clockwise from top-left). |
+| `bbox` | `F324` | — | Axis-aligned bounding box derived from polygon: [left, top, right, bottom]. |
+| `row` | `integer()` | — | Row index in the table (0-based). |
+| `col` | `integer()` | — | Column index within the row (0-based). |
+
+
+---
+
+#### SlanetModel
+
+SLANeXT table structure recognition model.
+
+Wraps an ORT session for SLANeXT ONNX model and provides preprocessing,
+inference, and post-processing in a single `recognize` call.
+
+##### Functions
+
+###### from_file()
+
+Load a SLANeXT ONNX model from a file path.
+
+**Signature:**
+
+```elixir
+def from_file(path, accel)
+```
+
+###### recognize()
+
+Recognize table structure from a cropped table image.
+
+Returns a `SlanetResult` with detected cells, grid dimensions,
+and structure tokens.
+
+**Signature:**
+
+```elixir
+def recognize(table_img)
+```
+
+
+---
+
+#### SlanetResult
+
+SLANeXT recognition result for a single table image.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `cells` | `list(SlanetCell)` | — | Detected cells with bounding boxes and grid positions. |
+| `num_rows` | `integer()` | — | Number of rows in the table. |
+| `num_cols` | `integer()` | — | Maximum number of columns across all rows. |
+| `confidence` | `float()` | — | Average structure prediction confidence. |
+| `structure_tokens` | `list(String.t())` | — | Raw HTML structure tokens (for debugging). |
+
+
+---
+
+#### StreamReader
+
+##### Functions
+
+###### read_u8()
+
+**Signature:**
+
+```elixir
+def read_u8()
+```
+
+###### read_u16()
+
+**Signature:**
+
+```elixir
+def read_u16()
+```
+
+###### read_u32()
+
+**Signature:**
+
+```elixir
+def read_u32()
+```
+
+###### read_bytes()
+
+**Signature:**
+
+```elixir
+def read_bytes(len)
+```
+
+###### position()
+
+Current byte position within the stream.
+
+**Signature:**
+
+```elixir
+def position()
+```
+
+###### remaining()
+
+Number of bytes remaining from the current position to the end.
+
+**Signature:**
+
+```elixir
+def remaining()
+```
+
+
+---
+
+#### StringBufferPool
+
+Convenience type alias for a pooled String.
+
+
+---
+
+#### StringBufferPoolMetrics
+
+Metrics for StringBufferPool (only available with `pool-metrics` feature).
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `total_acquires` | `integer()` | — | Total number of acquire calls |
+| `total_reuses` | `integer()` | — | Total number of buffer reuses from pool |
+| `hit_rate` | `float()` | — | Hit rate as percentage (0.0-100.0) |
+
+
+---
+
+#### StringGrowthValidator
+
+Helper struct for tracking and validating string growth.
+
+##### Functions
+
+###### check_append()
+
+Validate and update size after appending.
+
+**Returns:**
+* `Ok(())` if size is within limits
+* `Err(SecurityError)` if size exceeds limit
+
+**Signature:**
+
+```elixir
+def check_append(len)
+```
+
+###### current_size()
+
+Get current size.
+
+**Signature:**
+
+```elixir
+def current_size()
+```
+
+
+---
+
+#### StructuredData
+
+Structured data (Schema.org, microdata, RDFa) block.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `data_type` | `StructuredDataType` | — | Type of structured data |
+| `raw_json` | `String.t()` | — | Raw JSON string representation |
+| `schema_type` | `String.t() | nil` | `nil` | Schema type if detectable (e.g., "Article", "Event", "Product") |
+
+
+---
+
+#### StructuredDataResult
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `content` | `String.t()` | — | The extracted text content |
+| `format` | `Str` | — | Format (str) |
+| `metadata` | `map()` | — | Document metadata |
+| `text_fields` | `list(String.t())` | — | Text fields |
+
+
+---
+
+#### StructuredExtractionConfig
+
+Configuration for LLM-based structured data extraction.
+
+Sends extracted document content to a VLM with a JSON schema,
+returning structured data that conforms to the schema.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `schema` | `term()` | — | JSON Schema defining the desired output structure. |
+| `schema_name` | `String.t()` | — | Schema name passed to the LLM's structured output mode. |
+| `schema_description` | `String.t() | nil` | `nil` | Optional schema description for the LLM. |
+| `strict` | `boolean()` | — | Enable strict mode — output must exactly match the schema. |
+| `prompt` | `String.t() | nil` | `nil` | Custom Jinja2 extraction prompt template. When `None`, a default template is used. Available template variables: - `{{ content }}` — The extracted document text. - `{{ schema }}` — The JSON schema as a formatted string. - `{{ schema_name }}` — The schema name. - `{{ schema_description }}` — The schema description (may be empty). |
+| `llm` | `LlmConfig` | — | LLM configuration for the extraction. |
+
+
+---
+
+#### StructuredExtractionResponse
+
+Response from structured extraction endpoint.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `structured_output` | `term()` | — | Structured data conforming to the provided JSON schema |
+| `content` | `String.t()` | — | Extracted document text content |
+| `mime_type` | `String.t()` | — | Detected MIME type of the input file |
+
+
+---
+
+#### StructuredExtractor
+
+Structured data extractor supporting JSON, JSONL/NDJSON, YAML, and TOML.
+
+##### Functions
+
+###### default()
+
+**Signature:**
+
+```elixir
+def default()
+```
+
+###### name()
+
+**Signature:**
+
+```elixir
+def name()
+```
+
+###### version()
+
+**Signature:**
+
+```elixir
+def version()
+```
+
+###### initialize()
+
+**Signature:**
+
+```elixir
+def initialize()
+```
+
+###### shutdown()
+
+**Signature:**
+
+```elixir
+def shutdown()
+```
+
+###### extract_bytes()
+
+**Signature:**
+
+```elixir
+def extract_bytes(content, mime_type, config)
+```
+
+###### supported_mime_types()
+
+**Signature:**
+
+```elixir
+def supported_mime_types()
+```
+
+###### priority()
+
+**Signature:**
+
+```elixir
+def priority()
+```
+
+
+---
+
+#### StyleCatalog
+
+Catalog of all styles parsed from `word/styles.xml`, plus document defaults.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `styles` | `AHashMap` | — | Styles (a hash map) |
+| `default_paragraph_properties` | `ParagraphProperties` | — | Default paragraph properties (paragraph properties) |
+| `default_run_properties` | `RunProperties` | — | Default run properties (run properties) |
+
+##### Functions
+
+###### resolve_style()
+
+Resolve a style by walking its `basedOn` inheritance chain.
+
+The resolution order is:
+1. Document defaults (`<w:docDefaults>`)
+2. Base style chain (walking `basedOn` from root to leaf)
+3. The style itself
+
+For `Option` fields, a child value of `Some(x)` overrides the parent.
+A value of `nil` inherits from the parent. For boolean toggle properties,
+`Some(false)` explicitly disables the property.
+
+The chain depth is limited to 20 to prevent infinite loops from circular references.
+
+**Signature:**
+
+```elixir
+def resolve_style(style_id)
+```
+
+
+---
+
+#### StyleDefinition
+
+A single style definition parsed from `<w:style>` in `word/styles.xml`.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `id` | `String.t()` | — | The style ID (`w:styleId` attribute). |
+| `name` | `String.t() | nil` | `nil` | Human-readable name (`<w:name w:val="..."/>`). |
+| `style_type` | `StyleType` | — | Style type: paragraph, character, table, or numbering. |
+| `based_on` | `String.t() | nil` | `nil` | ID of the parent style (`<w:basedOn w:val="..."/>`). |
+| `next_style` | `String.t() | nil` | `nil` | ID of the style to apply to the next paragraph (`<w:next w:val="..."/>`). |
+| `is_default` | `boolean()` | — | Whether this is the default style for its type. |
+| `paragraph_properties` | `ParagraphProperties` | — | Paragraph properties defined directly on this style. |
+| `run_properties` | `RunProperties` | — | Run properties defined directly on this style. |
+
+
+---
+
+#### StyledHtmlRenderer
+
+Styled HTML renderer.
+
+Implements the `Renderer` trait; registered as `"html"` when the
+`html` feature is active. Configuration is baked in at
+construction time — no per-render allocation for CSS resolution.
+
+##### Functions
+
+###### new()
+
+**Signature:**
+
+```elixir
+def new(config)
+```
+
+###### name()
+
+**Signature:**
+
+```elixir
+def name()
+```
+
+###### render()
+
+**Signature:**
+
+```elixir
+def render(doc)
+```
+
+
+---
+
+#### SupportedFormat
+
+A supported document format entry.
+
+Represents a file extension and its corresponding MIME type that Kreuzberg can process.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `extension` | `String.t()` | — | File extension (without leading dot), e.g., "pdf", "docx" |
+| `mime_type` | `String.t()` | — | MIME type string, e.g., "application/pdf" |
+
+
+---
+
+#### SyncExtractor
+
+Trait for extractors that can work synchronously (WASM-compatible).
+
+This trait defines the synchronous extraction interface for WASM targets and other
+environments where async/tokio runtimes are not available or desirable.
+
+# Implementation
+
+Extractors that need to support WASM should implement this trait in addition to
+the async `DocumentExtractor` trait. This allows the same extractor to work in both
+environments by delegating to the sync implementation.
+
+# MIME Type Validation
+
+The `mime_type` parameter is guaranteed to be already validated.
+
+##### Functions
+
+###### extract_sync()
+
+Extract content from a byte array synchronously.
+
+This method performs extraction without requiring an async runtime.
+It is called by `extract_bytes_sync()` when the `tokio-runtime` feature is disabled.
+
+**Returns:**
+
+An `InternalDocument` containing the extracted elements, metadata, and tables.
+
+**Signature:**
+
+```elixir
+def extract_sync(content, mime_type, config)
+```
+
+
+---
+
+#### Table
+
+Extracted table structure.
+
+Represents a table detected and extracted from a document (PDF, image, etc.).
+Tables are converted to both structured cell data and Markdown format.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `cells` | `list(list(String.t()))` | `[]` | Table cells as a 2D vector (rows × columns) |
+| `markdown` | `String.t()` | — | Markdown representation of the table |
+| `page_number` | `integer()` | — | Page number where the table was found (1-indexed) |
+| `bounding_box` | `BoundingBox | nil` | `nil` | Bounding box of the table on the page (PDF coordinates: x0=left, y0=bottom, x1=right, y1=top). Only populated for PDF-extracted tables when position data is available. |
+
+
+---
+
+#### TableBorders
+
+Borders for a table (6 borders: top, bottom, left, right, insideH, insideV).
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `top` | `BorderStyle | nil` | `nil` | Top (border style) |
+| `bottom` | `BorderStyle | nil` | `nil` | Bottom (border style) |
+| `left` | `BorderStyle | nil` | `nil` | Left (border style) |
+| `right` | `BorderStyle | nil` | `nil` | Right (border style) |
+| `inside_h` | `BorderStyle | nil` | `nil` | Inside h (border style) |
+| `inside_v` | `BorderStyle | nil` | `nil` | Inside v (border style) |
+
+
+---
+
+#### TableCell
+
+Individual table cell with content and optional styling.
+
+Future extension point for rich table support with cell-level metadata.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `content` | `String.t()` | — | Cell content as text |
+| `row_span` | `integer()` | — | Row span (number of rows this cell spans) |
+| `col_span` | `integer()` | — | Column span (number of columns this cell spans) |
+| `is_header` | `boolean()` | — | Whether this is a header cell |
+
+
+---
+
+#### TableClassifier
+
+PP-LCNet table classifier model.
+
+##### Functions
+
+###### from_file()
+
+Load the table classifier ONNX model from a file path.
+
+**Signature:**
+
+```elixir
+def from_file(path, accel)
+```
+
+###### classify()
+
+Classify a cropped table image as wired or wireless.
+
+**Signature:**
+
+```elixir
+def classify(table_img)
+```
+
+
+---
+
+#### TableGrid
+
+Structured table grid with cell-level metadata.
+
+Stores row/column dimensions and a flat list of cells with position info.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `rows` | `integer()` | — | Number of rows in the table. |
+| `cols` | `integer()` | — | Number of columns in the table. |
+| `cells` | `list(GridCell)` | `[]` | All cells in row-major order. |
+
+
+---
+
+#### TableLook
+
+Table look bitmask/flags controlling conditional formatting bands.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `first_row` | `boolean()` | — | First row |
+| `last_row` | `boolean()` | — | Last row |
+| `first_column` | `boolean()` | — | First column |
+| `last_column` | `boolean()` | — | Last column |
+| `no_h_band` | `boolean()` | — | No h band |
+| `no_v_band` | `boolean()` | — | No v band |
+
+
+---
+
+#### TableProperties
+
+Table-level properties from `<w:tblPr>`.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `style_id` | `String.t() | nil` | `nil` | Style id |
+| `width` | `TableWidth | nil` | `nil` | Width (table width) |
+| `alignment` | `String.t() | nil` | `nil` | Alignment |
+| `layout` | `String.t() | nil` | `nil` | Layout |
+| `look` | `TableLook | nil` | `nil` | Look (table look) |
+| `borders` | `TableBorders | nil` | `nil` | Borders (table borders) |
+| `cell_margins` | `CellMargins | nil` | `nil` | Cell margins (cell margins) |
+| `indent` | `TableWidth | nil` | `nil` | Indent (table width) |
+| `caption` | `String.t() | nil` | `nil` | Caption |
+
+
+---
+
+#### TableRow
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `cells` | `list(TableCell)` | `[]` | Cells |
+| `properties` | `RowProperties | nil` | `nil` | Properties (row properties) |
+
+
+---
+
+#### TableValidator
+
+Helper struct for validating table cell counts.
+
+##### Functions
+
+###### add_cells()
+
+Add cells to table and validate.
+
+**Returns:**
+* `Ok(())` if cell count is within limits
+* `Err(SecurityError)` if cell count exceeds limit
+
+**Signature:**
+
+```elixir
+def add_cells(count)
+```
+
+###### current_cells()
+
+Get current cell count.
+
+**Signature:**
+
+```elixir
+def current_cells()
+```
+
+
+---
+
+#### TableWidth
+
+Width specification used for tables and cells.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `value` | `integer()` | — | Value |
+| `width_type` | `String.t()` | — | Width type |
+
+
+---
+
+#### TarExtractor
+
+TAR archive extractor.
+
+Extracts file lists and text content from TAR archives.
+
+##### Functions
+
+###### default()
+
+**Signature:**
+
+```elixir
+def default()
+```
+
+###### name()
+
+**Signature:**
+
+```elixir
+def name()
+```
+
+###### version()
+
+**Signature:**
+
+```elixir
+def version()
+```
+
+###### initialize()
+
+**Signature:**
+
+```elixir
+def initialize()
+```
+
+###### shutdown()
+
+**Signature:**
+
+```elixir
+def shutdown()
+```
+
+###### description()
+
+**Signature:**
+
+```elixir
+def description()
+```
+
+###### author()
+
+**Signature:**
+
+```elixir
+def author()
+```
+
+###### extract_bytes()
+
+**Signature:**
+
+```elixir
+def extract_bytes(content, mime_type, config)
+```
+
+###### supported_mime_types()
+
+**Signature:**
+
+```elixir
+def supported_mime_types()
+```
+
+###### priority()
+
+**Signature:**
+
+```elixir
+def priority()
+```
+
+###### as_sync_extractor()
+
+**Signature:**
+
+```elixir
+def as_sync_extractor()
+```
+
+###### extract_sync()
+
+**Signature:**
+
+```elixir
+def extract_sync(content, mime_type, config)
+```
+
+
+---
+
+#### TatrDetection
+
+A single TATR detection result.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `bbox` | `F324` | — | Bounding box in crop-pixel coordinates: `[x1, y1, x2, y2]`. |
+| `confidence` | `float()` | — | Detection confidence score (0.0..1.0). |
+| `class` | `TatrClass` | — | Detected class. |
+
+
+---
+
+#### TatrModel
+
+TATR (Table Transformer) table structure recognition model.
+
+Wraps an ORT session for the TATR ONNX model and provides preprocessing,
+inference, and post-processing in a single `recognize` call.
+
+##### Functions
+
+###### from_file()
+
+Load a TATR ONNX model from a file path.
+
+Uses the default execution provider selection from `build_session`
+with a CPU-only fallback if the platform EP fails.
+
+**Signature:**
+
+```elixir
+def from_file(path, accel)
+```
+
+###### recognize()
+
+Recognize table structure from a cropped table image.
+
+Returns a `TatrResult` with detected rows, columns, headers, and
+spanning cells in the input image's pixel coordinate space.
+
+**Signature:**
+
+```elixir
+def recognize(table_img)
+```
+
+
+---
+
+#### TatrResult
+
+Aggregated TATR recognition result with detections separated by class.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `rows` | `list(TatrDetection)` | — | Detected rows, sorted top-to-bottom by `y2`. |
+| `columns` | `list(TatrDetection)` | — | Detected columns, sorted left-to-right by `x2`. |
+| `headers` | `list(TatrDetection)` | — | Detected headers (ColumnHeader and ProjectedRowHeader). |
+| `spanning` | `list(TatrDetection)` | — | Detected spanning cells. |
+
+
+---
+
+#### TessdataManager
+
+Manages tessdata file downloading, caching, and manifest generation.
+
+##### Functions
+
+###### cache_dir()
+
+Get the cache directory path.
+
+**Signature:**
+
+```elixir
+def cache_dir()
+```
+
+###### is_language_cached()
+
+Check if a specific language traineddata file is cached.
+
+**Signature:**
+
+```elixir
+def is_language_cached(lang)
+```
+
+
+---
+
+#### TesseractBackend
+
+Native Tesseract OCR backend.
+
+This backend wraps the OcrProcessor and implements the OcrBackend trait,
+allowing it to be used through the plugin system.
+
+# Thread Safety
+
+Uses Arc for shared ownership and is thread-safe (Send + Sync).
+
+##### Functions
+
+###### new()
+
+Create a new Tesseract backend with default cache directory.
+
+**Signature:**
+
+```elixir
+def new()
+```
+
+###### with_cache_dir()
+
+Create a new Tesseract backend with custom cache directory.
+
+**Signature:**
+
+```elixir
+def with_cache_dir(cache_dir)
+```
+
+###### default()
+
+**Signature:**
+
+```elixir
+def default()
+```
+
+###### name()
+
+**Signature:**
+
+```elixir
+def name()
+```
+
+###### version()
+
+**Signature:**
+
+```elixir
+def version()
+```
+
+###### initialize()
+
+**Signature:**
+
+```elixir
+def initialize()
+```
+
+###### shutdown()
+
+**Signature:**
+
+```elixir
+def shutdown()
+```
+
+###### process_image()
+
+**Signature:**
+
+```elixir
+def process_image(image_bytes, config)
+```
+
+###### process_image_file()
+
+**Signature:**
+
+```elixir
+def process_image_file(path, config)
+```
+
+###### supports_language()
+
+**Signature:**
+
+```elixir
+def supports_language(lang)
+```
+
+###### backend_type()
+
+**Signature:**
+
+```elixir
+def backend_type()
+```
+
+###### supported_languages()
+
+**Signature:**
+
+```elixir
+def supported_languages()
+```
+
+###### supports_table_detection()
+
+**Signature:**
+
+```elixir
+def supports_table_detection()
+```
+
+
+---
+
+#### TesseractConfig
+
+Tesseract OCR configuration.
+
+Provides fine-grained control over Tesseract OCR engine parameters.
+Most users can use the defaults, but these settings allow optimization
+for specific document types (invoices, handwriting, etc.).
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `language` | `String.t()` | `"eng"` | Language code (e.g., "eng", "deu", "fra") |
+| `psm` | `integer()` | `3` | Page Segmentation Mode (0-13). Common values: - 3: Fully automatic page segmentation (default) - 6: Assume a single uniform block of text - 11: Sparse text with no particular order |
+| `output_format` | `String.t()` | `"markdown"` | Output format ("text" or "markdown") |
+| `oem` | `integer()` | `3` | OCR Engine Mode (0-3). - 0: Legacy engine only - 1: Neural nets (LSTM) only (usually best) - 2: Legacy + LSTM - 3: Default (based on what's available) |
+| `min_confidence` | `float()` | `0` | Minimum confidence threshold (0.0-100.0). Words with confidence below this threshold may be rejected or flagged. |
+| `preprocessing` | `ImagePreprocessingConfig | nil` | `nil` | Image preprocessing configuration. Controls how images are preprocessed before OCR. Can significantly improve quality for scanned documents or low-quality images. |
+| `enable_table_detection` | `boolean()` | `true` | Enable automatic table detection and reconstruction |
+| `table_min_confidence` | `float()` | `0` | Minimum confidence threshold for table detection (0.0-1.0) |
+| `table_column_threshold` | `integer()` | `50` | Column threshold for table detection (pixels) |
+| `table_row_threshold_ratio` | `float()` | `0.5` | Row threshold ratio for table detection (0.0-1.0) |
+| `use_cache` | `boolean()` | `true` | Enable OCR result caching |
+| `classify_use_pre_adapted_templates` | `boolean()` | `true` | Use pre-adapted templates for character classification |
+| `language_model_ngram_on` | `boolean()` | `false` | Enable N-gram language model |
+| `tessedit_dont_blkrej_good_wds` | `boolean()` | `true` | Don't reject good words during block-level processing |
+| `tessedit_dont_rowrej_good_wds` | `boolean()` | `true` | Don't reject good words during row-level processing |
+| `tessedit_enable_dict_correction` | `boolean()` | `true` | Enable dictionary correction |
+| `tessedit_char_whitelist` | `String.t()` | `""` | Whitelist of allowed characters (empty = all allowed) |
+| `tessedit_char_blacklist` | `String.t()` | `""` | Blacklist of forbidden characters (empty = none forbidden) |
+| `tessedit_use_primary_params_model` | `boolean()` | `true` | Use primary language params model |
+| `textord_space_size_is_variable` | `boolean()` | `true` | Variable-width space detection |
+| `thresholding_method` | `boolean()` | `false` | Use adaptive thresholding method |
+
+##### Functions
+
+###### default()
+
+**Signature:**
+
+```elixir
+def default()
+```
+
+
+---
+
+#### TextAnnotation
+
+Inline text annotation — byte-range based formatting and links.
+
+Annotations reference byte offsets into the node's text content,
+enabling precise identification of formatted regions.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `start` | `integer()` | — | Start byte offset in the node's text content (inclusive). |
+| `end` | `integer()` | — | End byte offset in the node's text content (exclusive). |
+| `kind` | `AnnotationKind` | — | Annotation type. |
+
+
+---
+
+#### TextBlock
+
+A block of text with spatial and semantic information.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `text` | `String.t()` | — | The text content |
+| `bbox` | `BoundingBox` | — | The bounding box of the block |
+| `font_size` | `float()` | — | The font size of the text in this block |
+
+
+---
+
+#### TextExtractionResult
+
+Plain text and Markdown extraction result.
+
+Contains the extracted text along with statistics and,
+for Markdown files, structural elements like headers and links.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `content` | `String.t()` | — | Extracted text content |
+| `line_count` | `integer()` | — | Number of lines |
+| `word_count` | `integer()` | — | Number of words |
+| `character_count` | `integer()` | — | Number of characters |
+| `headers` | `list(String.t()) | nil` | `nil` | Markdown headers (text only, Markdown files only) |
+| `links` | `list(StringString) | nil` | `nil` | Markdown links as (text, URL) tuples (Markdown files only) |
+| `code_blocks` | `list(StringString) | nil` | `nil` | Code blocks as (language, code) tuples (Markdown files only) |
+
+
+---
+
+#### TextMetadata
+
+Text/Markdown metadata.
+
+Extracted from plain text and Markdown files. Includes word counts and,
+for Markdown, structural elements like headers and links.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `line_count` | `integer()` | — | Number of lines in the document |
+| `word_count` | `integer()` | — | Number of words |
+| `character_count` | `integer()` | — | Number of characters |
+| `headers` | `list(String.t()) | nil` | `[]` | Markdown headers (headings text only, for Markdown files) |
+| `links` | `list(StringString) | nil` | `[]` | Markdown links as (text, url) tuples (for Markdown files) |
+| `code_blocks` | `list(StringString) | nil` | `[]` | Code blocks as (language, code) tuples (for Markdown files) |
+
+
+---
+
+#### Theme
+
+Complete theme with color scheme and font scheme.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `name` | `String.t()` | — | Theme name (e.g., "Office Theme"). |
+| `color_scheme` | `ColorScheme | nil` | `nil` | Color scheme (12 standard colors). |
+| `font_scheme` | `FontScheme | nil` | `nil` | Font scheme (major and minor fonts). |
+
+
+---
+
+#### TokenReducer
+
+##### Functions
+
+###### new()
+
+**Signature:**
+
+```elixir
+def new(config, language_hint)
+```
+
+###### language()
+
+Get the language code being used for stopwords and semantic analysis.
+
+**Signature:**
+
+```elixir
+def language()
+```
+
+###### reduce()
+
+**Signature:**
+
+```elixir
+def reduce(text)
+```
+
+###### batch_reduce()
+
+**Signature:**
+
+```elixir
+def batch_reduce(texts)
+```
+
+
+---
+
+#### TokenReductionConfig
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `level` | `ReductionLevel` | `:moderate` | Level (reduction level) |
+| `language_hint` | `String.t() | nil` | `nil` | Language hint |
+| `preserve_markdown` | `boolean()` | `false` | Preserve markdown |
+| `preserve_code` | `boolean()` | `true` | Preserve code |
+| `semantic_threshold` | `float()` | `0.3` | Semantic threshold |
+| `enable_parallel` | `boolean()` | `true` | Enable parallel |
+| `use_simd` | `boolean()` | `true` | Use simd |
+| `custom_stopwords` | `map() | nil` | `nil` | Custom stopwords |
+| `preserve_patterns` | `list(String.t())` | `[]` | Preserve patterns |
+| `target_reduction` | `float() | nil` | `nil` | Target reduction |
+| `enable_semantic_clustering` | `boolean()` | `false` | Enable semantic clustering |
+
+##### Functions
+
+###### default()
+
+**Signature:**
+
+```elixir
+def default()
+```
+
+
+---
+
+#### TokenReductionOptions
+
+Token reduction configuration.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `mode` | `String.t()` | — | Reduction mode: "off", "light", "moderate", "aggressive", "maximum" |
+| `preserve_important_words` | `boolean()` | — | Preserve important words (capitalized, technical terms) |
+
+
+---
+
+#### TracingLayer
+
+A `tower.Layer` that wraps each extraction in a semantic tracing span.
+
+##### Functions
+
+###### layer()
+
+**Signature:**
+
+```elixir
+def layer(inner)
+```
+
+
+---
+
+#### TreeSitterConfig
+
+Configuration for tree-sitter language pack integration.
+
+Controls grammar download behavior and code analysis options.
+
+# Example (TOML)
+
+```toml
+[tree_sitter]
+languages = ["python", "rust"]
+groups = ["web"]
+
+[tree_sitter.process]
+structure = true
+comments = true
+docstrings = true
+```
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `enabled` | `boolean()` | `true` | Enable code intelligence processing (default: true). When `False`, tree-sitter analysis is completely skipped even if the config section is present. |
+| `cache_dir` | `String.t() | nil` | `nil` | Custom cache directory for downloaded grammars. When `None`, uses the default: `~/.cache/tree-sitter-language-pack/v{version}/libs/`. |
+| `languages` | `list(String.t()) | nil` | `nil` | Languages to pre-download on init (e.g., `["python", "rust"]`). |
+| `groups` | `list(String.t()) | nil` | `nil` | Language groups to pre-download (e.g., `["web", "systems", "scripting"]`). |
+| `process` | `TreeSitterProcessConfig` | — | Processing options for code analysis. |
+
+##### Functions
+
+###### default()
+
+**Signature:**
+
+```elixir
+def default()
+```
+
+
+---
+
+#### TreeSitterProcessConfig
+
+Processing options for tree-sitter code analysis.
+
+Controls which analysis features are enabled when extracting code files.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `structure` | `boolean()` | `true` | Extract structural items (functions, classes, structs, etc.). Default: true. |
+| `imports` | `boolean()` | `true` | Extract import statements. Default: true. |
+| `exports` | `boolean()` | `true` | Extract export statements. Default: true. |
+| `comments` | `boolean()` | `false` | Extract comments. Default: false. |
+| `docstrings` | `boolean()` | `false` | Extract docstrings. Default: false. |
+| `symbols` | `boolean()` | `false` | Extract symbol definitions. Default: false. |
+| `diagnostics` | `boolean()` | `false` | Include parse diagnostics. Default: false. |
+| `chunk_max_size` | `integer() | nil` | `nil` | Maximum chunk size in bytes. `None` disables chunking. |
+| `content_mode` | `CodeContentMode` | `:chunks` | Content rendering mode for code extraction. |
+
+##### Functions
+
+###### default()
+
+**Signature:**
+
+```elixir
+def default()
+```
+
+
+---
+
+#### TsvRow
+
+Tesseract TSV row data for conversion.
+
+This struct represents a single row from Tesseract's TSV output format.
+TSV format includes hierarchical information (block, paragraph, line, word)
+along with bounding boxes and confidence scores.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `level` | `integer()` | — | Hierarchical level (1=block, 2=para, 3=line, 4=word, 5=symbol) |
+| `page_num` | `integer()` | — | Page number (1-indexed) |
+| `block_num` | `integer()` | — | Block number within page |
+| `par_num` | `integer()` | — | Paragraph number within block |
+| `line_num` | `integer()` | — | Line number within paragraph |
+| `word_num` | `integer()` | — | Word number within line |
+| `left` | `integer()` | — | Left x-coordinate in pixels |
+| `top` | `integer()` | — | Top y-coordinate in pixels |
+| `width` | `integer()` | — | Width in pixels |
+| `height` | `integer()` | — | Height in pixels |
+| `conf` | `float()` | — | Confidence score (0-100) |
+| `text` | `String.t()` | — | Recognized text |
+
+
+---
+
+#### TypstExtractor
+
+Typst document extractor
+
+##### Functions
+
+###### default()
+
+**Signature:**
+
+```elixir
+def default()
+```
+
+###### name()
+
+**Signature:**
+
+```elixir
+def name()
+```
+
+###### version()
+
+**Signature:**
+
+```elixir
+def version()
+```
+
+###### initialize()
+
+**Signature:**
+
+```elixir
+def initialize()
+```
+
+###### shutdown()
+
+**Signature:**
+
+```elixir
+def shutdown()
+```
+
+###### description()
+
+**Signature:**
+
+```elixir
+def description()
+```
+
+###### author()
+
+**Signature:**
+
+```elixir
+def author()
+```
+
+###### extract_bytes()
+
+**Signature:**
+
+```elixir
+def extract_bytes(content, mime_type, config)
+```
+
+###### extract_file()
+
+**Signature:**
+
+```elixir
+def extract_file(path, mime_type, config)
+```
+
+###### supported_mime_types()
+
+**Signature:**
+
+```elixir
+def supported_mime_types()
+```
+
+###### priority()
+
+**Signature:**
+
+```elixir
+def priority()
+```
+
+
+---
+
+#### Uri
+
+A URI extracted from a document.
+
+Represents any link, reference, or resource pointer found during extraction.
+The `kind` field classifies the URI semantically, while `label` carries
+optional human-readable display text.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `url` | `String.t()` | — | The URL or path string. |
+| `label` | `String.t() | nil` | `nil` | Optional display text / label for the link. |
+| `page` | `integer() | nil` | `nil` | Optional page number where the URI was found (1-indexed). |
+| `kind` | `UriKind` | — | Semantic classification of the URI. |
+
+##### Functions
+
+###### hyperlink()
+
+Create a new hyperlink URI, auto-classifying `mailto:` as Email and `#` as Anchor.
+
+**Signature:**
+
+```elixir
+def hyperlink(url, label)
+```
+
+###### image()
+
+Create a new image URI.
+
+**Signature:**
+
+```elixir
+def image(url, label)
+```
+
+###### citation()
+
+Create a new citation URI (for DOIs, academic references).
+
+**Signature:**
+
+```elixir
+def citation(url, label)
+```
+
+###### anchor()
+
+Create a new anchor/cross-reference URI.
+
+**Signature:**
+
+```elixir
+def anchor(url, label)
+```
+
+###### email()
+
+Create a new email URI.
+
+**Signature:**
+
+```elixir
+def email(url, label)
+```
+
+###### reference()
+
+Create a new reference URI.
+
+**Signature:**
+
+```elixir
+def reference(url, label)
+```
+
+###### with_page()
+
+Set the page number.
+
+**Signature:**
+
+```elixir
+def with_page(page)
+```
+
+
+---
+
+#### ValidatorRegistry
+
+Registry for validator plugins.
+
+Manages validators with priority-based execution order.
+
+##### Functions
+
+###### register()
+
+Register a validator.
+
+**Signature:**
+
+```elixir
+def register(validator)
+```
+
+###### get_all()
+
+Get all validators in priority order.
+
+**Returns:**
+
+Vector of validators in priority order (highest first).
+
+**Signature:**
+
+```elixir
+def get_all()
+```
+
+###### list()
+
+List all registered validator names.
+
+**Signature:**
+
+```elixir
+def list()
+```
+
+###### remove()
+
+Remove a validator from the registry.
+
+**Signature:**
+
+```elixir
+def remove(name)
+```
+
+###### shutdown_all()
+
+Shutdown all validators and clear the registry.
+
+**Signature:**
+
+```elixir
+def shutdown_all()
+```
+
+###### default()
+
+**Signature:**
+
+```elixir
+def default()
+```
+
+
+---
+
+#### VersionResponse
+
+Version response.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `version` | `String.t()` | — | Kreuzberg version string |
+
+
+---
+
+#### VlmOcrBackend
+
+VLM-based OCR backend using liter-llm vision models.
+
+This backend sends images to a vision language model (e.g., GPT-4o, Claude)
+for text extraction, as an alternative to traditional OCR backends.
+
+##### Functions
+
+###### name()
+
+**Signature:**
+
+```elixir
+def name()
+```
+
+###### version()
+
+**Signature:**
+
+```elixir
+def version()
+```
+
+###### initialize()
+
+**Signature:**
+
+```elixir
+def initialize()
+```
+
+###### shutdown()
+
+**Signature:**
+
+```elixir
+def shutdown()
+```
+
+###### process_image()
+
+**Signature:**
+
+```elixir
+def process_image(image_bytes, config)
+```
+
+###### supports_language()
+
+**Signature:**
+
+```elixir
+def supports_language(lang)
+```
+
+###### backend_type()
+
+**Signature:**
+
+```elixir
+def backend_type()
+```
+
+
+---
+
+#### WarmRequest
+
+Cache warm request.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `all_embeddings` | `boolean()` | — | Download all embedding model presets |
+| `embedding_model` | `String.t() | nil` | `nil` | Specific embedding model preset to download |
+
+
+---
+
+#### WarmResponse
+
+Cache warm response.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `cache_dir` | `String.t()` | — | Cache directory used |
+| `downloaded` | `list(String.t())` | — | Models that were downloaded |
+| `already_cached` | `list(String.t())` | — | Models that were already cached |
+
+
+---
+
+#### XlsxAppProperties
+
+Application properties from docProps/app.xml for XLSX
+
+Contains Excel-specific document metadata.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `application` | `String.t() | nil` | `nil` | Application name (e.g., "Microsoft Excel") |
+| `app_version` | `String.t() | nil` | `nil` | Application version |
+| `doc_security` | `integer() | nil` | `nil` | Document security level |
+| `scale_crop` | `boolean() | nil` | `nil` | Scale crop flag |
+| `links_up_to_date` | `boolean() | nil` | `nil` | Links up to date flag |
+| `shared_doc` | `boolean() | nil` | `nil` | Shared document flag |
+| `hyperlinks_changed` | `boolean() | nil` | `nil` | Hyperlinks changed flag |
+| `company` | `String.t() | nil` | `nil` | Company name |
+| `worksheet_names` | `list(String.t())` | `[]` | Worksheet names |
+
+
+---
+
+#### XmlExtractionResult
+
+XML extraction result.
+
+Contains extracted text content from XML files along with
+structural statistics about the XML document.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `content` | `String.t()` | — | Extracted text content (XML structure filtered out) |
+| `element_count` | `integer()` | — | Total number of XML elements processed |
+| `unique_elements` | `list(String.t())` | — | List of unique element names found (sorted) |
+
+
+---
+
+#### XmlExtractor
+
+XML extractor.
+
+Extracts text content from XML files, preserving element structure information.
+
+##### Functions
+
+###### default()
+
+**Signature:**
+
+```elixir
+def default()
+```
+
+###### name()
+
+**Signature:**
+
+```elixir
+def name()
+```
+
+###### version()
+
+**Signature:**
+
+```elixir
+def version()
+```
+
+###### initialize()
+
+**Signature:**
+
+```elixir
+def initialize()
+```
+
+###### shutdown()
+
+**Signature:**
+
+```elixir
+def shutdown()
+```
+
+###### description()
+
+**Signature:**
+
+```elixir
+def description()
+```
+
+###### author()
+
+**Signature:**
+
+```elixir
+def author()
+```
+
+###### extract_sync()
+
+**Signature:**
+
+```elixir
+def extract_sync(content, mime_type, config)
+```
+
+###### extract_bytes()
+
+**Signature:**
+
+```elixir
+def extract_bytes(content, mime_type, config)
+```
+
+###### supported_mime_types()
+
+**Signature:**
+
+```elixir
+def supported_mime_types()
+```
+
+###### priority()
+
+**Signature:**
+
+```elixir
+def priority()
+```
+
+###### as_sync_extractor()
+
+**Signature:**
+
+```elixir
+def as_sync_extractor()
+```
+
+
+---
+
+#### XmlMetadata
+
+XML metadata extracted during XML parsing.
+
+Provides statistics about XML document structure.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `element_count` | `integer()` | — | Total number of XML elements processed |
+| `unique_elements` | `list(String.t())` | `[]` | List of unique element tag names (sorted) |
+
+
+---
+
+#### YakeParams
+
+YAKE-specific parameters.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `window_size` | `integer()` | `2` | Window size for co-occurrence analysis (default: 2). Controls the context window for computing co-occurrence statistics. |
+
+##### Functions
+
+###### default()
+
+**Signature:**
+
+```elixir
+def default()
+```
+
+
+---
+
+#### YearRange
+
+Year range for bibliographic metadata.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `min` | `integer() | nil` | `nil` | Min |
+| `max` | `integer() | nil` | `nil` | Max |
+| `years` | `list(integer())` | — | Years |
+
+
+---
+
+#### YoloModel
+
+YOLO-family layout detection model (YOLOv10, DocLayout-YOLO, YOLOX).
+
+##### Functions
+
+###### from_file()
+
+Load a YOLO ONNX model from a file.
+
+For square-input models (YOLOv10, DocLayout-YOLO), pass the same value for both dimensions.
+For YOLOX (unstructuredio), use width=768, height=1024.
+
+**Signature:**
+
+```elixir
+def from_file(path, variant, input_width, input_height, model_name, accel)
+```
+
+###### detect()
+
+**Signature:**
+
+```elixir
+def detect(img)
+```
+
+###### detect_with_threshold()
+
+**Signature:**
+
+```elixir
+def detect_with_threshold(img, threshold)
+```
+
+###### name()
+
+**Signature:**
+
+```elixir
+def name()
+```
+
+
+---
+
+#### ZipBombValidator
+
+Helper struct for validating ZIP archives for security issues.
+
+
+---
+
+#### ZipExtractor
+
+ZIP archive extractor.
+
+Extracts file lists and text content from ZIP archives.
+
+##### Functions
+
+###### default()
+
+**Signature:**
+
+```elixir
+def default()
+```
+
+###### name()
+
+**Signature:**
+
+```elixir
+def name()
+```
+
+###### version()
+
+**Signature:**
+
+```elixir
+def version()
+```
+
+###### initialize()
+
+**Signature:**
+
+```elixir
+def initialize()
+```
+
+###### shutdown()
+
+**Signature:**
+
+```elixir
+def shutdown()
+```
+
+###### description()
+
+**Signature:**
+
+```elixir
+def description()
+```
+
+###### author()
+
+**Signature:**
+
+```elixir
+def author()
+```
+
+###### extract_bytes()
+
+**Signature:**
+
+```elixir
+def extract_bytes(content, mime_type, config)
+```
+
+###### supported_mime_types()
+
+**Signature:**
+
+```elixir
+def supported_mime_types()
+```
+
+###### priority()
+
+**Signature:**
+
+```elixir
+def priority()
+```
+
+###### as_sync_extractor()
+
+**Signature:**
+
+```elixir
+def as_sync_extractor()
+```
+
+###### extract_sync()
+
+**Signature:**
+
+```elixir
+def extract_sync(content, mime_type, config)
+```
+
+
+---
+
+### Enums
+
+#### ExecutionProviderType
+
+ONNX Runtime execution provider type.
+
+Determines which hardware backend is used for model inference.
+`Auto` (default) selects the best available provider per platform.
+
+| Value | Description |
+|-------|-------------|
+| `auto` | Auto-select: CoreML on macOS, CUDA on Linux, CPU elsewhere. |
+| `cpu` | CPU execution provider (always available). |
+| `core_ml` | Apple CoreML (macOS/iOS Neural Engine + GPU). |
+| `cuda` | NVIDIA CUDA GPU acceleration. |
+| `tensor_rt` | NVIDIA TensorRT (optimized CUDA inference). |
+
+
+---
+
+#### OutputFormat
+
+Output format for extraction results.
+
+Controls the format of the `content` field in `ExtractionResult`.
+When set to `Markdown`, `Djot`, or `Html`, the output will be formatted
+accordingly. `Plain` returns the raw extracted text.
+`Structured` returns JSON with full OCR element data including bounding
+boxes and confidence scores.
+
+| Value | Description |
+|-------|-------------|
+| `plain` | Plain text content only (default) |
+| `markdown` | Markdown format |
+| `djot` | Djot markup format |
+| `html` | HTML format |
+| `json` | JSON tree format with heading-driven sections. |
+| `structured` | Structured JSON format with full OCR element metadata. |
+| `custom` | Custom renderer registered via the RendererRegistry. The string is the renderer name (e.g., "docx", "latex"). — Fields: `0`: `String.t()` |
+
+
+---
+
+#### HtmlTheme
+
+Built-in HTML theme selection.
+
+| Value | Description |
+|-------|-------------|
+| `default` | Sensible defaults: system font stack, neutral colours, readable line measure. CSS custom properties (`--kb-*`) are all defined so user CSS can override individual values. |
+| `git_hub` | GitHub Markdown-inspired palette and spacing. |
+| `dark` | Dark background, light text. |
+| `light` | Minimal light theme with generous whitespace. |
+| `unstyled` | No built-in stylesheet emitted. CSS custom properties are still defined on `:root` so user stylesheets can reference `var(--kb-*)` tokens. |
+
+
+---
+
+#### TableModel
+
+Which table structure recognition model to use.
+
+Controls the model used for table cell detection within layout-detected
+table regions.
+
+| Value | Description |
+|-------|-------------|
+| `tatr` | TATR (Table Transformer) -- default, 30MB, DETR-based row/column detection. |
+| `slanet_wired` | SLANeXT wired variant -- 365MB, optimized for bordered tables. |
+| `slanet_wireless` | SLANeXT wireless variant -- 365MB, optimized for borderless tables. |
+| `slanet_plus` | SLANet-plus -- 7.78MB, lightweight general-purpose. |
+| `slanet_auto` | Classifier-routed SLANeXT: auto-select wired/wireless per table. Uses PP-LCNet classifier (6.78MB) + both SLANeXT variants (730MB total). |
+| `disabled` | Disable table structure model inference entirely; use heuristic path only. |
+
+
+---
+
+#### PdfBackend
+
+PDF extraction backend selection.
+
+Controls which PDF library is used for text extraction:
+- `Pdfium`: pdfium-render (default, C++ based, mature)
+- `PdfOxide`: pdf_oxide (pure Rust, faster, requires `pdf-oxide` feature)
+- `Auto`: automatically select based on available features
+
+| Value | Description |
+|-------|-------------|
+| `pdfium` | Use pdfium-render backend (default). |
+| `pdf_oxide` | Use pdf_oxide backend (pure Rust). Requires `pdf-oxide` feature. |
+| `auto` | Automatically select the best available backend. |
+
+
+---
+
+#### ChunkerType
+
+Type of text chunker to use.
+
+# Variants
+
+* `Text` - Generic text splitter, splits on whitespace and punctuation
+* `Markdown` - Markdown-aware splitter, preserves formatting and structure
+* `Yaml` - YAML-aware splitter, creates one chunk per top-level key
+* `Semantic` - Topic-aware chunker that splits at natural document boundaries
+  (headers, paragraph breaks, topic shifts). Works out of the box with no extra
+  configuration. Optionally add an `EmbeddingConfig` for embedding-based topic
+  detection; `topic_threshold` (default 0.75) and `max_characters` (default 1000)
+  are automatically applied when not specified.
+
+| Value | Description |
+|-------|-------------|
+| `text` | Text format |
+| `markdown` | Markdown format |
+| `yaml` | Yaml format |
+| `semantic` | Semantic |
+
+
+---
+
+#### ChunkSizing
+
+How chunk size is measured.
+
+Defaults to `Characters` (Unicode character count). When using token-based sizing,
+chunks are sized by token count according to the specified tokenizer.
+
+Token-based sizing uses HuggingFace tokenizers loaded at runtime. Any tokenizer
+available on HuggingFace Hub can be used, including OpenAI-compatible tokenizers
+(e.g., `Xenova/gpt-4o`, `Xenova/cl100k_base`).
+
+| Value | Description |
+|-------|-------------|
+| `characters` | Size measured in Unicode characters (default). |
+| `tokenizer` | Size measured in tokens from a HuggingFace tokenizer. — Fields: `model`: `String.t()`, `cache_dir`: `String.t()` |
+
+
+---
+
+#### EmbeddingModelType
+
+Embedding model types supported by Kreuzberg.
+
+| Value | Description |
+|-------|-------------|
+| `preset` | Use a preset model configuration (recommended) — Fields: `name`: `String.t()` |
+| `custom` | Use a custom ONNX model from HuggingFace — Fields: `model_id`: `String.t()`, `dimensions`: `integer()` |
+| `llm` | Provider-hosted embedding model via liter-llm. Uses the model specified in the nested `LlmConfig` (e.g., `"openai/text-embedding-3-small"`). — Fields: `llm`: `LlmConfig` |
+
+
+---
+
+#### CodeContentMode
+
+Content rendering mode for code extraction.
+
+Controls how extracted code content is represented in the `content` field
+of `ExtractionResult`.
+
+| Value | Description |
+|-------|-------------|
+| `chunks` | Use TSLP semantic chunks as content (default). |
+| `raw` | Use raw source code as content. |
+| `structure` | Emit function/class headings + docstrings (no code bodies). |
+
+
+---
+
+#### ListType
+
+Type of list detection.
+
+| Value | Description |
+|-------|-------------|
+| `bullet` | Bullet points (-, *, •, etc.) |
+| `numbered` | Numbered lists (1., 2., etc.) |
+| `lettered` | Lettered lists (a., b., A., B., etc.) |
+| `indented` | Indented items |
+
+
+---
+
+#### HwpError
+
+Error type for HWP parsing.
+
+| Value | Description |
+|-------|-------------|
+| `invalid_format` | The file does not match the HWP 5.0 format. — Fields: `0`: `String.t()` |
+| `unsupported_version` | The HWP version or a feature is not supported (e.g. password-encrypted docs). — Fields: `0`: `String.t()` |
+| `io` | An underlying I/O error occurred. — Fields: `0`: `Error` |
+| `cfb` | A CFB compound-file error (stream not found, corrupt container, etc.). — Fields: `0`: `String.t()` |
+| `compression_error` | Decompression of a zlib/deflate stream failed. — Fields: `0`: `String.t()` |
+| `parse_error` | The binary record stream could not be parsed. — Fields: `0`: `String.t()` |
+| `encoding_error` | A UTF-16LE string contained invalid data. — Fields: `0`: `String.t()` |
+| `not_found` | A requested stream was not present in the compound file. — Fields: `0`: `String.t()` |
+
+
+---
+
+#### DrawingType
+
+Whether the drawing is inline or anchored.
+
+| Value | Description |
+|-------|-------------|
+| `inline` | Inline |
+| `anchored` | Anchored — Fields: `0`: `AnchorProperties` |
+
+
+---
+
+#### WrapType
+
+Text wrapping type.
+
+| Value | Description |
+|-------|-------------|
+| `none` | None |
+| `square` | Square |
+| `tight` | Tight |
+| `top_and_bottom` | Top and bottom |
+| `through` | Through |
+
+
+---
+
+#### FracType
+
+| Value | Description |
+|-------|-------------|
+| `bar` | Bar |
+| `no_bar` | No bar |
+| `linear` | Linear |
+| `skewed` | Skewed |
+
+
+---
+
+#### MathNode
+
+| Value | Description |
+|-------|-------------|
+| `run` | Plain text from m:r/m:t — Fields: `0`: `String.t()` |
+| `s_sup` | Superscript: base^{sup} — Fields: `base`: `list(MathNode)`, `sup`: `list(MathNode)` |
+| `s_sub` | Subscript: base_{sub} — Fields: `base`: `list(MathNode)`, `sub`: `list(MathNode)` |
+| `s_sub_sup` | Sub-superscript: base_{sub}^{sup} — Fields: `base`: `list(MathNode)`, `sub`: `list(MathNode)`, `sup`: `list(MathNode)` |
+| `frac` | Fraction: \frac{num}{den} — Fields: `num`: `list(MathNode)`, `den`: `list(MathNode)`, `frac_type`: `FracType` |
+| `rad` | Radical: \sqrt{body} or \sqrt[deg]{body} — Fields: `deg`: `list(MathNode)`, `body`: `list(MathNode)`, `deg_hide`: `boolean()` |
+| `nary` | N-ary operator: \sum_{sub}^{sup}{body} — Fields: `chr`: `String.t()`, `sub`: `list(MathNode)`, `sup`: `list(MathNode)`, `body`: `list(MathNode)`, `sub_hide`: `boolean()`, `sup_hide`: `boolean()` |
+| `delim` | Delimiter: \left( ... \right) — Fields: `begin_chr`: `String.t()`, `end_chr`: `String.t()`, `sep_chr`: `String.t()`, `elements`: `list(list(MathNode))` |
+| `func` | Function: \funcname{body} — Fields: `name`: `list(MathNode)`, `body`: `list(MathNode)` |
+| `acc` | Accent: \hat{body} — Fields: `chr`: `String.t()`, `body`: `list(MathNode)` |
+| `eq_arr` | Equation array: \begin{aligned}...\end{aligned} — Fields: `rows`: `list(list(MathNode))` |
+| `lim_low` | Lower limit: \underset{lim}{body} — Fields: `body`: `list(MathNode)`, `lim`: `list(MathNode)` |
+| `lim_upp` | Upper limit: \overset{lim}{body} — Fields: `body`: `list(MathNode)`, `lim`: `list(MathNode)` |
+| `bar` | Bar (overline/underline) — Fields: `body`: `list(MathNode)`, `top`: `boolean()` |
+| `border_box` | Border box: \boxed{body} — Fields: `body`: `list(MathNode)` |
+| `matrix` | Matrix: \begin{matrix}...\end{matrix} — Fields: `rows`: `list(list(list(MathNode)))` |
+| `group` | Grouping container (m:box, m:phant, etc.) — passes through children — Fields: `children`: `list(MathNode)` |
+| `s_pre` | Pre-sub-superscript: {}_{sub}^{sup}{base} — Fields: `base`: `list(MathNode)`, `sub`: `list(MathNode)`, `sup`: `list(MathNode)` |
+
+
+---
+
+#### DocumentElement
+
+Tracks document element ordering (paragraphs, tables, and drawings interleaved).
+
+| Value | Description |
+|-------|-------------|
+| `paragraph` | Paragraph element — Fields: `0`: `integer()` |
+| `table` | Table element — Fields: `0`: `integer()` |
+| `drawing` | Drawing — Fields: `0`: `integer()` |
+
+
+---
+
+#### HeaderFooterType
+
+| Value | Description |
+|-------|-------------|
+| `default` | Default |
+| `first` | First |
+| `even` | Even |
+| `odd` | Odd |
+
+
+---
+
+#### NoteType
+
+| Value | Description |
+|-------|-------------|
+| `footnote` | Footnote element |
+| `endnote` | Endnote |
+
+
+---
+
+#### Orientation
+
+Page orientation.
+
+| Value | Description |
+|-------|-------------|
+| `portrait` | Portrait |
+| `landscape` | Landscape |
+
+
+---
+
+#### StyleType
+
+The type of a style definition in DOCX.
+
+| Value | Description |
+|-------|-------------|
+| `paragraph` | Paragraph element |
+| `character` | Character |
+| `table` | Table element |
+| `numbering` | Numbering |
+
+
+---
+
+#### VerticalMerge
+
+Vertical merge state.
+
+| Value | Description |
+|-------|-------------|
+| `restart` | Restart |
+| `continue` | Continue |
+
+
+---
+
+#### ThemeColor
+
+A theme color definition, either direct RGB or a system color with fallback.
+
+| Value | Description |
+|-------|-------------|
+| `rgb` | Direct hex RGB color (e.g., "156082"). — Fields: `0`: `String.t()` |
+| `system` | System color with fallback RGB (e.g., "windowText" with lastClr "000000"). — Fields: `name`: `String.t()`, `last_color`: `String.t()` |
+
+
+---
+
+#### SecurityError
+
+Security validation errors.
+
+| Value | Description |
+|-------|-------------|
+| `zip_bomb_detected` | Potential ZIP bomb detected — Fields: `compressed_size`: `integer()`, `uncompressed_size`: `integer()`, `ratio`: `float()` |
+| `archive_too_large` | Archive exceeds maximum size — Fields: `size`: `integer()`, `max`: `integer()` |
+| `too_many_files` | Archive contains too many files — Fields: `count`: `integer()`, `max`: `integer()` |
+| `nesting_too_deep` | Nesting too deep — Fields: `depth`: `integer()`, `max`: `integer()` |
+| `content_too_large` | Content exceeds maximum size — Fields: `size`: `integer()`, `max`: `integer()` |
+| `entity_too_long` | Entity/string too long — Fields: `length`: `integer()`, `max`: `integer()` |
+| `too_many_iterations` | Too many iterations — Fields: `count`: `integer()`, `max`: `integer()` |
+| `xml_depth_exceeded` | XML depth exceeded — Fields: `depth`: `integer()`, `max`: `integer()` |
+| `too_many_cells` | Too many table cells — Fields: `cells`: `integer()`, `max`: `integer()` |
+
+
+---
+
+#### OcrBackendType
+
+OCR backend types.
+
+| Value | Description |
+|-------|-------------|
+| `tesseract` | Tesseract OCR (native Rust binding) |
+| `easy_ocr` | EasyOCR (Python-based, via FFI) |
+| `paddle_ocr` | PaddleOCR (Python-based, via FFI) |
+| `custom` | Custom/third-party OCR backend |
+
+
+---
+
+#### ReductionLevel
+
+| Value | Description |
+|-------|-------------|
+| `off` | Off |
+| `light` | Light |
+| `moderate` | Moderate |
+| `aggressive` | Aggressive |
+| `maximum` | Maximum |
+
+
+---
+
+#### PdfAnnotationType
+
+Type of PDF annotation.
+
+| Value | Description |
+|-------|-------------|
+| `text` | Sticky note / text annotation |
+| `highlight` | Highlighted text region |
+| `link` | Hyperlink annotation |
+| `stamp` | Rubber stamp annotation |
+| `underline` | Underline text markup |
+| `strike_out` | Strikeout text markup |
+| `other` | Any other annotation type |
+
+
+---
+
+#### BlockType
+
+Types of block-level elements in Djot.
+
+| Value | Description |
+|-------|-------------|
+| `paragraph` | Paragraph element |
+| `heading` | Heading element |
+| `blockquote` | Blockquote element |
+| `code_block` | Code block |
+| `list_item` | List item |
+| `ordered_list` | Ordered list |
+| `bullet_list` | Bullet list |
+| `task_list` | Task list |
+| `definition_list` | Definition list |
+| `definition_term` | Definition term |
+| `definition_description` | Definition description |
+| `div` | Div |
+| `section` | Section element |
+| `thematic_break` | Thematic break |
+| `raw_block` | Raw block |
+| `math_display` | Math display |
+
+
+---
+
+#### InlineType
+
+Types of inline elements in Djot.
+
+| Value | Description |
+|-------|-------------|
+| `text` | Text format |
+| `strong` | Strong |
+| `emphasis` | Emphasis |
+| `highlight` | Highlight |
+| `subscript` | Subscript |
+| `superscript` | Superscript |
+| `insert` | Insert |
+| `delete` | Delete |
+| `code` | Code |
+| `link` | Link |
+| `image` | Image element |
+| `span` | Span |
+| `math` | Math |
+| `raw_inline` | Raw inline |
+| `footnote_ref` | Footnote ref |
+| `symbol` | Symbol |
+
+
+---
+
+#### RelationshipKind
+
+Semantic kind of a relationship between document elements.
+
+| Value | Description |
+|-------|-------------|
+| `footnote_reference` | Footnote marker -> footnote definition. |
+| `citation_reference` | Citation marker -> bibliography entry. |
+| `internal_link` | Internal anchor link (`#id`) -> target heading/element. |
+| `caption` | Caption paragraph -> figure/table it describes. |
+| `label` | Label -> labeled element (HTML `<label for>`, LaTeX `\label{}`). |
+| `toc_entry` | TOC entry -> target section. |
+| `cross_reference` | Cross-reference (LaTeX `\ref{}`, DOCX cross-reference field). |
+
+
+---
+
+#### ContentLayer
+
+Content layer classification for document nodes.
+
+Replaces separate body/furniture arrays with per-node granularity.
+
+| Value | Description |
+|-------|-------------|
+| `body` | Main document body content. |
+| `header` | Page/section header (running header). |
+| `footer` | Page/section footer (running footer). |
+| `footnote` | Footnote content. |
+
+
+---
+
+#### NodeContent
+
+Tagged enum for node content. Each variant carries only type-specific data.
+
+Uses `#[serde(tag = "node_type")]` to avoid "type" keyword collision in
+Go/Java/TypeScript bindings.
+
+| Value | Description |
+|-------|-------------|
+| `title` | Document title. — Fields: `text`: `String.t()` |
+| `heading` | Section heading with level (1-6). — Fields: `level`: `integer()`, `text`: `String.t()` |
+| `paragraph` | Body text paragraph. — Fields: `text`: `String.t()` |
+| `list` | List container — children are `ListItem` nodes. — Fields: `ordered`: `boolean()` |
+| `list_item` | Individual list item. — Fields: `text`: `String.t()` |
+| `table` | Table with structured cell grid. — Fields: `grid`: `TableGrid` |
+| `image` | Image reference. — Fields: `description`: `String.t()`, `image_index`: `integer()`, `src`: `String.t()` |
+| `code` | Code block. — Fields: `text`: `String.t()`, `language`: `String.t()` |
+| `quote` | Block quote — container, children carry the quoted content. |
+| `formula` | Mathematical formula / equation. — Fields: `text`: `String.t()` |
+| `footnote` | Footnote reference content. — Fields: `text`: `String.t()` |
+| `group` | Logical grouping container (section, key-value area). `heading_level` + `heading_text` capture the section heading directly rather than relying on a first-child positional convention. — Fields: `label`: `String.t()`, `heading_level`: `integer()`, `heading_text`: `String.t()` |
+| `page_break` | Page break marker. |
+| `slide` | Presentation slide container — children are the slide's content nodes. — Fields: `number`: `integer()`, `title`: `String.t()` |
+| `definition_list` | Definition list container — children are `DefinitionItem` nodes. |
+| `definition_item` | Individual definition list entry with term and definition. — Fields: `term`: `String.t()`, `definition`: `String.t()` |
+| `citation` | Citation or bibliographic reference. — Fields: `key`: `String.t()`, `text`: `String.t()` |
+| `admonition` | Admonition / callout container (note, warning, tip, etc.). Children carry the admonition body content. — Fields: `kind`: `String.t()`, `title`: `String.t()` |
+| `raw_block` | Raw block preserved verbatim from the source format. Used for content that cannot be mapped to a semantic node type (e.g. JSX in MDX, raw LaTeX in markdown, embedded HTML). — Fields: `format`: `String.t()`, `content`: `String.t()` |
+| `metadata_block` | Structured metadata block (email headers, YAML frontmatter, etc.). — Fields: `entries`: `list(StringString)` |
+
+
+---
+
+#### AnnotationKind
+
+Types of inline text annotations.
+
+| Value | Description |
+|-------|-------------|
+| `bold` | Bold |
+| `italic` | Italic |
+| `underline` | Underline |
+| `strikethrough` | Strikethrough |
+| `code` | Code |
+| `subscript` | Subscript |
+| `superscript` | Superscript |
+| `link` | Link — Fields: `url`: `String.t()`, `title`: `String.t()` |
+| `highlight` | Highlighted text (PDF highlights, HTML `<mark>`). |
+| `color` | Text color (CSS-compatible value, e.g. "#ff0000", "red"). — Fields: `value`: `String.t()` |
+| `font_size` | Font size with units (e.g. "12pt", "1.2em", "16px"). — Fields: `value`: `String.t()` |
+| `custom` | Extensible annotation for format-specific styling. — Fields: `name`: `String.t()`, `value`: `String.t()` |
+
+
+---
+
+#### ChunkType
+
+Semantic structural classification of a text chunk.
+
+Assigned by the heuristic classifier in `chunking.classifier`.
+Defaults to `Unknown` when no rule matches.
+Designed to be extended in future versions without breaking changes.
+
+| Value | Description |
+|-------|-------------|
+| `heading` | Section heading or document title. |
+| `party_list` | Party list: names, addresses, and signatories. |
+| `definitions` | Definition clause ("X means…", "X shall mean…"). |
+| `operative_clause` | Operative clause containing legal/contractual action verbs. |
+| `signature_block` | Signature block with signatures, names, and dates. |
+| `schedule` | Schedule, annex, appendix, or exhibit section. |
+| `table_like` | Table-like content with aligned columns or repeated patterns. |
+| `formula` | Mathematical formula or equation. |
+| `code_block` | Code block or preformatted content. |
+| `image` | Embedded or referenced image content. |
+| `org_chart` | Organizational chart or hierarchy diagram. |
+| `diagram` | Diagram, figure, or visual illustration. |
+| `unknown` | Unclassified or mixed content. |
+
+
+---
+
+#### ElementType
+
+Semantic element type classification.
+
+Categorizes text content into semantic units for downstream processing.
+Supports the element types commonly found in Unstructured documents.
+
+| Value | Description |
+|-------|-------------|
+| `title` | Document title |
+| `narrative_text` | Main narrative text body |
+| `heading` | Section heading |
+| `list_item` | List item (bullet, numbered, etc.) |
+| `table` | Table element |
+| `image` | Image element |
+| `page_break` | Page break marker |
+| `code_block` | Code block |
+| `block_quote` | Block quote |
+| `footer` | Footer text |
+| `header` | Header text |
+
+
+---
+
+#### ElementKind
+
+Semantic role of an internal element.
+
+Superset of `NodeContent` variants
+plus OCR and container markers.
+
+| Value | Description |
+|-------|-------------|
+| `title` | Document title. |
+| `heading` | Section heading with level (1-6). — Fields: `level`: `integer()` |
+| `paragraph` | Body text paragraph. |
+| `list_item` | List item. `ordered` indicates numbered vs bulleted. — Fields: `ordered`: `boolean()` |
+| `code` | Code block. Language stored in element attributes. |
+| `formula` | Mathematical formula / equation. |
+| `footnote_definition` | Footnote content (the definition, not the reference marker). |
+| `footnote_ref` | Footnote reference marker in body text. |
+| `citation` | Citation or bibliographic reference. |
+| `slide` | Presentation slide container. — Fields: `number`: `integer()` |
+| `definition_term` | Definition list term. |
+| `definition_description` | Definition list description. |
+| `admonition` | Admonition / callout (note, warning, tip, etc.). Kind stored in attributes. |
+| `raw_block` | Raw block preserved verbatim. Format stored in attributes. |
+| `metadata_block` | Structured metadata block (frontmatter, email headers). |
+| `list_start` | Start of a list container. — Fields: `ordered`: `boolean()` |
+| `list_end` | End of a list container. |
+| `quote_start` | Start of a block quote. |
+| `quote_end` | End of a block quote. |
+| `group_start` | Start of a generic group/section. |
+| `group_end` | End of a generic group/section. |
+| `table` | Table reference. `table_index` is an index into `InternalDocument.tables`. — Fields: `table_index`: `integer()` |
+| `image` | Image reference. `image_index` is an index into `InternalDocument.images`. — Fields: `image_index`: `integer()` |
+| `page_break` | Page break marker. |
+| `ocr_text` | OCR-detected text at a given hierarchical level. — Fields: `level`: `OcrElementLevel` |
+
+
+---
+
+#### RelationshipTarget
+
+Target of a relationship — either a resolved element index or an unresolved key.
+
+| Value | Description |
+|-------|-------------|
+| `index` | Resolved: index into `InternalDocument.elements`. — Fields: `0`: `integer()` |
+| `key` | Unresolved: key to be matched against element anchors during derivation. — Fields: `0`: `String.t()` |
+
+
+---
+
+#### FormatMetadata
+
+Format-specific metadata (discriminated union).
+
+Only one format type can exist per extraction result. This provides
+type-safe, clean metadata without nested optionals.
+
+| Value | Description |
+|-------|-------------|
+| `pdf` | Pdf format — Fields: `0`: `PdfMetadata` |
+| `docx` | Docx format — Fields: `0`: `DocxMetadata` |
+| `excel` | Excel — Fields: `0`: `ExcelMetadata` |
+| `email` | Email — Fields: `0`: `EmailMetadata` |
+| `pptx` | Pptx format — Fields: `0`: `PptxMetadata` |
+| `archive` | Archive — Fields: `0`: `ArchiveMetadata` |
+| `image` | Image element — Fields: `0`: `ImageMetadata` |
+| `xml` | Xml format — Fields: `0`: `XmlMetadata` |
+| `text` | Text format — Fields: `0`: `TextMetadata` |
+| `html` | Preserve as HTML `<mark>` tags — Fields: `0`: `HtmlMetadata` |
+| `ocr` | Ocr — Fields: `0`: `OcrMetadata` |
+| `csv` | Csv format — Fields: `0`: `CsvMetadata` |
+| `bibtex` | Bibtex — Fields: `0`: `BibtexMetadata` |
+| `citation` | Citation — Fields: `0`: `CitationMetadata` |
+| `fiction_book` | Fiction book — Fields: `0`: `FictionBookMetadata` |
+| `dbf` | Dbf — Fields: `0`: `DbfMetadata` |
+| `jats` | Jats — Fields: `0`: `JatsMetadata` |
+| `epub` | Epub format — Fields: `0`: `EpubMetadata` |
+| `pst` | Pst — Fields: `0`: `PstMetadata` |
+| `code` | Code — Fields: `0`: `ProcessResult` |
+
+
+---
+
+#### TextDirection
+
+Text direction enumeration for HTML documents.
+
+| Value | Description |
+|-------|-------------|
+| `left_to_right` | Left-to-right text direction |
+| `right_to_left` | Right-to-left text direction |
+| `auto` | Automatic text direction detection |
+
+
+---
+
+#### LinkType
+
+Link type classification.
+
+| Value | Description |
+|-------|-------------|
+| `anchor` | Anchor link (#section) |
+| `internal` | Internal link (same domain) |
+| `external` | External link (different domain) |
+| `email` | Email link (mailto:) |
+| `phone` | Phone link (tel:) |
+| `other` | Other link type |
+
+
+---
+
+#### ImageType
+
+Image type classification.
+
+| Value | Description |
+|-------|-------------|
+| `data_uri` | Data URI image |
+| `inline_svg` | Inline SVG |
+| `external` | External image URL |
+| `relative` | Relative path image |
+
+
+---
+
+#### StructuredDataType
+
+Structured data type classification.
+
+| Value | Description |
+|-------|-------------|
+| `json_ld` | JSON-LD structured data |
+| `microdata` | Microdata |
+| `rdfa` | RDFa |
+
+
+---
+
+#### OcrBoundingGeometry
+
+Bounding geometry for an OCR element.
+
+Supports both axis-aligned rectangles (from Tesseract) and 4-point quadrilaterals
+(from PaddleOCR and rotated text detection).
+
+| Value | Description |
+|-------|-------------|
+| `rectangle` | Axis-aligned bounding box (typical for Tesseract output). — Fields: `left`: `integer()`, `top`: `integer()`, `width`: `integer()`, `height`: `integer()` |
+| `quadrilateral` | 4-point quadrilateral for rotated/skewed text (PaddleOCR). Points are in clockwise order starting from top-left: `[top_left, top_right, bottom_right, bottom_left]` — Fields: `points`: `U32U324` |
+
+
+---
+
+#### OcrElementLevel
+
+Hierarchical level of an OCR element.
+
+Maps to Tesseract's page segmentation hierarchy and provides
+equivalent semantics for PaddleOCR.
+
+| Value | Description |
+|-------|-------------|
+| `word` | Individual word |
+| `line` | Line of text (default for PaddleOCR) |
+| `block` | Paragraph or text block |
+| `page` | Page-level element |
+
+
+---
+
+#### PageUnitType
+
+Type of paginated unit in a document.
+
+Distinguishes between different types of "pages" (PDF pages, presentation slides, spreadsheet sheets).
+
+| Value | Description |
+|-------|-------------|
+| `page` | Standard document pages (PDF, DOCX, images) |
+| `slide` | Presentation slides (PPTX, ODP) |
+| `sheet` | Spreadsheet sheets (XLSX, ODS) |
+
+
+---
+
+#### UriKind
+
+Semantic classification of an extracted URI.
+
+| Value | Description |
+|-------|-------------|
+| `hyperlink` | A clickable hyperlink (web URL, file link). |
+| `image` | An image or media resource reference. |
+| `anchor` | An internal anchor or cross-reference target. |
+| `citation` | A citation or bibliographic reference (DOI, academic ref). |
+| `reference` | A general reference (e.g. `\ref{}` in LaTeX, `:ref:` in RST). |
+| `email` | An email address (`mailto:` link or bare email). |
+
+
+---
+
+#### PoolError
+
+Error type for pool operations.
+
+| Value | Description |
+|-------|-------------|
+| `lock_poisoned` | The pool's internal mutex was poisoned. This indicates a panic occurred while holding the lock. The pool is in a locked state and cannot be recovered. |
+
+
+---
+
+#### ExtractionSource
+
+The source of a document to extract.
+
+| Value | Description |
+|-------|-------------|
+| `file` | Extract from a filesystem path with an optional MIME type hint. — Fields: `path`: `String.t()`, `mime_hint`: `String.t()` |
+| `bytes` | Extract from in-memory bytes with a known MIME type. — Fields: `data`: `binary()`, `mime_type`: `String.t()` |
+
+
+---
+
+#### Pooling
+
+Pooling strategy for extracting a single vector from token embeddings.
+
+| Value | Description |
+|-------|-------------|
+| `cls` | Use the [CLS] token embedding (first token). |
+| `mean` | Mean of all token embeddings, weighted by attention mask. |
+
+
+---
+
+#### EmbedError
+
+Embedding engine errors.
+
+| Value | Description |
+|-------|-------------|
+| `tokenizer` | Tokenizer — Fields: `0`: `String.t()` |
+| `ort` | Ort — Fields: `0`: `Error` |
+| `shape` | Shape — Fields: `0`: `String.t()` |
+| `no_output` | No output |
+
+
+---
+
+#### KeywordAlgorithm
+
+Keyword algorithm selection.
+
+| Value | Description |
+|-------|-------------|
+| `yake` | YAKE (Yet Another Keyword Extractor) - statistical approach |
+| `rake` | RAKE (Rapid Automatic Keyword Extraction) - co-occurrence based |
+
+
+---
+
+#### OcrError
+
+OCR-specific errors (pure Rust, no PyO3)
+
+| Value | Description |
+|-------|-------------|
+| `tesseract_initialization_failed` | Tesseract initialization failed — Fields: `0`: `String.t()` |
+| `unsupported_version` | Unsupported version — Fields: `0`: `String.t()` |
+| `invalid_configuration` | Invalid configuration — Fields: `0`: `String.t()` |
+| `invalid_language_code` | Invalid language code — Fields: `0`: `String.t()` |
+| `image_processing_failed` | Image processing failed — Fields: `0`: `String.t()` |
+| `processing_failed` | Processing failed — Fields: `0`: `String.t()` |
+| `cache_error` | Cache error — Fields: `0`: `String.t()` |
+| `io_error` | I o error — Fields: `0`: `String.t()` |
+
+
+---
+
+#### PsmMode
+
+Page Segmentation Mode for Tesseract OCR
+
+| Value | Description |
+|-------|-------------|
+| `osd_only` | Osd only |
+| `auto_osd` | Auto osd |
+| `auto_only` | Auto only |
+| `auto` | Auto |
+| `single_column` | Single column |
+| `single_block_vertical` | Single block vertical |
+| `single_block` | Single block |
+| `single_line` | Single line |
+| `single_word` | Single word |
+| `circle_word` | Circle word |
+| `single_char` | Single char |
+
+
+---
+
+#### PaddleLanguage
+
+Supported languages in PaddleOCR.
+
+Maps user-friendly language codes to paddle-ocr-rs language identifiers.
+
+| Value | Description |
+|-------|-------------|
+| `english` | English |
+| `chinese` | Simplified Chinese |
+| `japanese` | Japanese |
+| `korean` | Korean |
+| `german` | German |
+| `french` | French |
+| `latin` | Latin script (covers most European languages) |
+| `cyrillic` | Cyrillic (Russian and related) |
+| `traditional_chinese` | Traditional Chinese |
+| `thai` | Thai |
+| `greek` | Greek |
+| `east_slavic` | East Slavic (Russian, Ukrainian, Belarusian) |
+| `arabic` | Arabic (Arabic, Persian, Urdu) |
+| `devanagari` | Devanagari (Hindi, Marathi, Sanskrit, Nepali) |
+| `tamil` | Tamil |
+| `telugu` | Telugu |
+
+
+---
+
+#### ModelBackend
+
+Which underlying model architecture to use.
+
+| Value | Description |
+|-------|-------------|
+| `yolo_doc_lay_net` | YOLO trained on DocLayNet (11 classes, 640x640 input). |
+| `rt_detr` | RT-DETR v2 (17 classes, 640x640 input, NMS-free). |
+| `custom` | Custom model from a local file path. — Fields: `path`: `String.t()`, `variant`: `CustomModelVariant` |
+
+
+---
+
+#### CustomModelVariant
+
+Variant selection for custom model paths.
+
+| Value | Description |
+|-------|-------------|
+| `rt_detr` | Rt detr |
+| `yolo_doc_lay_net` | Yolo doc lay net |
+| `yolo_doc_struct_bench` | Yolo doc struct bench |
+| `yolox` | Yolox — Fields: `input_width`: `integer()`, `input_height`: `integer()` |
+
+
+---
+
+#### TableType
+
+Table type classification result.
+
+| Value | Description |
+|-------|-------------|
+| `wired` | Bordered table with visible gridlines. |
+| `wireless` | Borderless table without visible gridlines. |
+
+
+---
+
+#### TatrClass
+
+TATR object detection class labels.
+
+The 7 classes output by the Table Transformer model. `NoObject` (class 6)
+is the background/padding class and is filtered out during post-processing.
+
+| Value | Description |
+|-------|-------------|
+| `table` | Full table bounding box (class 0). |
+| `column` | Table column (class 1). |
+| `row` | Table row (class 2). |
+| `column_header` | Column header row (class 3). |
+| `projected_row_header` | Projected row header column (class 4). |
+| `spanning_cell` | Spanning cell covering multiple rows/columns (class 5). |
+
+
+---
+
+#### YoloVariant
+
+Which YOLO variant this model represents.
+
+| Value | Description |
+|-------|-------------|
+| `doc_lay_net` | YOLOv10/v8 trained on DocLayNet (11 classes). Output: [batch, num_dets, 6] = [x1, y1, x2, y2, score, class_id] |
+| `doc_struct_bench` | DocLayout-YOLO trained on DocStructBench (10 classes). Output: [batch, num_dets, 4+num_classes] center-format, or [batch, num_dets, 6] decoded. |
+| `yolox` | YOLOX with letterbox preprocessing and grid decoding. Output: [batch, num_anchors, 5+num_classes] — needs grid decoding + NMS. Strides: [8, 16, 32], anchors decoded via (raw + grid_offset) * stride. |
+
+
+---
+
+#### LayoutClass
+
+The 17 canonical document layout classes.
+
+All model backends (RT-DETR, YOLO, etc.) map their native class IDs
+to this shared set. Models with fewer classes (DocLayNet: 11, PubLayNet: 5)
+map to the closest equivalent.
+
+| Value | Description |
+|-------|-------------|
+| `caption` | Caption element |
+| `footnote` | Footnote element |
+| `formula` | Formula |
+| `list_item` | List item |
+| `page_footer` | Page footer |
+| `page_header` | Page header |
+| `picture` | Picture |
+| `section_header` | Section header |
+| `table` | Table element |
+| `text` | Text format |
+| `title` | Title element |
+| `document_index` | Document index |
+| `code` | Code |
+| `checkbox_selected` | Checkbox selected |
+| `checkbox_unselected` | Checkbox unselected |
+| `form` | Form |
+| `key_value_region` | Key value region |
+
+
+---
+
+#### PdfError
+
+| Value | Description |
+|-------|-------------|
+| `invalid_pdf` | Invalid pdf — Fields: `0`: `String.t()` |
+| `password_required` | Password required |
+| `invalid_password` | Invalid password |
+| `encryption_not_supported` | Encryption not supported — Fields: `0`: `String.t()` |
+| `page_not_found` | Page not found — Fields: `0`: `integer()` |
+| `text_extraction_failed` | Text extraction failed — Fields: `0`: `String.t()` |
+| `rendering_failed` | Rendering failed — Fields: `0`: `String.t()` |
+| `metadata_extraction_failed` | Metadata extraction failed — Fields: `0`: `String.t()` |
+| `extraction_failed` | Extraction failed — Fields: `0`: `String.t()` |
+| `font_loading_failed` | Font loading failed — Fields: `0`: `String.t()` |
+| `io_error` | I o error — Fields: `0`: `String.t()` |
+| `cancelled` | The operation was cancelled via a `CancellationToken`. |
+
+
+---
+
+#### HierarchyLevel
+
+Hierarchy level assignment result.
+
+| Value | Description |
+|-------|-------------|
+| `h1` | H1 - Top-level heading |
+| `h2` | H2 - Secondary heading |
+| `h3` | H3 - Tertiary heading |
+| `h4` | H4 - Quaternary heading |
+| `h5` | H5 - Quinary heading |
+| `h6` | H6 - Senary heading |
+| `body` | Body text |
+
+
+---
+
+### Errors
+
+#### KreuzbergError
+
+Main error type for all Kreuzberg operations.
+
+All errors in Kreuzberg use this enum, which preserves error chains
+and provides context for debugging.
+
+# Variants
+
+- `Io` - File system and I/O errors (always bubble up)
+- `Parsing` - Document parsing errors (corrupt files, unsupported features)
+- `Ocr` - OCR processing errors
+- `Validation` - Input validation errors (invalid paths, config, parameters)
+- `Cache` - Cache operation errors (non-fatal, can be ignored)
+- `ImageProcessing` - Image manipulation errors
+- `Serialization` - JSON/MessagePack serialization errors
+- `MissingDependency` - Missing optional dependencies (tesseract, etc.)
+- `Plugin` - Plugin-specific errors
+- `LockPoisoned` - Mutex/RwLock poisoning (should not happen in normal operation)
+- `UnsupportedFormat` - Unsupported MIME type or file format
+- `Other` - Catch-all for uncommon errors
+
+| Variant | Description |
+|---------|-------------|
+| `io` | IO error: {0} |
+| `parsing` | Parsing error: {message} |
+| `ocr` | OCR error: {message} |
+| `validation` | Validation error: {message} |
+| `cache` | Cache error: {message} |
+| `image_processing` | Image processing error: {message} |
+| `serialization` | Serialization error: {message} |
+| `missing_dependency` | Missing dependency: {0} |
+| `plugin` | Plugin error in '{plugin_name}': {message} |
+| `lock_poisoned` | Lock poisoned: {0} |
+| `unsupported_format` | Unsupported format: {0} |
+| `embedding` | Embedding error: {message} |
+| `timeout` | Extraction timed out after {elapsed_ms}ms (limit: {limit_ms}ms) |
+| `cancelled` | Extraction cancelled |
+| `other` | {0} |
+
+
+---
+
+#### LayoutError
+
+| Variant | Description |
+|---------|-------------|
+| `ort` | ORT error: {0} |
+| `image` | Image error: {0} |
+| `session_not_initialized` | Session not initialized |
+| `invalid_output` | Invalid model output: {0} |
+| `model_download` | Model download failed: {0} |
+
+
+---
+

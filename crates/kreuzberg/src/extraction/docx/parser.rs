@@ -10,6 +10,7 @@
 //! - Added markdown rendering and formatting support (fixes #376)
 
 use ahash::AHashMap;
+use serde::{Deserialize, Serialize};
 use std::io::{Cursor, Read, Seek};
 
 use quick_xml::Reader;
@@ -18,7 +19,7 @@ use quick_xml::events::{BytesStart, Event};
 // --- Types ---
 
 /// Tracks document element ordering (paragraphs, tables, and drawings interleaved).
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum DocumentElement {
     Paragraph(usize), // index into Document::paragraphs
     Table(usize),     // index into Document::tables
